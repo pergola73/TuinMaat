@@ -919,11 +919,24 @@ fun SnoeiKalenderScherm(navController: NavController) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(maand, style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.ExtraBold)
                         plantenVoorMaand.forEach { plant ->
-                            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.ContentCut, contentDescription = null, tint = GrasGroen)
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clickable { navController.navigate("detail/${plant.firestoreId}") },
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                            ) {
+                                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    AsyncImage(
+                                        model = plant.fotoUri,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
                                     Spacer(modifier = Modifier.width(16.dp))
-                                    Text(plant.naam, style = MaterialTheme.typography.bodyLarge)
+                                    Text(plant.naam, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = DonkerGroen)
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Icon(Icons.Default.ContentCut, contentDescription = null, tint = GrasGroen, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
