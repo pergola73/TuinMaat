@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "408553659599",
+    "project_id": "tuinmaat-22cf8",
+    "storage_bucket": "tuinmaat-22cf8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:408553659599:android:196a880b8da77cf81b6bba",
+        "android_client_info": {
+          "package_name": "com.example.tuinmaat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAByfKwO77pDPtRrZ3XJ9UKfVAEduwb0NA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
