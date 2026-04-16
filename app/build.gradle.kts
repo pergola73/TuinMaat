@@ -57,7 +57,6 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.biometric)
-    implementation(libs.google.generativeai)
     implementation(libs.play.services.base)
 
     // Firebase
@@ -66,6 +65,10 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.storage)
+    implementation(libs.firebase.vertexai)
+    implementation(libs.firebase.appcheck)
+    implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.firebase.appcheck.debug)
     implementation(libs.kotlinx.coroutines.play.services)
 
     testImplementation(libs.junit)

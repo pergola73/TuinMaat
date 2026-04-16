@@ -61,15 +61,19 @@ import com.example.tuinmaat.ui.theme.DonkerGroen
 import com.example.tuinmaat.ui.theme.GrasGroen
 import com.example.tuinmaat.ui.theme.TuinMaatTheme
 import com.example.tuinmaat.ui.theme.ZachtBeige
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.content
+import com.google.firebase.appcheck.appCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.Firebase
+import com.google.firebase.appcheck.appCheck
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
+import com.google.firebase.vertexai.vertexAI
+import com.google.firebase.vertexai.type.content
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -79,6 +83,18 @@ import java.io.ByteArrayOutputStream
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Firebase App Check
+        // Firebase is initialized automatically, but if you need manual initialization:
+        // com.google.firebase.FirebaseApp.initializeApp(this)
+
+        Firebase.appCheck.installAppCheckProviderFactory(
+            if (BuildConfig.DEBUG) {
+                DebugAppCheckProviderFactory.getInstance()
+            } else {
+                PlayIntegrityAppCheckProviderFactory.getInstance()
+            }
+        )
 
         // Zorg ervoor dat de content achter de statusbalk kan lopen voor een modern uiterlijk
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -1440,12 +1456,13 @@ data class GeminiPlantResult(
     val snoeiMaand: String
 )
 
-// Helperfunctie voor Gemini AI plantidentificatie
+// Helperfunctie voor Gemini AI plantidentificatie met Vertex AI in Firebase
 suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context): List<GeminiPlantResult> {
     return try {
-        val generativeModel = GenerativeModel(
-            modelName = "gemini-1.5-flash",
-            apiKey = BuildConfig.GEMINI_API_KEY
+        // Gebruik Vertex AI van Firebase
+        val vertexAI = Firebase.vertexAI
+        val generativeModel = vertexAI.generativeModel(
+            modelName = "gemini-2.5-flash-lite"
         )
 
         val prompt = content {
