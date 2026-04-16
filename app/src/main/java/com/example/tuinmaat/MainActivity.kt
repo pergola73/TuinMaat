@@ -15,9 +15,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
+import java.util.Calendar
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -56,7 +60,13 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import android.graphics.drawable.BitmapDrawable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.text.style.TextOverflow
 import com.example.tuinmaat.ui.theme.DonkerGroen
 import com.example.tuinmaat.ui.theme.GrasGroen
 import com.example.tuinmaat.ui.theme.TuinMaatTheme
@@ -238,7 +248,15 @@ fun LoginScherm(navController: NavController) {
                 onValueChange = { voornaam = it },
                 label = { Text("Voornaam") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = DonkerGroen,
+                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                )
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -250,7 +268,15 @@ fun LoginScherm(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = DonkerGroen) }
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = DonkerGroen) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = DonkerGroen,
+                unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+            )
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -271,7 +297,15 @@ fun LoginScherm(navController: NavController) {
                         tint = DonkerGroen
                     )
                 }
-            }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = DonkerGroen,
+                unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+            )
         )
 
         if (foutMelding != null) {
@@ -299,27 +333,33 @@ fun LoginScherm(navController: NavController) {
                 if (isRegistreren) {
                     if (email.isNotBlank() && wachtwoord.isNotBlank() && voornaam.isNotBlank()) {
                         isLaden = true
-                        auth.createUserWithEmailAndPassword(email, wachtwoord)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    val user = auth.currentUser
-                                    val profile = hashMapOf(
-                                        "voornaam" to voornaam,
-                                        "email" to email,
-                                        "createdAt" to System.currentTimeMillis()
-                                    )
-                                    db.collection("users").document(user!!.uid).set(profile)
-                                        .addOnSuccessListener {
-                                            // Maak ook een standaard tuin aan voor de nieuwe gebruiker
-                                            val tuin = hashMapOf("naam" to "Mijn Tuin")
-                                            db.collection("tuinen").document(user.uid).set(tuin, SetOptions.merge())
-                                            navController.navigate("hoofdmenu") { popUpTo(0) }
+                                    auth.createUserWithEmailAndPassword(email, wachtwoord)
+                                        .addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                val user = auth.currentUser
+                                                user?.sendEmailVerification()
+                                                    ?.addOnCompleteListener { verificationTask ->
+                                                        if (verificationTask.isSuccessful) {
+                                                            Toast.makeText(context, "Bevestigingsmail verzonden naar ${user.email}", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
+                                                val profile = hashMapOf(
+                                                    "voornaam" to voornaam,
+                                                    "email" to email,
+                                                    "createdAt" to System.currentTimeMillis()
+                                                )
+                                                db.collection("users").document(user!!.uid).set(profile)
+                                                    .addOnSuccessListener {
+                                                        // Maak ook een standaard tuin aan voor de nieuwe gebruiker
+                                                        val tuin = hashMapOf("naam" to "Mijn Tuin")
+                                                        db.collection("tuinen").document(user.uid).set(tuin, SetOptions.merge())
+                                                        navController.navigate("hoofdmenu") { popUpTo(0) }
+                                                    }
+                                            } else {
+                                                isLaden = false
+                                                foutMelding = vertaalFoutmelding(task.exception)
+                                            }
                                         }
-                                } else {
-                                    isLaden = false
-                                    foutMelding = vertaalFoutmelding(task.exception)
-                                }
-                            }
                     } else {
                         foutMelding = "Vul alle velden in."
                     }
@@ -729,18 +769,34 @@ fun PlantToevoegenScherm(
             }
 
             // AI Button
-            if (bitmap != null) {
+            if (bitmap != null || bestaandeFotoUri != null) {
                 Button(
                     onClick = {
                         coroutineScope.launch {
                             isAIBezig = true
                             try {
-                                val resultaten = zoekPlantInfoMetAI(bitmap!!, context)
-                                if (resultaten.isNotEmpty()) {
-                                    aiSuggesties = resultaten
-                                    laatSuggestiesZien = true
+                                var bitmapToProcess = bitmap
+                                if (bitmapToProcess == null && bestaandeFotoUri != null) {
+                                    // Download en converteer bestaande foto naar bitmap voor AI
+                                    val loader = ImageLoader(context)
+                                    val request = ImageRequest.Builder(context)
+                                        .data(bestaandeFotoUri)
+                                        .allowHardware(false)
+                                        .build()
+                                    val result = loader.execute(request)
+                                    bitmapToProcess = (result.drawable as? BitmapDrawable)?.bitmap
+                                }
+
+                                if (bitmapToProcess != null) {
+                                    val resultaten = zoekPlantInfoMetAI(bitmapToProcess, context)
+                                    if (resultaten.isNotEmpty()) {
+                                        aiSuggesties = resultaten
+                                        laatSuggestiesZien = true
+                                    } else {
+                                        Toast.makeText(context, "AI kon plant niet identificeren", Toast.LENGTH_SHORT).show()
+                                    }
                                 } else {
-                                    Toast.makeText(context, "AI kon plant niet identificeren", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Kon foto niet laden voor AI", Toast.LENGTH_SHORT).show()
                                 }
                             } catch (e: Exception) {
                                 Log.e("TuinMaat", "AI Error: ${e.message}")
@@ -875,6 +931,7 @@ fun PlantDetailScherm(plantId: String?, navController: NavController) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(plant!!.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = DonkerGroen, modifier = Modifier.weight(1f))
+                    
                     IconButton(onClick = { navController.navigate("toevoegen?plantId=${plant!!.firestoreId}") }) {
                         Icon(Icons.Default.Edit, contentDescription = "Bewerken", tint = DonkerGroen)
                     }
@@ -916,6 +973,7 @@ fun InfoSectie(titel: String, inhoud: String, icoon: ImageVector) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SnoeiKalenderScherm(navController: NavController) {
     val db = Firebase.firestore
@@ -941,38 +999,102 @@ fun SnoeiKalenderScherm(navController: NavController) {
         }
     }
 
+    val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
+    val huidigMaandIndex = Calendar.getInstance().get(Calendar.MONTH)
+    
+    // Sorteer maanden zodat de huidige maand bovenaan staat
+    val gesorteerdeMaanden = maanden.subList(huidigMaandIndex, 12) + maanden.subList(0, huidigMaandIndex)
+    
+    val listState = rememberLazyListState()
+
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
             IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
             Text("Snoei Kalender", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
         }
 
-        val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(maanden) { maand ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState
+        ) {
+            gesorteerdeMaanden.forEach { maand ->
                 val plantenVoorMaand = planten.filter { it.snoeiMaand.contains(maand, ignoreCase = true) }
-                if (plantenVoorMaand.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(maand, style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.ExtraBold)
-                        plantenVoorMaand.forEach { plant ->
+                
+                stickyHeader {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = GrasGroen,
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            text = if (maand == maanden[huidigMaandIndex]) "$maand (Nu)" else maand,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+
+                if (plantenVoorMaand.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                            Text("Geen planten te snoeien in $maand", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                } else {
+                    item {
+                        val pagerState = rememberPagerState(pageCount = { plantenVoorMaand.size })
+                        
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                            contentPadding = PaddingValues(horizontal = 32.dp),
+                            pageSpacing = 16.dp,
+                            flingBehavior = PagerDefaults.flingBehavior(state = pagerState)
+                        ) { page ->
+                            val plant = plantenVoorMaand[page]
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
+                                    .height(120.dp)
                                     .clickable { navController.navigate("detail/${plant.firestoreId}") },
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
-                                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     AsyncImage(
                                         model = plant.fotoUri,
                                         contentDescription = null,
-                                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
+                                        modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
                                         contentScale = ContentScale.Crop
                                     )
                                     Spacer(modifier = Modifier.width(16.dp))
-                                    Text(plant.naam, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = DonkerGroen)
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Icon(Icons.Default.ContentCut, contentDescription = null, tint = GrasGroen, modifier = Modifier.size(20.dp))
+                                    Column {
+                                        Text(plant.naam, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                                        Text(plant.locatie, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.ContentCut, contentDescription = null, tint = GrasGroen, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Snoeien", style = MaterialTheme.typography.labelSmall, color = GrasGroen)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Page indicator
+                        if (plantenVoorMaand.size > 1) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                repeat(plantenVoorMaand.size) { iteration ->
+                                    val color = if (pagerState.currentPage == iteration) DonkerGroen else DonkerGroen.copy(alpha = 0.2f)
+                                    Box(
+                                        modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(6.dp)
+                                    )
                                 }
                             }
                         }
@@ -1249,7 +1371,15 @@ fun ProfielBewerkenScherm(navController: NavController) {
                 onValueChange = { voornaam = it },
                 label = { Text("Voornaam") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = DonkerGroen,
+                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                )
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -1391,6 +1521,7 @@ fun ProfielBewerkenScherm(navController: NavController) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlantenLijstScherm(navController: NavController) {
     val db = Firebase.firestore
@@ -1423,6 +1554,8 @@ fun PlantenLijstScherm(navController: NavController) {
                 plant.locatie.contains(zoekTerm, ignoreCase = true)
     }
 
+    val pagerState = rememberPagerState(pageCount = { gefilterdePlanten.size })
+
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
             IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
@@ -1440,9 +1573,68 @@ fun PlantenLijstScherm(navController: NavController) {
             colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
         )
 
-        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
-            items(gefilterdePlanten) { plant ->
-                PlantKaart(plant, navController)
+        if (gefilterdePlanten.isNotEmpty()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp),
+                pageSpacing = 16.dp,
+                flingBehavior = PagerDefaults.flingBehavior(state = pagerState)
+            ) { page ->
+                val plant = gefilterdePlanten[page]
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.85f)
+                        .clickable { navController.navigate("detail/${plant.firestoreId}") },
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column {
+                        AsyncImage(
+                            model = plant.fotoUri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Text(plant.naam, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Surface(color = GrasGroen.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.LocationOn, null, tint = DonkerGroen, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(plant.locatie, color = DonkerGroen, style = MaterialTheme.typography.labelLarge)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(plant.omschrijving, style = MaterialTheme.typography.bodyLarge, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                            
+                            Spacer(modifier = Modifier.weight(1f))
+                            
+                            Button(
+                                onClick = { navController.navigate("detail/${plant.firestoreId}") },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Bekijk Details")
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (allePlanten.isNotEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Geen planten gevonden die voldoen aan je zoekopdracht.", color = Color.Gray)
+            }
+        } else {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Je hebt nog geen planten toegevoegd.", color = Color.Gray)
             }
         }
     }
