@@ -61,16 +61,20 @@ import com.example.tuinmaat.ui.theme.DonkerGroen
 import com.example.tuinmaat.ui.theme.GrasGroen
 import com.example.tuinmaat.ui.theme.TuinMaatTheme
 import com.example.tuinmaat.ui.theme.ZachtBeige
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.content
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -537,6 +541,11 @@ fun PlantToevoegenScherm(
     var snoeiMaand by remember { mutableStateOf("") }
     var snoeiAdvies by remember { mutableStateOf("") }
 
+    // Gemini AI State
+    var aiSuggesties by remember { mutableStateOf<List<GeminiPlantResult>>(emptyList()) }
+    var laatSuggestiesZien by remember { mutableStateOf(false) }
+    var isAIBezig by remember { mutableStateOf(false) }
+
     // UI State
     var isLaden by remember { mutableStateOf(false) }
     var laatLocatieMenuZien by remember { mutableStateOf(false) }
@@ -625,9 +634,19 @@ fun PlantToevoegenScherm(
                                     db.collection("tuinen").document(gardenId).collection("planten").document()
                                 }
 
+                                var downloadUrl = bestaandeFotoUri ?: ""
+                                if (bitmap != null) {
+                                    val storageRef = Firebase.storage.reference.child("planten/${docRef.id}.jpg")
+                                    val baos = ByteArrayOutputStream()
+                                    bitmap!!.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+                                    val data = baos.toByteArray()
+                                    storageRef.putBytes(data).await()
+                                    downloadUrl = storageRef.downloadUrl.await().toString()
+                                }
+
                                 val finalData = plantData.toMutableMap()
                                 finalData["firestoreId"] = docRef.id
-                                finalData["fotoUri"] = bestaandeFotoUri ?: ""
+                                finalData["fotoUri"] = downloadUrl
 
                                 docRef.set(finalData, SetOptions.merge()).await()
                                 navController.popBackStack()
@@ -696,6 +715,60 @@ fun PlantToevoegenScherm(
                     containerColor = Color.White.copy(alpha = 0.8f)
                 ) {
                     Icon(Icons.Default.PhotoCamera, contentDescription = "Foto maken", tint = DonkerGroen)
+                }
+            }
+
+            // Gemini AI Button
+            if (bitmap != null) {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            isAIBezig = true
+                            val resultaten = zoekPlantInfoMetAI(bitmap!!, context)
+                            aiSuggesties = resultaten
+                            laatSuggestiesZien = true
+                            isAIBezig = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = GrasGroen),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !isAIBezig
+                ) {
+                    if (isAIBezig) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Identificeer met Gemini AI", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            if (laatSuggestiesZien) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                    Text("Selecteer de juiste plant:", fontWeight = FontWeight.Bold, color = DonkerGroen)
+                    aiSuggesties.forEach { suggestie ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
+                                naam = suggestie.naam
+                                omschrijving = suggestie.omschrijving
+                                snoeiAdvies = suggestie.snoeiAdvies
+                                snoeiMaand = suggestie.snoeiMaand
+                                laatSuggestiesZien = false
+                            },
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, GrasGroen.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(suggestie.naam, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                                Text(suggestie.omschrijving, maxLines = 2, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    TextButton(onClick = { laatSuggestiesZien = false }) {
+                        Text("Annuleren", color = Color.Gray)
+                    }
                 }
             }
 
@@ -995,7 +1068,28 @@ fun InstellingItem(titel: String, icoon: ImageVector, onClick: () -> Unit) {
 
 @Composable
 fun BeveiligingsInstellingenScherm(navController: NavController) {
+    val db = Firebase.firestore
+    val auth = Firebase.auth
+    val userId = auth.currentUser?.uid ?: ""
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current as FragmentActivity
+
     var isBiometrieIngeschakeld by remember { mutableStateOf(false) }
+    var isLaden by remember { mutableStateOf(true) }
+
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            try {
+                val doc = db.collection("users").document(userId).get().await()
+                val securityType = doc.getString("securityType") ?: "NONE"
+                isBiometrieIngeschakeld = securityType == "BIOMETRIC"
+            } catch (e: Exception) {
+                Log.e("TuinMaat", "Fout bij laden beveiliging: ${e.message}")
+            } finally {
+                isLaden = false
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
@@ -1003,12 +1097,43 @@ fun BeveiligingsInstellingenScherm(navController: NavController) {
             Text("Beveiliging", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
         }
 
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("Biometrische beveiliging", modifier = Modifier.weight(1f))
-                Switch(checked = isBiometrieIngeschakeld, onCheckedChange = { isBiometrieIngeschakeld = it })
+        if (isLaden) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = DonkerGroen)
             }
-            Text("Gebruik vingerafdruk of gezichtsherkenning om de app te openen.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        } else {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Text("Biometrische beveiliging", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Switch(
+                        checked = isBiometrieIngeschakeld,
+                        onCheckedChange = { ingeschakeld ->
+                            if (ingeschakeld) {
+                                // Controleer of biometrie beschikbaar is op dit toestel
+                                val biometricManager = androidx.biometric.BiometricManager.from(context)
+                                val canAuthenticate = biometricManager.canAuthenticate(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                                
+                                if (canAuthenticate == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS) {
+                                    isBiometrieIngeschakeld = true
+                                    scope.launch {
+                                        db.collection("users").document(userId).update("securityType", "BIOMETRIC")
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Biometrie is niet beschikbaar of niet ingesteld op dit toestel.", Toast.LENGTH_LONG).show()
+                                }
+                            } else {
+                                isBiometrieIngeschakeld = false
+                                scope.launch {
+                                    db.collection("users").document(userId).update("securityType", "NONE")
+                                }
+                            }
+                        },
+                        colors = SwitchDefaults.colors(checkedThumbColor = GrasGroen, checkedTrackColor = GrasGroen.copy(alpha = 0.5f))
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Gebruik vingerafdruk of gezichtsherkenning om de app te openen bij inactiviteit.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            }
         }
     }
 }
@@ -1329,4 +1454,91 @@ fun PlantenLijstScherm(navController: NavController) {
             }
         }
     }
+}
+
+// Data class voor Gemini AI resultaten
+data class GeminiPlantResult(
+    val naam: String,
+    val omschrijving: String,
+    val snoeiAdvies: String,
+    val snoeiMaand: String
+)
+
+// Helperfunctie voor Gemini AI plantidentificatie
+suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context): List<GeminiPlantResult> {
+    return try {
+        val generativeModel = GenerativeModel(
+            modelName = "gemini-2.5-flash-lite",
+            apiKey = "AIzaSyAQh99EnRFodIff8ap1T7952cWsv67M4_Q"
+                    //BuildConfig.GEMINI_API_KEY
+        )
+
+        val prompt = content {
+            image(bitmap)
+            text("""
+                Identificeer deze plant en geef 3 mogelijke resultaten terug.
+                Geef het antwoord strikt in het volgende JSON formaat als een lijst van objecten:
+                [
+                  {
+                    "naam": "Naam van de plant",
+                    "omschrijving": "Korte omschrijving van de plant",
+                    "snoeiAdvies": "Kort advies over hoe te snoeien",
+                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'"
+                  }
+                ]
+                Gebruik alleen de JSON structuur in je antwoord, geen extra tekst.
+            """.trimIndent())
+        }
+
+        val response = withContext(Dispatchers.IO) {
+            generativeModel.generateContent(prompt)
+        }
+
+        val jsonText = response.text?.replace("```json", "")?.replace("```", "")?.trim() ?: "[]"
+        
+        // Simpele handmatige parsing of gebruik een JSON library als die beschikbaar is
+        // Voor nu een simpele extractie om externe afhankelijkheden te beperken
+        parseGeminiJson(jsonText)
+    } catch (e: Exception) {
+        Log.e("TuinMaat", "Gemini AI Fout: ${e.message}")
+        emptyList()
+    }
+}
+
+fun parseGeminiJson(json: String): List<GeminiPlantResult> {
+    val resultaten = mutableListOf<GeminiPlantResult>()
+    try {
+        // Robuustere parsing voor JSON met mogelijke line-breaks en spaties
+        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
+        val matches = objectRegex.findAll(json)
+        matches.forEach { match ->
+            val (naam, omschrijving, snoeiAdvies, snoeiMaand) = match.destructured
+            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand))
+        }
+    } catch (e: Exception) {
+        Log.e("TuinMaat", "Parsing error: ${e.message}")
+    }
+    
+    // Tweede poging: Zoek individuele velden als objecten niet in één keer matchen
+    if (resultaten.isEmpty()) {
+        try {
+            val namen = Regex(""""naam"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+            val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+            val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+            val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+            
+            for (i in 0 until minOf(namen.size, 3)) {
+                resultaten.add(GeminiPlantResult(
+                    namen.getOrElse(i) { "" },
+                    omschrijvingen.getOrElse(i) { "" },
+                    adviezen.getOrElse(i) { "" },
+                    maanden.getOrElse(i) { "" }
+                ))
+            }
+        } catch (e: Exception) {
+            Log.e("TuinMaat", "Fallback parsing error: ${e.message}")
+        }
+    }
+    
+    return resultaten.take(3)
 }

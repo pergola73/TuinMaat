@@ -17,6 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Voeg de API key toe aan BuildConfig
+        val geminiApiKey: String = project.findProperty("GEMINI_API_KEY") as String? ?: ""
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
@@ -53,6 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.biometric)
+    implementation(libs.google.generativeai)
     implementation(libs.play.services.base)
 
     // Firebase

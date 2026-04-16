@@ -14,6 +14,7 @@ googleServices = "4.4.2"
 firebaseBom = "33.7.0"
 kotlinxCoroutinesPlayServices = "1.10.2"
 biometric = "1.1.0"
+generativeai = "0.9.0"
 coil = "2.7.0"
 navigationCompose = "2.9.7"
 materialIconsExtended = "1.7.8"
@@ -44,6 +45,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
