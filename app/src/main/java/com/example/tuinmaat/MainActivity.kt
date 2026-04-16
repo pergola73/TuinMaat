@@ -125,6 +125,7 @@ class MainActivity : FragmentActivity() {
                             composable("beveiliging") { BeveiligingsInstellingenScherm(navController) }
                             composable("locatiebeheer") { LocatieBeheerScherm(navController) }
                             composable("profiel_bewerken") { ProfielBewerkenScherm(navController) }
+                            composable("info") { InfoScherm(navController) }
                         }
                     }
                 }
@@ -466,11 +467,11 @@ fun HoofdMenu(navController: NavController) {
                 }
             }
             Surface(
-                modifier = Modifier.size(50.dp).clickable { navController.navigate("profiel_bewerken") },
+                modifier = Modifier.size(50.dp).clickable { navController.navigate("instellingen") },
                 shape = CircleShape,
-                color = GrasGroen.copy(alpha = 0.2f)
+                color = Color.Transparent
             ) {
-                Icon(Icons.Default.Person, contentDescription = null, tint = DonkerGroen, modifier = Modifier.padding(10.dp))
+                // Icon verwijderd op verzoek van gebruiker, maar klikgebied behouden voor balans of weghalen
             }
         }
 
@@ -484,15 +485,6 @@ fun HoofdMenu(navController: NavController) {
         MenuKnop("Plant Toevoegen", Icons.Default.Add) { navController.navigate("toevoegen") }
         MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { navController.navigate("kalender") }
         MenuKnop("Instellingen", Icons.Default.Settings) { navController.navigate("instellingen") }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        TextButton(onClick = {
-            auth.signOut()
-            navController.navigate("login") { popUpTo(0) }
-        }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text("Uitloggen", color = Color.Red.copy(alpha = 0.7f))
-        }
     }
 }
 
@@ -523,8 +515,7 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
 @Composable
 fun PlantToevoegenScherm(
     navController: NavController,
-    bewerkPlantFirestoreId: String? = null,
-    beschikbareLocaties: List<String> = listOf("Woonkamer", "Keuken", "Slaapkamer", "Balkon")
+    bewerkPlantFirestoreId: String? = null
 ) {
     val db = Firebase.firestore
     val auth = Firebase.auth
@@ -536,10 +527,11 @@ fun PlantToevoegenScherm(
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var bestaandeFotoUri by remember { mutableStateOf<String?>(null) }
     var naam by remember { mutableStateOf("") }
-    var geselecteerdeLocatie by remember { mutableStateOf(beschikbareLocaties.firstOrNull() ?: "") }
+    var geselecteerdeLocatie by remember { mutableStateOf("") }
     var omschrijving by remember { mutableStateOf("") }
     var snoeiMaand by remember { mutableStateOf("") }
     var snoeiAdvies by remember { mutableStateOf("") }
+    var beschikbareLocaties by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Gemini AI State
     var aiSuggesties by remember { mutableStateOf<List<GeminiPlantResult>>(emptyList()) }
@@ -550,25 +542,36 @@ fun PlantToevoegenScherm(
     var isLaden by remember { mutableStateOf(false) }
     var laatLocatieMenuZien by remember { mutableStateOf(false) }
 
-    // Load existing plant if editing
-    LaunchedEffect(bewerkPlantFirestoreId) {
-        if (bewerkPlantFirestoreId != null) {
-            isLaden = true
+    // Load locations and existing plant
+    LaunchedEffect(userId, bewerkPlantFirestoreId) {
+        if (userId.isNotEmpty()) {
             try {
                 val userDoc = db.collection("users").document(userId).get().await()
                 val gardenId = userDoc.getString("sharedGardenId") ?: userId
-                val doc = db.collection("tuinen").document(gardenId).collection("planten").document(bewerkPlantFirestoreId).get().await()
-                val plant = doc.toObject(Plant::class.java)
-                if (plant != null) {
-                    naam = plant.naam
-                    geselecteerdeLocatie = plant.locatie
-                    omschrijving = plant.omschrijving
-                    snoeiMaand = plant.snoeiMaand
-                    snoeiAdvies = plant.snoeiAdvies
-                    bestaandeFotoUri = plant.fotoUri
+                
+                // Load locations
+                val gardenDoc = db.collection("tuinen").document(gardenId).get().await()
+                @Suppress("UNCHECKED_CAST")
+                val locs = gardenDoc.get("locaties") as? List<String> ?: listOf("Woonkamer", "Keuken", "Balkon")
+                beschikbareLocaties = locs
+                
+                if (bewerkPlantFirestoreId != null) {
+                    isLaden = true
+                    val doc = db.collection("tuinen").document(gardenId).collection("planten").document(bewerkPlantFirestoreId).get().await()
+                    val plant = doc.toObject(Plant::class.java)
+                    if (plant != null) {
+                        naam = plant.naam
+                        geselecteerdeLocatie = plant.locatie
+                        omschrijving = plant.omschrijving
+                        snoeiMaand = plant.snoeiMaand
+                        snoeiAdvies = plant.snoeiAdvies
+                        bestaandeFotoUri = plant.fotoUri
+                    }
+                } else if (geselecteerdeLocatie.isEmpty() && locs.isNotEmpty()) {
+                    geselecteerdeLocatie = locs.first()
                 }
             } catch (e: Exception) {
-                Log.e("TuinMaat", "Fout bij laden plant: ${e.message}")
+                Log.e("TuinMaat", "Fout bij laden data: ${e.message}")
             } finally {
                 isLaden = false
             }
@@ -577,9 +580,17 @@ fun PlantToevoegenScherm(
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
-    ) { result ->
-        if (result != null) {
-            bitmap = result
+    ) { result -> if (result != null) bitmap = result }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val context = (navController.context as? Activity)
+            if (context != null) {
+                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                bitmap = android.graphics.ImageDecoder.decodeBitmap(source)
+            }
         }
     }
 
@@ -587,11 +598,8 @@ fun PlantToevoegenScherm(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            cameraLauncher.launch(null)
-        } else {
-            Toast.makeText(context, "Camera toestemming is nodig om foto's te maken.", Toast.LENGTH_SHORT).show()
-        }
+        if (isGranted) cameraLauncher.launch(null)
+        else Toast.makeText(context, "Camera toestemming nodig.", Toast.LENGTH_SHORT).show()
     }
 
     Scaffold(
@@ -659,10 +667,7 @@ fun PlantToevoegenScherm(
                     },
                     enabled = naam.isNotBlank() && !isLaden,
                     colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(56.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isLaden) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
@@ -672,62 +677,60 @@ fun PlantToevoegenScherm(
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-                .background(ZachtBeige)
+            modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(scrollState).background(ZachtBeige)
         ) {
-            // Foto Sectie (vergelijkbaar met detail scherm hoogte)
+            // Foto Sectie
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp)
-                    .background(Color.LightGray),
+                modifier = Modifier.fillMaxWidth().height(250.dp).background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
                 if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap!!.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Image(bitmap = bitmap!!.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 } else if (bestaandeFotoUri != null) {
-                    AsyncImage(
-                        model = bestaandeFotoUri,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    AsyncImage(model = bestaandeFotoUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                        Text("Geen foto geselecteerd", color = Color.Gray)
+                    }
                 }
 
-                SmallFloatingActionButton(
-                    onClick = {
-                        val permissionCheckResult = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                        if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
-                            cameraLauncher.launch(null)
-                        } else {
-                            permissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-                    containerColor = Color.White.copy(alpha = 0.8f)
-                ) {
-                    Icon(Icons.Default.PhotoCamera, contentDescription = "Foto maken", tint = DonkerGroen)
+                Row(modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
+                    SmallFloatingActionButton(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        containerColor = Color.White.copy(alpha = 0.8f)
+                    ) { Icon(Icons.Default.PhotoLibrary, contentDescription = "Galerij", tint = DonkerGroen) }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    SmallFloatingActionButton(
+                        onClick = {
+                            val permissionCheckResult = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                            if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) cameraLauncher.launch(null)
+                            else permissionLauncher.launch(Manifest.permission.CAMERA)
+                        },
+                        containerColor = Color.White.copy(alpha = 0.8f)
+                    ) { Icon(Icons.Default.PhotoCamera, contentDescription = "Camera", tint = DonkerGroen) }
                 }
             }
 
-            // Gemini AI Button
+            // AI Button
             if (bitmap != null) {
                 Button(
                     onClick = {
                         coroutineScope.launch {
                             isAIBezig = true
-                            val resultaten = zoekPlantInfoMetAI(bitmap!!, context)
-                            aiSuggesties = resultaten
-                            laatSuggestiesZien = true
-                            isAIBezig = false
+                            try {
+                                val resultaten = zoekPlantInfoMetAI(bitmap!!, context)
+                                if (resultaten.isNotEmpty()) {
+                                    aiSuggesties = resultaten
+                                    laatSuggestiesZien = true
+                                } else {
+                                    Toast.makeText(context, "AI kon plant niet identificeren", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("TuinMaat", "AI Error: ${e.message}")
+                            } finally {
+                                isAIBezig = false
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
@@ -735,9 +738,8 @@ fun PlantToevoegenScherm(
                     shape = RoundedCornerShape(12.dp),
                     enabled = !isAIBezig
                 ) {
-                    if (isAIBezig) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
+                    if (isAIBezig) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    else {
                         Icon(Icons.Default.AutoAwesome, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Identificeer met Gemini AI", fontWeight = FontWeight.Bold)
@@ -766,90 +768,35 @@ fun PlantToevoegenScherm(
                             }
                         }
                     }
-                    TextButton(onClick = { laatSuggestiesZien = false }) {
-                        Text("Annuleren", color = Color.Gray)
-                    }
+                    TextButton(onClick = { laatSuggestiesZien = false }) { Text("Annuleren", color = Color.Gray) }
                 }
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
-                // 1. Naam
-                OutlinedTextField(
-                    value = naam,
-                    onValueChange = { naam = it },
-                    label = { Text("Naam") },
-                    textStyle = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = DonkerGroen)
-                )
-
+                OutlinedTextField(value = naam, onValueChange = { naam = it }, label = { Text("Naam") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // 2. Locatie (Dropdown)
-                ExposedDropdownMenuBox(
-                    expanded = laatLocatieMenuZien,
-                    onExpandedChange = { laatLocatieMenuZien = !laatLocatieMenuZien }
-                ) {
+                ExposedDropdownMenuBox(expanded = laatLocatieMenuZien, onExpandedChange = { laatLocatieMenuZien = !laatLocatieMenuZien }) {
                     OutlinedTextField(
-                        value = geselecteerdeLocatie,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Locatie") },
-                        leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = DonkerGroen) },
+                        value = geselecteerdeLocatie, onValueChange = {}, readOnly = true, label = { Text("Locatie") },
+                        leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = DonkerGroen) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = laatLocatieMenuZien) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = DonkerGroen)
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded = laatLocatieMenuZien,
-                        onDismissRequest = { laatLocatieMenuZien = false }
-                    ) {
+                    ExposedDropdownMenu(expanded = laatLocatieMenuZien, onDismissRequest = { laatLocatieMenuZien = false }) {
                         beschikbareLocaties.forEach { loc ->
-                            DropdownMenuItem(
-                                text = { Text(loc) },
-                                onClick = {
-                                    geselecteerdeLocatie = loc
-                                    laatLocatieMenuZien = false
-                                }
-                            )
+                            DropdownMenuItem(text = { Text(loc) }, onClick = { geselecteerdeLocatie = loc; laatLocatieMenuZien = false })
                         }
                     }
                 }
-
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // 3. Omschrijving
-                InvoerVeldMetIcoon(
-                    label = "Omschrijving",
-                    waarde = omschrijving,
-                    onWaardeChange = { omschrijving = it },
-                    icoon = Icons.Default.Info
-                )
-
-                // 4. Beste snoeimaand
-                InvoerVeldMetIcoon(
-                    label = "Beste snoeimaand",
-                    waarde = snoeiMaand,
-                    onWaardeChange = { snoeiMaand = it },
-                    icoon = Icons.Default.CalendarMonth
-                )
-
-                // 5. Snoeiadvies
-                InvoerVeldMetIcoon(
-                    label = "Snoeiadvies",
-                    waarde = snoeiAdvies,
-                    onWaardeChange = { snoeiAdvies = it },
-                    icoon = Icons.Default.ContentCut,
-                    isMultiLine = true
-                )
-
-                // Extra ruimte onderaan zodat scrollen overal bij kan
+                InvoerVeldMetIcoon("Omschrijving", omschrijving, { omschrijving = it }, Icons.Default.Info)
+                InvoerVeldMetIcoon("Beste snoeimaand", snoeiMaand, { snoeiMaand = it }, Icons.Default.CalendarMonth)
+                InvoerVeldMetIcoon("Snoeiadvies", snoeiAdvies, { snoeiAdvies = it }, Icons.Default.ContentCut, true)
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 }
-
 @Composable
 fun InvoerVeldMetIcoon(
     label: String,
@@ -1028,10 +975,11 @@ fun InstellingenScherm(navController: NavController) {
             Text("Instellingen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
         }
 
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
             InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
             InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
             InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
+            InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -1044,6 +992,34 @@ fun InstellingenScherm(navController: NavController) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f), contentColor = Color.Red)
             ) {
                 Text("Uitloggen")
+            }
+        }
+    }
+}
+
+@Composable
+fun InfoScherm(navController: NavController) {
+    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+            IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+            Text("Informatie", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+        }
+
+        Card(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.Park, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(64.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("TuinMaat", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Roland van Oel", style = MaterialTheme.typography.bodyLarge)
+                Text("rvanoel@etik.com", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("Bedankt voor het gebruiken van TuinMaat!", style = MaterialTheme.typography.bodySmall, color = GrasGroen, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -1468,9 +1444,8 @@ data class GeminiPlantResult(
 suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context): List<GeminiPlantResult> {
     return try {
         val generativeModel = GenerativeModel(
-            modelName = "gemini-2.5-flash-lite",
-            apiKey = "AIzaSyAQh99EnRFodIff8ap1T7952cWsv67M4_Q"
-                    //BuildConfig.GEMINI_API_KEY
+            modelName = "gemini-1.5-flash",
+            apiKey = BuildConfig.GEMINI_API_KEY
         )
 
         val prompt = content {
