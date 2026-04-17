@@ -62,6 +62,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.ui.draw.drawBehind
@@ -69,6 +70,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.text.style.TextAlign
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -407,28 +409,67 @@ fun LoginScherm(navController: NavController) {
 
 @Composable
 fun PlantKaart(plant: Plant, navController: NavController) {
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { navController.navigate("detail/${plant.firestoreId}") },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        color = ZachtBeige,
+        onClick = { navController.navigate("detail/${plant.firestoreId}") }
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = plant.fotoUri,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(plant.naam, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = DonkerGroen)
-                Text(plant.locatie, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // De container voor de afbeelding
+            Surface(
+                modifier = Modifier.size(60.dp), // Iets groter voor de foto
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White.copy(alpha = 0.4f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+            ) {
+                if (!plant.fotoUri.isNullOrEmpty()) { // Check of er een URL is
+                    AsyncImage(
+                        model = plant.fotoUri,
+                        contentDescription = plant.naam,
+                        contentScale = ContentScale.Crop, // Zorgt dat de foto het vakje vult
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    // Fallback als er geen foto is
+                    Icon(
+                        Icons.Default.LocalFlorist,
+                        contentDescription = null,
+                        tint = DonkerGroen.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = DonkerGroen)
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = plant.naam,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = DonkerGroen
+                )
+                Text(
+                    text = plant.locatie,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DonkerGroen.copy(alpha = 0.6f)
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = DonkerGroen.copy(alpha = 0.2f),
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
@@ -952,102 +993,148 @@ fun InvoerVeldMetIcoon(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PlantDetailScherm(plantId: String?, navController: NavController) {
-    val db = Firebase.firestore
+fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
     val auth = Firebase.auth
-    val userId = auth.currentUser?.uid ?: ""
+    val db = Firebase.firestore
     var allePlanten by remember { mutableStateOf<List<Plant>>(emptyList()) }
-    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(true) }
 
+    // 1. Haal de collectie op om te kunnen swipen
     LaunchedEffect(Unit) {
+        val userId = auth.currentUser?.uid ?: return@LaunchedEffect
         try {
             val userDoc = db.collection("users").document(userId).get().await()
             val gardenId = userDoc.getString("sharedGardenId") ?: userId
-            db.collection("tuinen").document(gardenId).collection("planten").addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("TuinMaat", "Firestore error in DetailScherm: ${error.message}")
-                    return@addSnapshotListener
+
+            db.collection("tuinen").document(gardenId).collection("planten")
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        allePlanten = snapshot.toObjects(Plant::class.java)
+                        isLoading = false
+                    }
                 }
-                if (snapshot != null) {
-                    allePlanten = snapshot.toObjects(Plant::class.java).sortedBy { it.naam }
-                }
-            }
         } catch (e: Exception) {
-            Log.e("TuinMaat", "Fout bij laden planten voor swiping: ${e.message}")
+            Log.e("TuinMaat", "Fout bij laden pager: ${e.message}")
         }
     }
 
-    if (allePlanten.isNotEmpty()) {
-        val startPageIndex = allePlanten.indexOfFirst { it.firestoreId == plantId }.coerceAtLeast(0)
-        val pagerState = rememberPagerState(initialPage = startPageIndex, pageCount = { allePlanten.size })
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = DonkerGroen)
+        }
+    } else {
+        // Bepaal de positie van de geselecteerde plant
+        val startIndex = allePlanten.indexOfFirst { it.firestoreId == initialPlantId }.coerceAtLeast(0)
+        val pagerState = rememberPagerState(initialPage = startIndex, pageCount = { allePlanten.size })
 
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
-            flingBehavior = PagerDefaults.flingBehavior(state = pagerState)
+            beyondViewportPageCount = 1
         ) { page ->
-            val plant = allePlanten[page]
-            Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).navigationBarsPadding().verticalScroll(rememberScrollState())) {
-                Box {
-                    AsyncImage(
-                        model = plant.fotoUri,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxWidth().height(350.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.padding(16.dp).statusBarsPadding().background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(50))) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+            val p = allePlanten[page]
 
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(plant.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = DonkerGroen, modifier = Modifier.weight(1f))
-                        
-                        IconButton(onClick = { navController.navigate("toevoegen?plantId=${plant.firestoreId}") }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Bewerken", tint = DonkerGroen)
-                        }
-                        IconButton(onClick = {
-                            scope.launch {
-                                val userDoc = db.collection("users").document(userId).get().await()
-                                val gardenId = userDoc.getString("sharedGardenId") ?: userId
-                                db.collection("tuinen").document(gardenId).collection("planten").document(plant.firestoreId).delete().await()
-                                // Als de lijst nu leeg is, ga terug
-                                if (allePlanten.size <= 1) {
-                                    navController.popBackStack()
-                                }
+            Box(modifier = Modifier.fillMaxSize().background(ZachtBeige)) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+
+                    // 1. Foto Header
+                    Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
+                        if (!p.fotoUri.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = p.fotoUri,
+                                contentDescription = p.naam,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize().background(DonkerGroen.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.LocalFlorist, null, tint = DonkerGroen, modifier = Modifier.size(80.dp))
                             }
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Verwijderen", tint = Color.Red)
+                        }
+
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.statusBarsPadding().padding(16.dp).background(Color.White.copy(alpha = 0.5f), CircleShape)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                         }
                     }
 
-                    Surface(color = GrasGroen.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
-                        Text(plant.locatie, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = DonkerGroen, style = MaterialTheme.typography.labelLarge)
-                    }
+                    // 2. Informatie Kaart
+                    Surface(
+                        modifier = Modifier.fillMaxSize().offset(y = (-30).dp),
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                        color = ZachtBeige
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Text(text = p.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
+                            Text(text = p.locatie, style = MaterialTheme.typography.titleMedium, color = DonkerGroen.copy(alpha = 0.6f))
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                    InfoSectie("Omschrijving", plant.omschrijving, Icons.Default.Info)
-                    InfoSectie("Beste snoeimaand", plant.snoeiMaand, Icons.Default.CalendarMonth)
-                    InfoSectie("Snoeiadvies", plant.snoeiAdvies, Icons.Default.ContentCut)
-                    
-                    if (allePlanten.size > 1) {
-                        Spacer(modifier = Modifier.height(32.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen.copy(alpha = 0.3f), modifier = Modifier.size(16.dp))
-                            Text(" Swipe voor meer ", style = MaterialTheme.typography.bodySmall, color = DonkerGroen.copy(alpha = 0.3f))
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = DonkerGroen.copy(alpha = 0.3f), modifier = Modifier.size(16.dp))
+                            // Badges
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                DetailBadge(Icons.Default.CalendarMonth, "Snoeimaand", p.snoeiMaand, Modifier.weight(1f))
+                                DetailBadge(Icons.Default.Place, "Locatie", p.locatie, Modifier.weight(1f))
+                            }
+
+                            Spacer(modifier = Modifier.height(32.dp))
+
+                            // Omschrijving
+                            SectionHeader("Omschrijving")
+                            Text(
+                                text = if (p.omschrijving.isNotBlank()) p.omschrijving else "Geen omschrijving beschikbaar.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DonkerGroen.copy(alpha = 0.8f),
+                                lineHeight = 22.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // SNOEIADVIES (Nu met de correcte hoofdletter 'A' in de code)
+                            SectionHeader("Snoeiadvies")
+                            Text(
+                                text = if (p.snoeiAdvies.isNotBlank()) p.snoeiAdvies else "Geen specifiek snoeiadvies bekend.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DonkerGroen.copy(alpha = 0.8f),
+                                lineHeight = 22.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(100.dp))
                         }
                     }
                 }
             }
         }
-    } else {
-        // Loading state or empty
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = DonkerGroen)
+    }
+}
+
+@Composable
+fun SectionHeader(titel: String) {
+    Text(
+        text = titel,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        color = DonkerGroen,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+}
+
+@Composable
+fun DetailBadge(icoon: ImageVector, label: String, waarde: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+        color = Color.White.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icoon, null, tint = GrasGroen, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text(waarde, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = DonkerGroen, textAlign = TextAlign.Center)
         }
     }
 }
@@ -1071,55 +1158,69 @@ fun SnoeiKalenderScherm(navController: NavController) {
     val auth = Firebase.auth
     val userId = auth.currentUser?.uid ?: ""
     var planten by remember { mutableStateOf<List<Plant>>(emptyList()) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         try {
             val userDoc = db.collection("users").document(userId).get().await()
             val gardenId = userDoc.getString("sharedGardenId") ?: userId
-            db.collection("tuinen").document(gardenId).collection("planten").addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("TuinMaat", "Firestore error in SnoeiKalender: ${error.message}")
-                    return@addSnapshotListener
+            db.collection("tuinen").document(gardenId).collection("planten")
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        planten = snapshot.toObjects(Plant::class.java)
+                        Log.d("TuinMaat", "Aantal planten geladen: ${planten.size}")
+                    }
                 }
-                if (snapshot != null) {
-                    planten = snapshot.toObjects(Plant::class.java)
-                }
-            }
         } catch (e: Exception) {
-            Log.e("TuinMaat", "Fout bij laden snoeikalender: ${e.message}")
+            Log.e("TuinMaat", "Fout: ${e.message}")
         }
     }
 
     val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
     val huidigMaandIndex = Calendar.getInstance().get(Calendar.MONTH)
-    
-    val listState = rememberLazyListState()
+
+    // We gebruiken een grote maar hanteerbare range voor "oneindig" gevoel (bijv. 100 jaar)
+    val startPunt = 600 // 50 jaar in de toekomst/verleden
+    val initiëleScrollIndex = startPunt + huidigMaandIndex
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initiëleScrollIndex)
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-            Text("Snoei Kalender", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+        // Header
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp, 16.dp)) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+            }
+            Text("Snoei Kalender", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.ExtraBold)
         }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            state = listState
+            state = listState,
+            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // Infinite scrolling logic: we use a large number and modulo it with 12
-            items(Int.MAX_VALUE) { globalIndex ->
-                val monthIndex = globalIndex % 12
-                val maand = maanden[monthIndex]
-                val plantenVoorMaand = planten.filter { it.snoeiMaand.contains(maand, ignoreCase = true) }
+            items(1200) { index -> // 100 jaar aan maanden
+                val maandIndex = index % 12
+                val maandNaam = maanden[maandIndex]
+
+                // VERBETERDE FILTER: Checkt of de maandnaam voorkomt in de snoeiMaand string
+                val plantenVoorMaand = planten.filter { plant ->
+                    plant.snoeiMaand.contains(maandNaam, ignoreCase = true)
+                }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Header for the month
+                    // Sticky-achtig effect voor de Maand Kop
                     Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = GrasGroen.copy(alpha = 0.15f), // More subtle contrast
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                            .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
+                        color = Color.White.copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = if (monthIndex == huidigMaandIndex) "$maand (Huidige maand)" else maand,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            text = if (maandIndex == huidigMaandIndex) "$maandNaam (Nu)" else maandNaam,
+                            modifier = Modifier.padding(16.dp, 10.dp),
                             style = MaterialTheme.typography.titleMedium,
                             color = DonkerGroen,
                             fontWeight = FontWeight.Bold
@@ -1127,65 +1228,20 @@ fun SnoeiKalenderScherm(navController: NavController) {
                     }
 
                     if (plantenVoorMaand.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            Text("Geen planten te snoeien in $maand", color = Color.Gray.copy(alpha = 0.6f), style = MaterialTheme.typography.bodySmall)
-                        }
+                        // Alleen tonen als je wilt weten dat er niets te doen is
+                        Text(
+                            "Geen snoeitaken",
+                            modifier = Modifier.padding(start = 40.dp, bottom = 12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DonkerGroen.copy(alpha = 0.3f)
+                        )
                     } else {
-                        val pagerState = rememberPagerState(pageCount = { plantenVoorMaand.size })
-                        
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                            contentPadding = PaddingValues(horizontal = 32.dp),
-                            pageSpacing = 16.dp,
-                            flingBehavior = PagerDefaults.flingBehavior(state = pagerState)
-                        ) { page ->
-                            val plant = plantenVoorMaand[page]
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(110.dp)
-                                    .clickable { navController.navigate("detail/${plant.firestoreId}") },
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    AsyncImage(
-                                        model = plant.fotoUri,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(70.dp).clip(RoundedCornerShape(12.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column {
-                                        Text(plant.naam, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DonkerGroen)
-                                        Text(plant.locatie, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.ContentCut, contentDescription = null, tint = GrasGroen, modifier = Modifier.size(14.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Snoeien", style = MaterialTheme.typography.labelSmall, color = GrasGroen)
-                                        }
-                                    }
-                                }
+                        plantenVoorMaand.forEach { plant ->
+                            Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
+                                PlantKaart(plant, navController)
                             }
                         }
-                        
-                        // Page indicator
-                        if (plantenVoorMaand.size > 1) {
-                            Row(
-                                Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                repeat(plantenVoorMaand.size) { iteration ->
-                                    val color = if (pagerState.currentPage == iteration) DonkerGroen else DonkerGroen.copy(alpha = 0.2f)
-                                    Box(
-                                        modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(4.dp)
-                                    )
-                                }
-                            }
-                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
@@ -1662,16 +1718,13 @@ fun PlantenLijstScherm(navController: NavController) {
             val gardenId = userDoc.getString("sharedGardenId") ?: userId
             db.collection("tuinen").document(gardenId).collection("planten")
                 .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        Log.e("TuinMaat", "Firestore error in PlantenLijst: ${error.message}")
-                        return@addSnapshotListener
-                    }
+                    if (error != null) return@addSnapshotListener
                     if (snapshot != null) {
                         allePlanten = snapshot.toObjects(Plant::class.java).sortedBy { it.naam }
                     }
                 }
         } catch (e: Exception) {
-            Log.e("TuinMaat", "Fout bij ophalen plantenlijst: ${e.message}")
+            Log.e("TuinMaat", "Fout: ${e.message}")
         }
     }
 
@@ -1680,47 +1733,74 @@ fun PlantenLijstScherm(navController: NavController) {
                 plant.locatie.contains(zoekTerm, ignoreCase = true)
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-            Text("Mijn Tuin", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(ZachtBeige)
+        .statusBarsPadding()
+    ) {
+        // Header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+        ) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+            }
+            Text(
+                "Mijn Tuin",
+                style = MaterialTheme.typography.headlineSmall,
+                color = DonkerGroen,
+                fontWeight = FontWeight.ExtraBold
+            )
         }
 
-        OutlinedTextField(
-            value = zoekTerm,
-            onValueChange = { zoekTerm = it },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text("Zoek op naam of plek...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = DonkerGroen) },
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedBorderColor = DonkerGroen,
-                unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+        // Neumorphic Zoekbalk
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            color = ZachtBeige
+        ) {
+            TextField(
+                value = zoekTerm,
+                onValueChange = { zoekTerm = it },
+                placeholder = { Text("Zoek op naam of plek...", color = DonkerGroen.copy(alpha = 0.5f)) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = DonkerGroen) },
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedTextColor = DonkerGroen,
+                    unfocusedTextColor = DonkerGroen
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
-        )
+        }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Lijst met planten
         if (gefilterdePlanten.isNotEmpty()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp) // Ruimte voor schaduwen
             ) {
                 items(gefilterdePlanten.size) { index ->
                     val plant = gefilterdePlanten[index]
                     PlantKaart(plant, navController)
                 }
             }
-        } else if (allePlanten.isNotEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Geen planten gevonden die voldoen aan je zoekopdracht.", color = Color.Gray)
-            }
         } else {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Je hebt nog geen planten toegevoegd.", color = Color.Gray)
+                Text(
+                    if (allePlanten.isEmpty()) "Je hebt nog geen planten." else "Niets gevonden.",
+                    color = DonkerGroen.copy(alpha = 0.5f)
+                )
             }
         }
     }
