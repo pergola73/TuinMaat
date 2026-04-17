@@ -157,7 +157,15 @@ fun LockScreen(securityType: String, savedPin: String, onUnlock: () -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
                 )
             } else if (securityType == "BIOMETRIC") {
                 Button(

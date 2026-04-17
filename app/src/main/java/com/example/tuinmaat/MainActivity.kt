@@ -63,6 +63,12 @@ import androidx.navigation.compose.rememberNavController
 import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -426,43 +432,34 @@ fun PlantKaart(plant: Plant, navController: NavController) {
         }
     }
 }
-
 @Composable
 fun HoofdMenu(navController: NavController) {
     val auth = Firebase.auth
     val db = Firebase.firestore
+
+    // States voor de data
     val voornaam = remember { mutableStateOf("Tuinder") }
     val tuinnaam = remember { mutableStateOf("Mijn Tuin") }
     val aantalPlanten = remember { mutableIntStateOf(0) }
 
+    // Firebase Data ophalen
     LaunchedEffect(Unit) {
         val user = auth.currentUser
         if (user != null) {
-            db.collection("users").document(user.uid).addSnapshotListener { userDoc, error ->
-                if (error != null) {
-                    Log.e("TuinMaat", "Firestore error in HoofdMenu (users): ${error.message}")
-                    return@addSnapshotListener
-                }
-                
+            db.collection("users").document(user.uid).addSnapshotListener { userDoc, _ ->
                 if (userDoc != null && userDoc.exists()) {
                     voornaam.value = userDoc.getString("voornaam") ?: "Tuinder"
                     val gid = userDoc.getString("sharedGardenId") ?: user.uid
-                    
-                    db.collection("tuinen").document(gid).addSnapshotListener { gardenDoc, gError ->
-                        if (gError != null) {
-                            Log.e("TuinMaat", "Firestore error in HoofdMenu (tuinen): ${gError.message}")
-                            return@addSnapshotListener
-                        }
+
+                    // Tuinnaam ophalen
+                    db.collection("tuinen").document(gid).addSnapshotListener { gardenDoc, _ ->
                         if (gardenDoc != null && gardenDoc.exists()) {
                             tuinnaam.value = gardenDoc.getString("naam") ?: "Mijn Tuin"
                         }
                     }
 
-                    db.collection("tuinen").document(gid).collection("planten").addSnapshotListener { snapshot, pError ->
-                        if (pError != null) {
-                            Log.e("TuinMaat", "Firestore error in HoofdMenu (planten): ${pError.message}")
-                            return@addSnapshotListener
-                        }
+                    // Aantal planten tellen
+                    db.collection("tuinen").document(gid).collection("planten").addSnapshotListener { snapshot, _ ->
                         aantalPlanten.intValue = snapshot?.size() ?: 0
                     }
                 }
@@ -470,50 +467,69 @@ fun HoofdMenu(navController: NavController) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ZachtBeige)
-            .statusBarsPadding()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Tree Logo
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Icon(
-                Icons.Default.Park,
-                contentDescription = "TuinMaat Logo",
-                tint = DonkerGroen,
-                modifier = Modifier.size(80.dp)
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize().background(ZachtBeige)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // 1. Logo
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Default.Park,
+                    contentDescription = "Logo",
+                    tint = DonkerGroen,
+                    modifier = Modifier.size(80.dp)
+                )
+            }
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
+            // 2. Welkom sectie + Glass Badges
+            Column {
                 Text("Hallo,", style = MaterialTheme.typography.bodyLarge, color = DonkerGroen)
-                Text(voornaam.value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
-                
-                Row(modifier = Modifier.padding(top = 4.dp)) {
+                Text(
+                    voornaam.value,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DonkerGroen
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // De Glass-effect Badges
+                Row {
+                    // Badge: Tuinnaam
                     Surface(
-                        color = GrasGroen.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
+                        color = Color.White.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(12.dp))
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                            Icon(Icons.Default.Home, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Home, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(tuinnaam.value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = DonkerGroen)
                         }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Badge: Planten teller
                     Surface(
-                        color = DonkerGroen.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
+                        color = Color.White.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(12.dp))
                     ) {
                         Text(
                             "${aantalPlanten.intValue} planten",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = DonkerGroen
@@ -521,25 +537,25 @@ fun HoofdMenu(navController: NavController) {
                     }
                 }
             }
-            Surface(
-                modifier = Modifier.size(50.dp).clickable { navController.navigate("instellingen") },
-                shape = CircleShape,
-                color = Color.Transparent
-            ) {
-                // Icon verwijderd op verzoek van gebruiker, maar klikgebied behouden voor balans of weghalen
-            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // 3. Actie titel
+            Text(
+                "Wat wil je doen?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = DonkerGroen
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 4. De Knoppen (Neumorphic)
+            MenuKnop("Mijn Planten", Icons.AutoMirrored.Filled.List) { navController.navigate("lijst") }
+            MenuKnop("Plant Toevoegen", Icons.Default.Add) { navController.navigate("toevoegen") }
+            MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { navController.navigate("kalender") }
+            MenuKnop("Instellingen", Icons.Default.Settings) { navController.navigate("instellingen") }
         }
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        Text("Wat wil je doen?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = DonkerGroen)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        MenuKnop("Mijn Planten", Icons.AutoMirrored.Filled.List) { navController.navigate("lijst") }
-        MenuKnop("Plant Toevoegen", Icons.Default.Add) { navController.navigate("toevoegen") }
-        MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { navController.navigate("kalender") }
-        MenuKnop("Instellingen", Icons.Default.Settings) { navController.navigate("instellingen") }
     }
 }
 
@@ -549,19 +565,29 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 6.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        shadowElevation = 2.dp
+        color = ZachtBeige, // MOET gelijk zijn aan achtergrond voor relief!
+        shadowElevation = 0.dp
     ) {
-        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = GrasGroen.copy(alpha = 0.1f), shape = RoundedCornerShape(12.dp)) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icoon container ook met een beetje relief
+            Surface(
+                color = ZachtBeige,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp))
+            ) {
                 Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.padding(8.dp))
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(tekst, color = DonkerGroen, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(tekst, color = DonkerGroen, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = DonkerGroen.copy(alpha = 0.3f), modifier = Modifier.size(20.dp))
+            Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = DonkerGroen.copy(alpha = 0.2f), modifier = Modifier.size(14.dp))
         }
     }
 }
@@ -847,14 +873,37 @@ fun PlantToevoegenScherm(
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
-                OutlinedTextField(value = naam, onValueChange = { naam = it }, label = { Text("Naam") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = naam,
+                    onValueChange = { naam = it },
+                    label = { Text("Naam") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 ExposedDropdownMenuBox(expanded = laatLocatieMenuZien, onExpandedChange = { laatLocatieMenuZien = !laatLocatieMenuZien }) {
                     OutlinedTextField(
                         value = geselecteerdeLocatie, onValueChange = {}, readOnly = true, label = { Text("Locatie") },
                         leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = DonkerGroen) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = laatLocatieMenuZien) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedBorderColor = DonkerGroen,
+                            unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                        )
                     )
                     ExposedDropdownMenu(expanded = laatLocatieMenuZien, onDismissRequest = { laatLocatieMenuZien = false }) {
                         beschikbareLocaties.forEach { loc ->
@@ -890,7 +939,15 @@ fun InvoerVeldMetIcoon(
             onValueChange = onWaardeChange,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             minLines = if (isMultiLine) 3 else 1,
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = DonkerGroen)
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = DonkerGroen,
+                unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+            )
         )
     }
 }
@@ -1315,7 +1372,21 @@ fun LocatieBeheerScherm(navController: NavController) {
 
         Column(modifier = Modifier.padding(16.dp)) {
             Row {
-                OutlinedTextField(value = nieuweLocatie, onValueChange = { nieuweLocatie = it }, modifier = Modifier.weight(1f), placeholder = { Text("Nieuwe plek...") })
+                OutlinedTextField(
+                    value = nieuweLocatie,
+                    onValueChange = { nieuweLocatie = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Nieuwe plek...") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
+                )
                 IconButton(onClick = {
                     if (nieuweLocatie.isNotBlank()) {
                         scope.launch {
@@ -1418,7 +1489,15 @@ fun ProfielBewerkenScherm(navController: NavController) {
                 onValueChange = { achternaam = it },
                 label = { Text("Achternaam") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = DonkerGroen,
+                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                )
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -1426,7 +1505,15 @@ fun ProfielBewerkenScherm(navController: NavController) {
                 onValueChange = { tuinnaam = it },
                 label = { Text("Tuinnaam") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = DonkerGroen,
+                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -1503,7 +1590,15 @@ fun ProfielBewerkenScherm(navController: NavController) {
                 onValueChange = { gardenIdToJoin = it },
                 label = { Text("Voer Tuin ID in") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = DonkerGroen,
+                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                )
             )
             Spacer(modifier = Modifier.height(12.dp))
             Button(
@@ -1599,7 +1694,14 @@ fun PlantenLijstScherm(navController: NavController) {
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = DonkerGroen) },
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
-            colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = DonkerGroen,
+                unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+            )
         )
 
         if (gefilterdePlanten.isNotEmpty()) {
@@ -1709,4 +1811,27 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
     }
     
     return resultaten.take(3)
+}
+
+fun Modifier.neumorphicShadow(
+    shape: Shape = RoundedCornerShape(20.dp),
+    baseColor: Color = ZachtBeige
+): Modifier = this.drawBehind {
+    val shadowColor = Color.Black.copy(alpha = 0.1f) // Zachte donkere schaduw
+    val highlightColor = Color.White.copy(alpha = 1f) // Lichte glans
+
+    drawIntoCanvas { canvas ->
+        val paint = Paint()
+        val frameworkPaint = paint.asFrameworkPaint()
+
+        // Donkere schaduw (rechtsonder)
+        frameworkPaint.color = shadowColor.toArgb()
+        frameworkPaint.setShadowLayer(25f, 12f, 12f, shadowColor.toArgb())
+        canvas.drawOutline(shape.createOutline(size, layoutDirection, this), paint)
+
+        // Lichte schaduw/glans (linksboven)
+        frameworkPaint.color = highlightColor.toArgb()
+        frameworkPaint.setShadowLayer(25f, -12f, -12f, highlightColor.toArgb())
+        canvas.drawOutline(shape.createOutline(size, layoutDirection, this), paint)
+    }
 }
