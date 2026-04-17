@@ -914,48 +914,82 @@ fun PlantToevoegenScherm(
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
-                OutlinedTextField(
-                    value = naam,
-                    onValueChange = { naam = it },
-                    label = { Text("Naam") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedBorderColor = DonkerGroen,
-                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
-                    )
+                // 1. Naam (Nu met InvoerVeldMetIcoon)
+                InvoerVeldMetIcoon(
+                    label = "Naam",
+                    waarde = naam,
+                    onWaardeChange = { naam = it },
+                    icoon = Icons.Default.LocalFlorist // Passend icoon voor een plantnaam
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                ExposedDropdownMenuBox(expanded = laatLocatieMenuZien, onExpandedChange = { laatLocatieMenuZien = !laatLocatieMenuZien }) {
-                    OutlinedTextField(
-                        value = geselecteerdeLocatie, onValueChange = {}, readOnly = true, label = { Text("Locatie") },
-                        leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = DonkerGroen) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = laatLocatieMenuZien) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedBorderColor = DonkerGroen,
-                            unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+
+                // 2. Locatie (Handmatige opbouw om exact op InvoerVeldMetIcoon te lijken)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Label en Icoon boven het veld (zoals InvoerVeldMetIcoon dat doet)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = DonkerGroen,
+                            modifier = Modifier.size(20.dp)
                         )
-                    )
-                    ExposedDropdownMenu(expanded = laatLocatieMenuZien, onDismissRequest = { laatLocatieMenuZien = false }) {
-                        beschikbareLocaties.forEach { loc ->
-                            DropdownMenuItem(text = { Text(loc) }, onClick = { geselecteerdeLocatie = loc; laatLocatieMenuZien = false })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Locatie",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DonkerGroen,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Het dropdown veld zonder eigen icoon/label erin
+                    ExposedDropdownMenuBox(
+                        expanded = laatLocatieMenuZien,
+                        onExpandedChange = { laatLocatieMenuZien = !laatLocatieMenuZien }
+                    ) {
+                        OutlinedTextField(
+                            value = geselecteerdeLocatie,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = laatLocatieMenuZien) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedBorderColor = DonkerGroen,
+                                unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = laatLocatieMenuZien,
+                            onDismissRequest = { laatLocatieMenuZien = false }
+                        ) {
+                            beschikbareLocaties.forEach { loc ->
+                                DropdownMenuItem(
+                                    text = { Text(loc) },
+                                    onClick = {
+                                        geselecteerdeLocatie = loc
+                                        laatLocatieMenuZien = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. De overige velden (Blijven zoals ze waren)
                 InvoerVeldMetIcoon("Omschrijving", omschrijving, { omschrijving = it }, Icons.Default.Info)
                 InvoerVeldMetIcoon("Beste snoeimaand", snoeiMaand, { snoeiMaand = it }, Icons.Default.CalendarMonth)
                 InvoerVeldMetIcoon("Snoeiadvies", snoeiAdvies, { snoeiAdvies = it }, Icons.Default.ContentCut, true)
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
@@ -1062,7 +1096,9 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                         }
                     }
 
-                    // 2. Informatie Kaart
+                    // ... (Bovenkant van het scherm en Pager blijven gelijk)
+
+// 2. Informatie Kaart
                     Surface(
                         modifier = Modifier.fillMaxSize().offset(y = (-30).dp),
                         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -1070,7 +1106,7 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(text = p.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
-                            Text(text = p.locatie, style = MaterialTheme.typography.titleMedium, color = DonkerGroen.copy(alpha = 0.6f))
+                            //Text(text = , style = MaterialTheme.typography.titleMedium, color = DonkerGroen.copy(alpha = 0.6f))
 
                             Spacer(modifier = Modifier.height(24.dp))
 
@@ -1093,7 +1129,7 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // SNOEIADVIES (Nu met de correcte hoofdletter 'A' in de code)
+                            // Snoeiadvies
                             SectionHeader("Snoeiadvies")
                             Text(
                                 text = if (p.snoeiAdvies.isNotBlank()) p.snoeiAdvies else "Geen specifiek snoeiadvies bekend.",
@@ -1102,7 +1138,28 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                                 lineHeight = 22.sp
                             )
 
-                            Spacer(modifier = Modifier.height(100.dp))
+                            Spacer(modifier = Modifier.height(40.dp))
+
+                            // DE BEWERK KNOP (Onderaan het advies)
+                            Button(
+                                onClick = { navController.navigate("toevoegen?plantId=${p.firestoreId}") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.White.copy(alpha = 0.6f),
+                                    contentColor = DonkerGroen
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Gegevens Bewerken", fontWeight = FontWeight.Bold)
+                            }
+
+                            Spacer(modifier = Modifier.height(100.dp)) // Extra scrollruimte voor comfort
                         }
                     }
                 }
