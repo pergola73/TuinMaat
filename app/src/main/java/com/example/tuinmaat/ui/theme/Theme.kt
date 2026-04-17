@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -49,25 +50,18 @@ private val LightColorScheme = lightColorScheme(
 )
 @Composable
 fun TuinAchtergrond(content: @Composable () -> Unit) {
-    val achtergrondKleur = Color(0xFFF2F7F2)
-    val plantLijnKleur = Color(0xFF2D4739)
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(achtergrondKleur)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        AchtergrondGroenLicht,
+                        AchtergrondGroenMidden
+                    )
+                )
+            )
     ) {
-        // Alpha verhoogd naar 0.15f voor betere zichtbaarheid
-        Canvas(modifier = Modifier.fillMaxSize().alpha(0.15f)) {
-            val random = java.util.Random(42)
-            for (i in 0..40) {
-                val x = random.nextFloat() * size.width
-                val y = random.nextFloat() * size.height
-                drawPlantCluster(x, y, random, plantLijnKleur)
-            }
-        }
-
-        // De content komt bovenop het canvas
         content()
     }
 }

@@ -478,7 +478,7 @@ fun PlantKaart(plant: Plant, navController: NavController) {
 fun HoofdMenu(navController: NavController) {
     val auth = Firebase.auth
     val db = Firebase.firestore
-
+    val eigenaarNaam = remember { mutableStateOf<String?>(null) }
     val voornaam = remember { mutableStateOf("Tuinder") }
     val tuinnaam = remember { mutableStateOf("Mijn Tuin") }
     val aantalPlanten = remember { mutableIntStateOf(0) }
@@ -486,18 +486,41 @@ fun HoofdMenu(navController: NavController) {
     LaunchedEffect(Unit) {
         val user = auth.currentUser
         if (user != null) {
-            db.collection("users").document(user.uid).addSnapshotListener { userDoc, _ ->
+            // Stap 1: Luister naar de eigen gebruikersgegevens
+            db.collection("users").document(user.uid).addSnapshotListener { userDoc, error ->
+                if (error != null) return@addSnapshotListener
+
                 if (userDoc != null && userDoc.exists()) {
                     voornaam.value = userDoc.getString("voornaam") ?: "Tuinder"
-                    val gid = userDoc.getString("sharedGardenId") ?: user.uid
+                    val gid = userDoc.getString("sharedGardenId")
 
-                    db.collection("tuinen").document(gid).addSnapshotListener { gardenDoc, _ ->
+                    // Bepaal of we in een andermans tuin kijken
+                    val isGedeeldeTuin = gid != null && gid != user.uid
+                    val effectieveGid = gid ?: user.uid
+
+                    // Stap 2: Haal de tuinnaam op
+                    db.collection("tuinen").document(effectieveGid).addSnapshotListener { gardenDoc, _ ->
                         if (gardenDoc != null && gardenDoc.exists()) {
                             tuinnaam.value = gardenDoc.getString("naam") ?: "Mijn Tuin"
                         }
                     }
 
-                    db.collection("tuinen").document(gid).collection("planten").addSnapshotListener { snapshot, _ ->
+                    // Stap 3: Haal de naam van de eigenaar op als het een gedeelde tuin is
+                    if (isGedeeldeTuin && gid != null) {
+                        // We gebruiken een snapshotListener zodat wijzigingen direct zichtbaar zijn
+                        db.collection("users").document(gid).addSnapshotListener { ownerDoc, _ ->
+                            val naam = ownerDoc?.getString("voornaam")
+                            eigenaarNaam.value = if (!naam.isNullOrBlank()) naam else "GedeeldeTuinMarker"
+
+                            // Debug log om te checken of de naam binnenkomt
+                            Log.d("TuinMaat", "Eigenaar naam opgehaald: $naam voor ID: $gid")
+                        }
+                    } else {
+                        eigenaarNaam.value = null
+                    }
+
+                    // Stap 4: Planten teller
+                    db.collection("tuinen").document(effectieveGid).collection("planten").addSnapshotListener { snapshot, _ ->
                         aantalPlanten.intValue = snapshot?.size() ?: 0
                     }
                 }
@@ -544,8 +567,29 @@ fun HoofdMenu(navController: NavController) {
                     color = DonkerGroen,
                     lineHeight = 42.sp
                 )
+                // Subtiele indicator voor de eigenaar
+                if (eigenaarNaam.value != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.People,
+                            contentDescription = null,
+                            tint = DonkerGroen.copy(alpha = 0.4f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Tuin van ${eigenaarNaam.value}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DonkerGroen.copy(alpha = 0.4f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+               Spacer(modifier = Modifier.height(16.dp))
 
                 // De Glass-effect Badges (Planten teller)
                 Surface(
