@@ -8,6 +8,9 @@ val GrasGroen = Color(0xFF7BA65D)    // Accentkleur voor acties
 val BladGroen = Color(0xFF81C784)    // Zachtere groentint voor variatie
 val ZachtBeige = Color(0xFFF5F5F0)   // De rustige achtergrondkleur
 
+val OrganischGroen = Color(0xFFF2F7F2) // Heel licht, bijna wit-groen
+
+
 // --- Neumorphic Kleuren (Cruciaal voor het diepte-effect) ---
 // Deze kleuren moeten gebaseerd zijn op ZachtBeige om de knoppen te laten "versmelten"
 val ShadowLight = Color(0xFFFFFFFF)  // Puur wit voor de lichtinval (linksboven)
