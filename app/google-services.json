@@ -23,6 +23,25 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:408553659599:android:3665fd2e9e7a326a1b6bba",
+        "android_client_info": {
+          "package_name": "com.rvodevelopment.tuinmaat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAByfKwO77pDPtRrZ3XJ9UKfVAEduwb0NA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

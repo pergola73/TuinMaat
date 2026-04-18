@@ -1,4 +1,4 @@
-package com.example.tuinmaat
+package com.rvodevelopment.tuinmaat
 
 import android.content.Context
 import androidx.room.Database

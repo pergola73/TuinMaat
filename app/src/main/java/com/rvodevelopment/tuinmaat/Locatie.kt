@@ -1,4 +1,4 @@
-package com.example.tuinmaat // Let op: gebruik je eigen pakketnaam bovenaan!
+package com.rvodevelopment.tuinmaat // Let op: gebruik je eigen pakketnaam bovenaan!
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

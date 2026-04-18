@@ -1,4 +1,4 @@
-package com.example.tuinmaat
+package com.rvodevelopment.tuinmaat
 
 import android.Manifest
 import android.app.Activity
@@ -17,9 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import java.util.Calendar
 import androidx.compose.foundation.shape.CircleShape
@@ -36,7 +34,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
@@ -73,12 +70,11 @@ import androidx.compose.ui.text.style.TextAlign
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import androidx.compose.ui.text.style.TextOverflow
-import com.example.tuinmaat.ui.theme.DonkerGroen
-import com.example.tuinmaat.ui.theme.GrasGroen
-import com.example.tuinmaat.ui.theme.TuinAchtergrond
-import com.example.tuinmaat.ui.theme.TuinMaatTheme
-import com.example.tuinmaat.ui.theme.ZachtBeige
+import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
+import com.rvodevelopment.tuinmaat.ui.theme.TuinMaatTheme
+import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.google.firebase.Firebase
 import com.google.firebase.appcheck.appCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory

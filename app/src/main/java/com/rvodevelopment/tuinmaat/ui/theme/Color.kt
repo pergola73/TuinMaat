@@ -1,4 +1,4 @@
-package com.example.tuinmaat.ui.theme
+package com.rvodevelopment.tuinmaat.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

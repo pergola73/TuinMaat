@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.tuinmaat"
+    namespace = "com.rvodevelopment.tuinmaat"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.tuinmaat"
+        applicationId = "com.rvodevelopment.tuinmaat"
         minSdk = 24
         targetSdk = 35
         versionCode = 2

@@ -1,4 +1,4 @@
-package com.example.tuinmaat
+package com.rvodevelopment.tuinmaat
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow

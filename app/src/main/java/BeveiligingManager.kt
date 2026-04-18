@@ -1,4 +1,4 @@
-package com.example.tuinmaat
+package com.rvodevelopment.tuinmaat
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -26,8 +26,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.example.tuinmaat.ui.theme.DonkerGroen
-import com.example.tuinmaat.ui.theme.ZachtBeige
+import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
