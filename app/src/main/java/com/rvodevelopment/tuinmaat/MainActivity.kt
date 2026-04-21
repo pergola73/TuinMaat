@@ -16,6 +16,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -145,9 +149,10 @@ class MainActivity : FragmentActivity() {
                             composable("login") { LoginScherm(navController) }
                             composable("hoofdmenu") { HoofdMenu(navController) }
                             composable("lijst") { PlantenLijstScherm(navController) }
-                            composable("toevoegen?plantId={plantId}") { backStackEntry ->
+                            composable("toevoegen?plantId={plantId}&focus={focus}") { backStackEntry ->
                                 val id = backStackEntry.arguments?.getString("plantId")
-                                PlantToevoegenScherm(navController, bewerkPlantFirestoreId = id)
+                                val focus = backStackEntry.arguments?.getString("focus")
+                                PlantToevoegenScherm(navController, bewerkPlantFirestoreId = id, initialFocus = focus)
                             }
                             composable("detail/{plantId}") { backStackEntry ->
                                 val id = backStackEntry.arguments?.getString("plantId")
@@ -251,7 +256,10 @@ fun LoginScherm(navController: NavController) {
                             db.collection("users").document(user!!.uid).set(profile)
                                 .addOnSuccessListener {
                                     // Maak ook een standaard tuin aan voor de nieuwe gebruiker
-                                    val tuin = hashMapOf("naam" to "Mijn Tuin")
+                                    val tuin = hashMapOf(
+                                        "naam" to "Mijn Tuin",
+                                        "locaties" to listOf("Tuin")
+                                    )
                                     db.collection("tuinen").document(user.uid).set(tuin, SetOptions.merge())
                                     navController.navigate("hoofdmenu") { popUpTo(0) }
                                 }
@@ -682,11 +690,12 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PlantToevoegenScherm(
     navController: NavController,
-    bewerkPlantFirestoreId: String? = null
+    bewerkPlantFirestoreId: String? = null,
+    initialFocus: String? = null
 ) {
     val db = Firebase.firestore
     val auth = Firebase.auth
@@ -694,24 +703,25 @@ fun PlantToevoegenScherm(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
+    // Focus logica
+    val focusRequester = remember { FocusRequester() }
+    var focusHasBeenSet by remember { mutableStateOf(false) }
+
     // State velden overeenkomstig met Plant detail model
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var bestaandeFotoUri by remember { mutableStateOf<String?>(null) }
     var naam by remember { mutableStateOf("") }
     var geselecteerdeLocatie by remember { mutableStateOf("") }
     var omschrijving by remember { mutableStateOf("") }
-    var snoeiMaand by remember { mutableStateOf("") }
+    val geselecteerdeMaanden = remember { mutableStateListOf<String>() }
     var snoeiAdvies by remember { mutableStateOf("") }
     var beschikbareLocaties by remember { mutableStateOf<List<String>>(emptyList()) }
-
-    // Gemini AI State
-    var aiSuggesties by remember { mutableStateOf<List<GeminiPlantResult>>(emptyList()) }
-    var laatSuggestiesZien by remember { mutableStateOf(false) }
-    var isAIBezig by remember { mutableStateOf(false) }
 
     // UI State
     var isLaden by remember { mutableStateOf(false) }
     var laatLocatieMenuZien by remember { mutableStateOf(false) }
+
+    val maandenLijst = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
 
     // Load locations and existing plant
     LaunchedEffect(userId, bewerkPlantFirestoreId) {
@@ -723,7 +733,7 @@ fun PlantToevoegenScherm(
                 // Load locations
                 val gardenDoc = db.collection("tuinen").document(gardenId).get().await()
                 @Suppress("UNCHECKED_CAST")
-                val locs = gardenDoc.get("locaties") as? List<String> ?: listOf("Woonkamer", "Keuken", "Balkon")
+                val locs = gardenDoc.get("locaties") as? List<String> ?: listOf("Tuin")
                 beschikbareLocaties = locs
                 
                 if (bewerkPlantFirestoreId != null) {
@@ -734,7 +744,12 @@ fun PlantToevoegenScherm(
                         naam = plant.naam
                         geselecteerdeLocatie = plant.locatie
                         omschrijving = plant.omschrijving
-                        snoeiMaand = plant.snoeiMaand
+                        // Parse string back to list
+                        geselecteerdeMaanden.clear()
+                        if (plant.snoeiMaand.isNotBlank()) {
+                            val opgeslagenMaanden = plant.snoeiMaand.split(", ")
+                            geselecteerdeMaanden.addAll(opgeslagenMaanden.filter { it in maandenLijst })
+                        }
                         snoeiAdvies = plant.snoeiAdvies
                         bestaandeFotoUri = plant.fotoUri
                     }
@@ -748,6 +763,11 @@ fun PlantToevoegenScherm(
             }
         }
     }
+
+    // Gemini AI State
+    var aiSuggesties by remember { mutableStateOf<List<GeminiPlantResult>>(emptyList()) }
+    var laatSuggestiesZien by remember { mutableStateOf(false) }
+    var isAIBezig by remember { mutableStateOf(false) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
@@ -805,7 +825,7 @@ fun PlantToevoegenScherm(
                                     "naam" to naam,
                                     "locatie" to geselecteerdeLocatie,
                                     "omschrijving" to omschrijving,
-                                    "snoeiMaand" to snoeiMaand,
+                                    "snoeiMaand" to geselecteerdeMaanden.joinToString(", "),
                                     "snoeiAdvies" to snoeiAdvies,
                                     "userId" to userId
                                 )
@@ -946,7 +966,15 @@ fun PlantToevoegenScherm(
                                 naam = suggestie.naam
                                 omschrijving = suggestie.omschrijving
                                 snoeiAdvies = suggestie.snoeiAdvies
-                                snoeiMaand = suggestie.snoeiMaand
+                                
+                                // Parse AI maand suggesties naar chips
+                                geselecteerdeMaanden.clear()
+                                maandenLijst.forEach { maand ->
+                                    if (suggestie.snoeiMaand.contains(maand, ignoreCase = true)) {
+                                        geselecteerdeMaanden.add(maand)
+                                    }
+                                }
+                                
                                 laatSuggestiesZien = false
                             },
                             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -1034,9 +1062,60 @@ fun PlantToevoegenScherm(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3. De overige velden (Blijven zoals ze waren)
+                // 3. De overige velden
                 InvoerVeldMetIcoon("Omschrijving", omschrijving, { omschrijving = it }, Icons.Default.Info)
-                InvoerVeldMetIcoon("Beste snoeimaand", snoeiMaand, { snoeiMaand = it }, Icons.Default.CalendarMonth)
+                
+                // Snoeimaand Chips
+                Column(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .focusRequester(focusRequester)
+                        .onGloballyPositioned { coords ->
+                            if (initialFocus == "snoeimaand" && !focusHasBeenSet) {
+                                coroutineScope.launch {
+                                    scrollState.animateScrollTo(coords.positionInParent().y.toInt())
+                                    focusRequester.requestFocus()
+                                    focusHasBeenSet = true
+                                }
+                            }
+                        }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Beste snoeimaand", style = MaterialTheme.typography.labelLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                    }
+                    
+                    FlowRow(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        maandenLijst.forEach { maand ->
+                            FilterChip(
+                                selected = geselecteerdeMaanden.contains(maand),
+                                onClick = {
+                                    if (geselecteerdeMaanden.contains(maand)) geselecteerdeMaanden.remove(maand)
+                                    else geselecteerdeMaanden.add(maand)
+                                },
+                                label = { Text(maand) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = GrasGroen,
+                                    selectedLabelColor = Color.White,
+                                    containerColor = Color.White,
+                                    labelColor = DonkerGroen
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    borderColor = DonkerGroen.copy(alpha = 0.5f),
+                                    selectedBorderColor = GrasGroen,
+                                    enabled = true,
+                                    selected = geselecteerdeMaanden.contains(maand)
+                                )
+                            )
+                        }
+                    }
+                }
+                
                 InvoerVeldMetIcoon("Snoeiadvies", snoeiAdvies, { snoeiAdvies = it }, Icons.Default.ContentCut, true)
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -1161,8 +1240,12 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
 
                             // Badges
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                DetailBadge(Icons.Default.CalendarMonth, "Snoeimaand", p.snoeiMaand, Modifier.weight(1f))
-                                DetailBadge(Icons.Default.Place, "Locatie", p.locatie, Modifier.weight(1f))
+                                DetailBadge(Icons.Default.CalendarMonth, "Snoeimaand", p.snoeiMaand, Modifier.weight(1f)) {
+                                    navController.navigate("toevoegen?plantId=${p.firestoreId}&focus=snoeimaand")
+                                }
+                                DetailBadge(Icons.Default.Place, "Locatie", p.locatie, Modifier.weight(1f)) {
+                                    navController.navigate("toevoegen?plantId=${p.firestoreId}")
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(32.dp))
@@ -1187,30 +1270,31 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                                 lineHeight = 22.sp
                             )
 
-                            Spacer(modifier = Modifier.height(40.dp))
-
-                            // DE BEWERK KNOP (Onderaan het advies)
-                            Button(
-                                onClick = { navController.navigate("toevoegen?plantId=${p.firestoreId}") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.White.copy(alpha = 0.6f),
-                                    contentColor = DonkerGroen
-                                ),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
-                            ) {
-                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Gegevens Bewerken", fontWeight = FontWeight.Bold)
-                            }
-
-                            Spacer(modifier = Modifier.height(100.dp)) // Extra scrollruimte voor comfort
+                            Spacer(modifier = Modifier.height(120.dp)) // Extra scrollruimte voor de vaste knop
                         }
                     }
+                }
+
+                // De Bewerken knop is nu altijd in beeld onderaan
+                Button(
+                    onClick = { navController.navigate("toevoegen?plantId=${p.firestoreId}") },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(24.dp)
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(alpha = 0.9f),
+                        contentColor = DonkerGroen
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Gegevens Bewerken", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1229,8 +1313,9 @@ fun SectionHeader(titel: String) {
 }
 
 @Composable
-fun DetailBadge(icoon: ImageVector, label: String, waarde: String, modifier: Modifier = Modifier) {
+fun DetailBadge(icoon: ImageVector, label: String, waarde: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     Surface(
+        onClick = onClick,
         modifier = modifier.neumorphicShadow(shape = RoundedCornerShape(16.dp)),
         color = Color.White.copy(alpha = 0.5f),
         shape = RoundedCornerShape(16.dp),
@@ -1551,7 +1636,7 @@ fun LocatieBeheerScherm(navController: NavController) {
             val gardenId = userDoc.getString("sharedGardenId") ?: userId
             db.collection("tuinen").document(gardenId).get().addOnSuccessListener { doc ->
                 @Suppress("UNCHECKED_CAST")
-                locaties = doc.get("locaties") as? List<String> ?: listOf("Woonkamer", "Keuken", "Balkon")
+                locaties = doc.get("locaties") as? List<String> ?: listOf("Tuin")
             }.addOnFailureListener { e ->
                 Log.e("TuinMaat", "Fout bij laden locaties: ${e.message}")
             }

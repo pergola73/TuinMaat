@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.biometric)
     implementation(libs.play.services.base)
 
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
