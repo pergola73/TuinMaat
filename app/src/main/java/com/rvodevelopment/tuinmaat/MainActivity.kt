@@ -22,6 +22,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import java.util.Calendar
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -41,9 +42,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -177,6 +180,7 @@ fun LoginScherm(navController: NavController) {
     val auth = Firebase.auth
     val db = Firebase.firestore
     val context = LocalContext.current as FragmentActivity
+    val focusManager = LocalFocusManager.current
 
     // Vertaalt technische Firebase fouten naar begrijpelijk Nederlands
     fun vertaalFoutmelding(exception: Exception?): String {
@@ -225,12 +229,65 @@ fun LoginScherm(navController: NavController) {
         }
     }
 
+    fun voerActieUit() {
+        if (isRegistreren) {
+            if (email.isNotBlank() && wachtwoord.isNotBlank() && voornaam.isNotBlank()) {
+                isLaden = true
+                auth.createUserWithEmailAndPassword(email, wachtwoord)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user = auth.currentUser
+                            user?.sendEmailVerification()
+                                ?.addOnCompleteListener { verificationTask ->
+                                    if (verificationTask.isSuccessful) {
+                                        Toast.makeText(context, "Bevestigingsmail verzonden naar ${user.email}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            val profile = hashMapOf(
+                                "voornaam" to voornaam,
+                                "email" to email,
+                                "createdAt" to System.currentTimeMillis()
+                            )
+                            db.collection("users").document(user!!.uid).set(profile)
+                                .addOnSuccessListener {
+                                    // Maak ook een standaard tuin aan voor de nieuwe gebruiker
+                                    val tuin = hashMapOf("naam" to "Mijn Tuin")
+                                    db.collection("tuinen").document(user.uid).set(tuin, SetOptions.merge())
+                                    navController.navigate("hoofdmenu") { popUpTo(0) }
+                                }
+                        } else {
+                            isLaden = false
+                            foutMelding = vertaalFoutmelding(task.exception)
+                        }
+                    }
+            } else {
+                foutMelding = "Vul alle velden in."
+            }
+        } else {
+            if (email.isNotBlank() && wachtwoord.isNotBlank()) {
+                isLaden = true
+                auth.signInWithEmailAndPassword(email, wachtwoord)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            navController.navigate("hoofdmenu") { popUpTo("login") { inclusive = true } }
+                        } else {
+                            isLaden = false
+                            foutMelding = vertaalFoutmelding(task.exception)
+                        }
+                    }
+            } else {
+                foutMelding = "Vul e-mail en wachtwoord in."
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(ZachtBeige)
             .statusBarsPadding()
             .navigationBarsPadding()
+            .imePadding()
             .padding(24.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -253,6 +310,8 @@ fun LoginScherm(navController: NavController) {
                 label = { Text("Voornaam") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.Black,
                     unfocusedTextColor = Color.Black,
@@ -271,7 +330,8 @@ fun LoginScherm(navController: NavController) {
             label = { Text("E-mailadres") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = DonkerGroen) },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.Black,
@@ -291,7 +351,13 @@ fun LoginScherm(navController: NavController) {
             label = { Text("Wachtwoord") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            singleLine = true,
             visualTransformation = if (wachtwoordZichtbaar) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+                voerActieUit()
+            }),
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = DonkerGroen) },
             trailingIcon = {
                 IconButton(onClick = { wachtwoordZichtbaar = !wachtwoordZichtbaar }) {
@@ -333,57 +399,7 @@ fun LoginScherm(navController: NavController) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = {
-                if (isRegistreren) {
-                    if (email.isNotBlank() && wachtwoord.isNotBlank() && voornaam.isNotBlank()) {
-                        isLaden = true
-                                    auth.createUserWithEmailAndPassword(email, wachtwoord)
-                                        .addOnCompleteListener { task ->
-                                            if (task.isSuccessful) {
-                                                val user = auth.currentUser
-                                                user?.sendEmailVerification()
-                                                    ?.addOnCompleteListener { verificationTask ->
-                                                        if (verificationTask.isSuccessful) {
-                                                            Toast.makeText(context, "Bevestigingsmail verzonden naar ${user.email}", Toast.LENGTH_LONG).show()
-                                                        }
-                                                    }
-                                                val profile = hashMapOf(
-                                                    "voornaam" to voornaam,
-                                                    "email" to email,
-                                                    "createdAt" to System.currentTimeMillis()
-                                                )
-                                                db.collection("users").document(user!!.uid).set(profile)
-                                                    .addOnSuccessListener {
-                                                        // Maak ook een standaard tuin aan voor de nieuwe gebruiker
-                                                        val tuin = hashMapOf("naam" to "Mijn Tuin")
-                                                        db.collection("tuinen").document(user.uid).set(tuin, SetOptions.merge())
-                                                        navController.navigate("hoofdmenu") { popUpTo(0) }
-                                                    }
-                                            } else {
-                                                isLaden = false
-                                                foutMelding = vertaalFoutmelding(task.exception)
-                                            }
-                                        }
-                    } else {
-                        foutMelding = "Vul alle velden in."
-                    }
-                } else {
-                    if (email.isNotBlank() && wachtwoord.isNotBlank()) {
-                        isLaden = true
-                        auth.signInWithEmailAndPassword(email, wachtwoord)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    navController.navigate("hoofdmenu") { popUpTo("login") { inclusive = true } }
-                                } else {
-                                    isLaden = false
-                                    foutMelding = vertaalFoutmelding(task.exception)
-                                }
-                            }
-                    } else {
-                        foutMelding = "Vul e-mail en wachtwoord in."
-                    }
-                }
-            },
+            onClick = { voerActieUit() },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
