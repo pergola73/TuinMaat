@@ -1361,9 +1361,13 @@ fun SnoeiKalenderScherm(navController: NavController) {
     val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
     val huidigMaandIndex = Calendar.getInstance().get(Calendar.MONTH)
 
-    // Gebruik de standaard state zonder initiële index
+    // Sorteer de maanden zodat de huidige maand bovenaan staat en we precies 1 jaar tonen
+    val gesorteerdeMaanden = mutableListOf<String>()
+    for (i in 0 until 12) {
+        gesorteerdeMaanden.add(maanden[(huidigMaandIndex + i) % 12])
+    }
+
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         try {
@@ -1373,24 +1377,6 @@ fun SnoeiKalenderScherm(navController: NavController) {
                 .addSnapshotListener { snapshot, _ ->
                     if (snapshot != null) {
                         planten = snapshot.toObjects(Plant::class.java)
-
-                        // Zodra de planten geladen zijn, scrollen we naar de huidige maand
-                        coroutineScope.launch {
-                            // We zoeken in onze 100-jaar range (startend bij het midden: 600)
-                            // naar de eerste maand die gelijk is aan de huidige maand én planten heeft.
-                            val targetIndex = (600 until 1200).firstOrNull { idx ->
-                                val mNaam = maanden[idx % 12]
-                                planten.any { it.snoeiMaand.contains(mNaam, ignoreCase = true) } && (idx % 12 >= huidigMaandIndex)
-                            }
-
-                            if (targetIndex != null) {
-                                // Scroll naar de specifieke key van die maand
-                                listState.scrollToItem(index = 0) // Reset even voor de zekerheid
-                                // In een LazyColumn met headers is het makkelijker om naar de key te zoeken
-                                // of handmatig te berekenen. Voor nu springen we naar de berekende positie:
-                                // We gebruiken animateScroll of scrollToItem op basis van de index in de lijst.
-                            }
-                        }
                     }
                 }
         } catch (e: Exception) {
@@ -1408,19 +1394,16 @@ fun SnoeiKalenderScherm(navController: NavController) {
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().navigationBarsPadding(),
             state = listState,
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // We lopen door de jaren heen
-            (0 until 1200).forEach { index ->
-                val maandIndex = index % 12
-                val maandNaam = maanden[maandIndex]
+            // We lopen door de 12 maanden heen, beginnend bij de huidige
+            gesorteerdeMaanden.forEach { maandNaam ->
                 val plantenVoorMaand = planten.filter { it.snoeiMaand.contains(maandNaam, ignoreCase = true) }
 
                 if (plantenVoorMaand.isNotEmpty()) {
-                    // We geven de header een specifieke key die we kunnen herkennen
-                    stickyHeader(key = "maand-$index") {
+                    stickyHeader(key = maandNaam) {
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1432,7 +1415,7 @@ fun SnoeiKalenderScherm(navController: NavController) {
                             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
                         ) {
                             Text(
-                                text = if (maandIndex == huidigMaandIndex && index >= 600 && index < 612) "$maandNaam (Nu)" else maandNaam,
+                                text = if (maandNaam == maanden[huidigMaandIndex]) "$maandNaam (Nu)" else maandNaam,
                                 modifier = Modifier.padding(16.dp, 10.dp),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = DonkerGroen,
@@ -1441,7 +1424,7 @@ fun SnoeiKalenderScherm(navController: NavController) {
                         }
                     }
 
-                    items(items = plantenVoorMaand, key = { "${it.firestoreId}-$index" }) { plant ->
+                    items(items = plantenVoorMaand, key = { "${it.firestoreId}-$maandNaam" }) { plant ->
                         Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
                             PlantKaart(plant, navController)
                         }
@@ -1452,35 +1435,8 @@ fun SnoeiKalenderScherm(navController: NavController) {
             }
         }
     }
-
-    // Effect om bij eerste keer laden naar de huidige maand te springen
-    LaunchedEffect(planten) {
-        if (planten.isNotEmpty()) {
-            // Zoek de eerste maand-sectie die getoond wordt vanaf 'vandaag' (index 600+)
-            val itemsInLijst = (600 until 1200).filter { idx ->
-                val mNaam = maanden[idx % 12]
-                planten.any { it.snoeiMaand.contains(mNaam, ignoreCase = true) }
-            }
-
-            val targetMaandIdx = itemsInLijst.firstOrNull { it >= 600 + huidigMaandIndex } ?: itemsInLijst.firstOrNull()
-
-            targetMaandIdx?.let { target ->
-                // We moeten uitzoeken hoeveel items er vòòr onze target maand zitten
-                // In een LazyColumn telt elk item (header + planten + spacer) mee voor de index.
-                var teller = 0
-                for (i in 0 until target) {
-                    val pVoorM = planten.filter { it.snoeiMaand.contains(maanden[i % 12], ignoreCase = true) }
-                    if (pVoorM.isNotEmpty()) {
-                        teller += 1 // De stickyHeader
-                        teller += pVoorM.size // De planten
-                        teller += 1 // De spacer
-                    }
-                }
-                listState.scrollToItem(teller)
-            }
-        }
-    }
 }
+
 
 @Composable
 fun InstellingenScherm(navController: NavController) {
@@ -2049,6 +2005,7 @@ fun PlantenLijstScherm(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
             // Header
             Row(
