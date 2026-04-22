@@ -13,8 +13,8 @@ android {
         applicationId = "com.rvodevelopment.tuinmaat"
         minSdk = 24
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "2.3 alpha test"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
