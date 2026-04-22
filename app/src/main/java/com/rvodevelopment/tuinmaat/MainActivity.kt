@@ -2,6 +2,7 @@ package com.rvodevelopment.tuinmaat
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -163,6 +164,7 @@ class MainActivity : FragmentActivity() {
                             composable("beveiliging") { BeveiligingsInstellingenScherm(navController) }
                             composable("locatiebeheer") { LocatieBeheerScherm(navController) }
                             composable("profiel_bewerken") { ProfielBewerkenScherm(navController) }
+                            composable("tuin_delen") { TuinDelenScherm(navController) }
                             composable("info") { InfoScherm(navController) }
                         }
                     }
@@ -980,9 +982,23 @@ fun PlantToevoegenScherm(
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             border = BorderStroke(1.dp, GrasGroen.copy(alpha = 0.5f))
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(suggestie.naam, fontWeight = FontWeight.Bold, color = DonkerGroen)
-                                Text(suggestie.omschrijving, maxLines = 2, style = MaterialTheme.typography.bodySmall)
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (suggestie.zoekTerm.isNotBlank()) {
+                                    AsyncImage(
+                                        model = "https://loremflickr.com/200/200/${suggestie.zoekTerm.replace(" ", ",")}",
+                                        contentDescription = null,
+                                        modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(suggestie.naam, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                                    Text(suggestie.omschrijving, maxLines = 2, style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
                     }
@@ -1292,7 +1308,7 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Gegevens Bewerken", fontWeight = FontWeight.Bold)
                 }
@@ -1484,6 +1500,7 @@ fun InstellingenScherm(navController: NavController) {
 
         Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
             InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
+            InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
             InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
             InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
             InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
@@ -1714,7 +1731,6 @@ fun ProfielBewerkenScherm(navController: NavController) {
     var voornaam by remember { mutableStateOf("") }
     var achternaam by remember { mutableStateOf("") }
     var tuinnaam by remember { mutableStateOf("") }
-    var gardenIdToJoin by remember { mutableStateOf("") }
     var isLaden by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -1824,35 +1840,89 @@ fun ProfielBewerkenScherm(navController: NavController) {
                     if (isLaden) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                     else Text("Opslaan")
                 }
+            }
+        }
+    }
+}
 
-                Spacer(modifier = Modifier.height(32.dp))
-                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(24.dp))
+@Composable
+fun TuinDelenScherm(navController: NavController) {
+    val db = Firebase.firestore
+    val auth = Firebase.auth
+    val user = auth.currentUser
+    val userId = user?.uid ?: ""
 
-                // SECTIE: TUIN DELEN
-                Text("Tuin Delen", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Deel deze ID met anderen:", style = MaterialTheme.typography.bodySmall)
+    var gardenIdToJoin by remember { mutableStateOf("") }
+    var isLaden by remember { mutableStateOf(false) }
+    var isGekoppeld by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        if (user != null) {
+            val userDoc = db.collection("users").document(user.uid).get().await()
+            val gid = userDoc.getString("sharedGardenId")
+            isGekoppeld = gid != null && gid != user.uid
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(ZachtBeige)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Header
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                }
+                Text("Tuin Delen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+            }
+
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("Deel je tuin", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                Text(
+                    "Geef onderstaande ID aan iemand anders om samen in jouw tuin te werken.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DonkerGroen.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
 
                 Surface(
                     color = Color.White.copy(alpha = 0.7f),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+                    modifier = Modifier.padding(vertical = 16.dp).fillMaxWidth()
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(12.dp)) {
                         SelectionContainer {
-                            Text(userId, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            Text(userId, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), color = DonkerGroen)
                         }
-                        val clipboard = LocalClipboardManager.current
                         IconButton(onClick = {
-                            clipboard.setText(AnnotatedString(userId))
-                            Toast.makeText(context, "ID gekopieerd!", Toast.LENGTH_SHORT).show()
-                        }) { Icon(Icons.Default.ContentCopy, null, tint = DonkerGroen) }
+                            val sendIntent: Intent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, userId)
+                                type = "text/plain"
+                            }
+                            val shareIntent = Intent.createChooser(sendIntent, null)
+                            context.startActivity(shareIntent)
+                        }) { Icon(Icons.Default.Share, "Deel ID", tint = DonkerGroen) }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-                Text("Koppel aan een andere tuin", style = MaterialTheme.typography.titleMedium, color = DonkerGroen)
+                Spacer(modifier = Modifier.height(32.dp))
+                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text("Koppel aan een andere tuin", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                Text(
+                    "Vul hier de ID in van de tuin die je wilt beheren.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DonkerGroen.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
 
                 OutlinedTextField(
                     value = gardenIdToJoin,
@@ -1866,7 +1936,7 @@ fun ProfielBewerkenScherm(navController: NavController) {
                     )
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = {
@@ -1874,11 +1944,11 @@ fun ProfielBewerkenScherm(navController: NavController) {
                             if (gardenIdToJoin.isNotBlank()) {
                                 isLaden = true
                                 try {
-                                    // Direct updaten naar het nieuwe ID
                                     db.collection("users").document(userId)
                                         .update("sharedGardenId", gardenIdToJoin)
                                         .await()
                                     Toast.makeText(context, "Tuin gekoppeld!", Toast.LENGTH_SHORT).show()
+                                    isGekoppeld = true
                                     navController.popBackStack()
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "ID niet gevonden", Toast.LENGTH_SHORT).show()
@@ -1886,34 +1956,53 @@ fun ProfielBewerkenScherm(navController: NavController) {
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = GrasGroen)
+                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
+                    enabled = !isLaden
                 ) {
-                    Text("Koppel Tuin")
+                    if (isLaden) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    else Text("Koppel Tuin", fontWeight = FontWeight.Bold)
                 }
 
-                // DE TERUGGEVONDEN KNOP: ONTKOPPELEN
-                Spacer(modifier = Modifier.height(16.dp))
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            try {
-                                // Verwijdert het koppel-veld volledig
-                                db.collection("users").document(userId)
-                                    .update("sharedGardenId", FieldValue.delete())
-                                    .await()
-                                Toast.makeText(context, "Je gebruikt nu weer je eigen tuin.", Toast.LENGTH_SHORT).show()
-                                navController.popBackStack()
-                            } catch (e: Exception) {
-                                Log.e("TuinMaat", "Ontkoppel fout: ${e.message}")
-                            }
+                Spacer(modifier = Modifier.height(120.dp))
+            }
+        }
+
+        // Bottom fixed "Stop met delen" button
+        if (isGekoppeld) {
+            Button(
+                onClick = {
+                    scope.launch {
+                        try {
+                            db.collection("users").document(userId)
+                                .update("sharedGardenId", FieldValue.delete())
+                                .await()
+                            Toast.makeText(context, "Je gebruikt nu weer je eigen tuin.", Toast.LENGTH_SHORT).show()
+                            isGekoppeld = false
+                            navController.popBackStack()
+                        } catch (e: Exception) {
+                            Log.e("TuinMaat", "Ontkoppel fout: ${e.message}")
                         }
-                    },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text("Stop met delen (eigen tuin gebruiken)", color = Color.Red.copy(alpha = 0.7f))
-                }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(24.dp)
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White.copy(alpha = 0.9f),
+                    contentColor = Color.Red.copy(alpha = 0.7f)
+                ),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
+            ) {
+                Icon(Icons.Default.LinkOff, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Stop met delen (eigen tuin gebruiken)", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -2044,7 +2133,8 @@ data class GeminiPlantResult(
     val naam: String,
     val omschrijving: String,
     val snoeiAdvies: String,
-    val snoeiMaand: String
+    val snoeiMaand: String,
+    val zoekTerm: String = ""
 )
 
 // Helperfunctie voor Gemini AI plantidentificatie met Vertex AI in Firebase
@@ -2053,7 +2143,7 @@ suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context)
         // Gebruik Vertex AI van Firebase
         val vertexAI = Firebase.vertexAI
         val generativeModel = vertexAI.generativeModel(
-            modelName = "gemini-2.5-flash-lite"
+            modelName = "gemini-3.1-flash-lite-preview"
         )
 
         val prompt = content {
@@ -2066,7 +2156,8 @@ suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context)
                     "naam": "Naam van de plant",
                     "omschrijving": "Korte omschrijving van de plant",
                     "snoeiAdvies": "Kort advies over hoe te snoeien",
-                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'"
+                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'",
+                    "zoekTerm": "Wetenschappelijke naam of zoekterm voor een afbeelding (bijv. 'Lavandula angustifolia')"
                   }
                 ]
                 Gebruik alleen de JSON structuur in je antwoord, geen extra tekst.
@@ -2092,11 +2183,11 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
     val resultaten = mutableListOf<GeminiPlantResult>()
     try {
         // Robuustere parsing voor JSON met mogelijke line-breaks en spaties
-        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
+        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)",\s*"zoekTerm"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
         val matches = objectRegex.findAll(json)
         matches.forEach { match ->
-            val (naam, omschrijving, snoeiAdvies, snoeiMaand) = match.destructured
-            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand))
+            val (naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm) = match.destructured
+            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm))
         }
     } catch (e: Exception) {
         Log.e("TuinMaat", "Parsing error: ${e.message}")
@@ -2109,13 +2200,15 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
             val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+            val zoekTermen = Regex(""""zoekTerm"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             
             for (i in 0 until minOf(namen.size, 3)) {
                 resultaten.add(GeminiPlantResult(
                     namen.getOrElse(i) { "" },
                     omschrijvingen.getOrElse(i) { "" },
                     adviezen.getOrElse(i) { "" },
-                    maanden.getOrElse(i) { "" }
+                    maanden.getOrElse(i) { "" },
+                    zoekTermen.getOrElse(i) { "" }
                 ))
             }
         } catch (e: Exception) {
