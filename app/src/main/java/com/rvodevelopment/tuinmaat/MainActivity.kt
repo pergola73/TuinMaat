@@ -69,6 +69,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
@@ -986,15 +987,6 @@ fun PlantToevoegenScherm(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (suggestie.zoekTerm.isNotBlank()) {
-                                    AsyncImage(
-                                        model = "https://loremflickr.com/200/200/${suggestie.zoekTerm.replace(" ", ",")}",
-                                        contentDescription = null,
-                                        modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                }
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(suggestie.naam, fontWeight = FontWeight.Bold, color = DonkerGroen)
                                     Text(suggestie.omschrijving, maxLines = 2, style = MaterialTheme.typography.bodySmall)
@@ -2118,10 +2110,25 @@ fun PlantenLijstScherm(navController: NavController) {
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        if (allePlanten.isEmpty()) "Je hebt nog geen planten." else "Niets gevonden.",
-                        color = DonkerGroen.copy(alpha = 0.5f)
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            if (allePlanten.isEmpty()) "Je hebt nog geen planten." else "Niets gevonden.",
+                            color = DonkerGroen.copy(alpha = 0.5f)
+                        )
+                        if (allePlanten.isEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { navController.navigate("toevoegen?plantId=&focus=") },
+                                colors = ButtonDefaults.buttonColors(containerColor = GrasGroen),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.padding(horizontal = 32.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Voeg nu je eerste plant toe!", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2133,8 +2140,7 @@ data class GeminiPlantResult(
     val naam: String,
     val omschrijving: String,
     val snoeiAdvies: String,
-    val snoeiMaand: String,
-    val zoekTerm: String = ""
+    val snoeiMaand: String
 )
 
 // Helperfunctie voor Gemini AI plantidentificatie met Vertex AI in Firebase
@@ -2143,7 +2149,7 @@ suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context)
         // Gebruik Vertex AI van Firebase
         val vertexAI = Firebase.vertexAI
         val generativeModel = vertexAI.generativeModel(
-            modelName = "gemini-3.1-flash-lite-preview"
+            modelName = "gemini-2.5-flash-lite"
         )
 
         val prompt = content {
@@ -2156,8 +2162,7 @@ suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context)
                     "naam": "Naam van de plant",
                     "omschrijving": "Korte omschrijving van de plant",
                     "snoeiAdvies": "Kort advies over hoe te snoeien",
-                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'",
-                    "zoekTerm": "Wetenschappelijke naam of zoekterm voor een afbeelding (bijv. 'Lavandula angustifolia')"
+                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'"
                   }
                 ]
                 Gebruik alleen de JSON structuur in je antwoord, geen extra tekst.
@@ -2183,11 +2188,11 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
     val resultaten = mutableListOf<GeminiPlantResult>()
     try {
         // Robuustere parsing voor JSON met mogelijke line-breaks en spaties
-        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)",\s*"zoekTerm"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
+        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
         val matches = objectRegex.findAll(json)
         matches.forEach { match ->
-            val (naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm) = match.destructured
-            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm))
+            val (naam, omschrijving, snoeiAdvies, snoeiMaand) = match.destructured
+            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand))
         }
     } catch (e: Exception) {
         Log.e("TuinMaat", "Parsing error: ${e.message}")
@@ -2200,15 +2205,13 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
             val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-            val zoekTermen = Regex(""""zoekTerm"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             
             for (i in 0 until minOf(namen.size, 3)) {
                 resultaten.add(GeminiPlantResult(
                     namen.getOrElse(i) { "" },
                     omschrijvingen.getOrElse(i) { "" },
                     adviezen.getOrElse(i) { "" },
-                    maanden.getOrElse(i) { "" },
-                    zoekTermen.getOrElse(i) { "" }
+                    maanden.getOrElse(i) { "" }
                 ))
             }
         } catch (e: Exception) {
