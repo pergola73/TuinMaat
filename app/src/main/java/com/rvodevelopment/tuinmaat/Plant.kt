@@ -18,6 +18,7 @@ data class Plant(
     val lichtBehoefte: String = "",
     val voedingAdvies: String = "",
     val ehboSignaal: String = "",
+    val wetenschappelijkeNaam: String = "",
     val fotoUri: String? = null,
     val locatie: String = ""
 )

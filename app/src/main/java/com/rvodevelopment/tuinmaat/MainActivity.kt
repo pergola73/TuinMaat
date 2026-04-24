@@ -48,6 +48,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -467,18 +468,19 @@ fun PlantKaart(plant: Plant, navController: NavController) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 4.dp) // Minder ruimte tussen kaarten
             .neumorphicShadow(shape = RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
         color = ZachtBeige,
         onClick = { navController.navigate("detail/${plant.firestoreId}") }
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp), // Minder padding binnen de kaart
             verticalAlignment = Alignment.CenterVertically
         ) {
             // De container voor de afbeelding
             Surface(
-                modifier = Modifier.size(60.dp), // Iets groter voor de foto
+                modifier = Modifier.size(50.dp), // Iets compacter
                 shape = RoundedCornerShape(12.dp),
                 color = Color.White.copy(alpha = 0.4f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
@@ -496,7 +498,7 @@ fun PlantKaart(plant: Plant, navController: NavController) {
                         Icons.Default.LocalFlorist,
                         contentDescription = null,
                         tint = DonkerGroen.copy(alpha = 0.3f),
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(12.dp)
                     )
                 }
             }
@@ -510,9 +512,18 @@ fun PlantKaart(plant: Plant, navController: NavController) {
                     fontWeight = FontWeight.Bold,
                     color = DonkerGroen
                 )
+                if (plant.wetenschappelijkeNaam.isNotBlank()) {
+                    Text(
+                        text = plant.wetenschappelijkeNaam,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        color = DonkerGroen.copy(alpha = 0.8f)
+                    )
+                }
                 Text(
                     text = plant.locatie,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = DonkerGroen.copy(alpha = 0.6f)
                 )
             }
@@ -827,8 +838,16 @@ class TuintipViewModel : ViewModel() {
         val generativeModel = vertexAI.generativeModel(modelName = "gemini-2.5-flash-lite")
         
         _isLoading.value = true
+
+        val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
+        val huidigeMaand = maanden[Calendar.getInstance().get(Calendar.MONTH)]
         
-        val prompt = "Je bent een ervaren hovenier. Geef één korte, praktische tuintip voor een tuinier in Nederland. De tip mag over planten, onderhoud, gereedschap of seizoenen gaan. Houd de tip onder de 25 woorden en begin met een vrolijke emoji."
+        val prompt = """
+            Je bent een ervaren hovenier. Geef één korte, praktische tuintip voor een doe-het-zelf tuinier in Nederland. 
+            De tip MOET specifiek gaan over de huidige maand ($huidigeMaand) of het huidige seizoen. 
+            Geef bij voorkeur eerst tips die NU in $huidigeMaand relevant zijn.
+            Houd de tip onder de 25 woorden en begin met een vrolijke emoji.
+        """.trimIndent()
         
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -901,6 +920,7 @@ fun PlantToevoegenScherm(
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var bestaandeFotoUri by remember { mutableStateOf<String?>(null) }
     var naam by remember { mutableStateOf("") }
+    var wetenschappelijkeNaam by remember { mutableStateOf("") }
     var geselecteerdeLocatie by remember { mutableStateOf("") }
     var omschrijving by remember { mutableStateOf("") }
     var waterBehoefte by remember { mutableStateOf("") }
@@ -914,6 +934,12 @@ fun PlantToevoegenScherm(
     // UI State
     var isLaden by remember { mutableStateOf(false) }
     var laatLocatieMenuZien by remember { mutableStateOf(false) }
+    var toonTip by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(5000)
+        toonTip = false
+    }
 
     val maandenLijst = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
 
@@ -936,6 +962,7 @@ fun PlantToevoegenScherm(
                     val plant = doc.toObject(Plant::class.java)
                     if (plant != null) {
                         naam = plant.naam
+                        wetenschappelijkeNaam = plant.wetenschappelijkeNaam
                         geselecteerdeLocatie = plant.locatie
                         omschrijving = plant.omschrijving
                         waterBehoefte = plant.waterBehoefte
@@ -1019,6 +1046,7 @@ fun PlantToevoegenScherm(
 
                                 val plantData = hashMapOf(
                                     "naam" to naam,
+                                    "wetenschappelijkeNaam" to wetenschappelijkeNaam,
                                     "locatie" to geselecteerdeLocatie,
                                     "omschrijving" to omschrijving,
                                     "waterBehoefte" to waterBehoefte,
@@ -1089,6 +1117,33 @@ fun PlantToevoegenScherm(
                     }
                 }
 
+                // Tip bovenaan de foto
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = toonTip,
+                    enter = androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.fadeOut(),
+                    modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
+                ) {
+                    Surface(
+                        color = DonkerGroen.copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Voeg een foto toe en gebruik de AI knop",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
                 Row(modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
                     SmallFloatingActionButton(
                         onClick = { galleryLauncher.launch("image/*") },
@@ -1129,6 +1184,7 @@ fun PlantToevoegenScherm(
                                     if (resultaat != null) {
                                         aiResultaat = resultaat
                                         naam = resultaat.naam
+                                        wetenschappelijkeNaam = resultaat.wetenschappelijkeNaam
                                         omschrijving = resultaat.omschrijving
                                         waterBehoefte = resultaat.waterBehoefte
                                         lichtBehoefte = resultaat.lichtBehoefte
@@ -1136,11 +1192,12 @@ fun PlantToevoegenScherm(
                                         ehboSignaal = resultaat.ehboSignaal
                                         snoeiAdvies = resultaat.snoeiAdvies
                                         
-                                        // Update snoeimaanden
+                                        // Update snoeimaanden (Alleen de 1e maand)
                                         geselecteerdeMaanden.clear()
-                                        maandenLijst.forEach { maand ->
-                                            if (resultaat.snoeiMaand.contains(maand, ignoreCase = true)) {
-                                                geselecteerdeMaanden.add(maand)
+                                        if (resultaat.snoeiMaand.isNotBlank()) {
+                                            val eersteMaand = resultaat.snoeiMaand.split(",").firstOrNull()?.trim()
+                                            maandenLijst.firstOrNull { it.equals(eersteMaand, ignoreCase = true) }?.let {
+                                                geselecteerdeMaanden.add(it)
                                             }
                                         }
                                         Toast.makeText(context, "Plant herkend via Pl@ntNet", Toast.LENGTH_SHORT).show()
@@ -1180,27 +1237,8 @@ fun PlantToevoegenScherm(
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
-                // Tip bovenaan
-                Surface(
-                    color = DonkerGroen.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            "Voeg een foto van je plant toe, en laat AI alle informatie invullen",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = DonkerGroen,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
+                // Tip is verplaatst naar bovenop de foto
+                
                 // 1. Naam (Nu met InvoerVeldMetIcoon)
                 InvoerVeldMetIcoon(
                     label = "Naam",
@@ -1469,6 +1507,17 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(text = p.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
                             
+                            if (p.wetenschappelijkeNaam.isNotBlank()) {
+                                Text(
+                                    text = p.wetenschappelijkeNaam,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                    color = DonkerGroen.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+
                             if (p.omschrijving.isNotBlank()) {
                                 Text(
                                     text = p.omschrijving,
@@ -2311,6 +2360,7 @@ fun PlantenLijstScherm(navController: NavController) {
 // Data class voor Gemini AI resultaten
 data class GeminiPlantResult(
     val naam: String = "",
+    val wetenschappelijkeNaam: String = "",
     val omschrijving: String = "",
     val snoeiAdvies: String = "",
     val snoeiMaand: String = "",
@@ -2339,7 +2389,7 @@ suspend fun identificeerPlantEnHaalInfoOp(bitmap: Bitmap, context: android.conte
             // Bron bepalen
             val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia/Gemini AI" else "Pl@ntNet • Gemini AI"
             
-            finaleInfo.copy(naam = plantNaam, bron = bron)
+            finaleInfo.copy(naam = plantNaam, wetenschappelijkeNaam = plantNetResult.second, bron = bron)
         } catch (e: Exception) {
             Log.e("TuinMaat", "Fout in flow: ${e.message}")
             null
