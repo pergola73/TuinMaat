@@ -14,6 +14,10 @@ data class Plant(
     val bemesting: String = "",
     val snoeiInstructies: String = "",
     val snoeiAdvies: String = "",
+    val waterBehoefte: String = "",
+    val lichtBehoefte: String = "",
+    val voedingAdvies: String = "",
+    val ehboSignaal: String = "",
     val fotoUri: String? = null,
     val locatie: String = ""
 )

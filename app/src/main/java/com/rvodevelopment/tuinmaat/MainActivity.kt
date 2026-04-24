@@ -45,11 +45,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,17 +63,21 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import android.graphics.drawable.BitmapDrawable
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -105,6 +107,11 @@ import com.google.firebase.firestore.FieldValue
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                ZachtBeige.toArgb(), ZachtBeige.toArgb()
+            )
+        )
         super.onCreate(savedInstanceState)
 
         // Initialize Firebase App Check
@@ -119,9 +126,6 @@ class MainActivity : FragmentActivity() {
             }
         )
 
-        // Zorg ervoor dat de content achter de statusbalk kan lopen voor een modern uiterlijk
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
         setContent {
             TuinMaatTheme {
                 val view = LocalView.current
@@ -130,9 +134,6 @@ class MainActivity : FragmentActivity() {
                 if (!view.isInEditMode) {
                     SideEffect {
                         val window = (view.context as Activity).window
-                        // We zetten de kleur van de statusbalk op ZachtBeige
-                        window.statusBarColor = ZachtBeige.toArgb()
-
                         // forceer DONKERE iconen (zwart) in de statusbalk
                         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
                     }
@@ -180,6 +181,7 @@ fun LoginScherm(navController: NavController) {
     var email by rememberSaveable { mutableStateOf("") }
     var wachtwoord by rememberSaveable { mutableStateOf("") }
     var voornaam by rememberSaveable { mutableStateOf("") }
+    var achternaam by rememberSaveable { mutableStateOf("") }
     var isRegistreren by rememberSaveable { mutableStateOf(false) }
     var wachtwoordZichtbaar by rememberSaveable { mutableStateOf(false) }
     var isLaden by remember { mutableStateOf(false) }
@@ -239,7 +241,7 @@ fun LoginScherm(navController: NavController) {
 
     fun voerActieUit() {
         if (isRegistreren) {
-            if (email.isNotBlank() && wachtwoord.isNotBlank() && voornaam.isNotBlank()) {
+            if (email.isNotBlank() && wachtwoord.isNotBlank() && voornaam.isNotBlank() && achternaam.isNotBlank()) {
                 isLaden = true
                 auth.createUserWithEmailAndPassword(email, wachtwoord)
                     .addOnCompleteListener { task ->
@@ -253,6 +255,7 @@ fun LoginScherm(navController: NavController) {
                                 }
                             val profile = hashMapOf(
                                 "voornaam" to voornaam,
+                                "achternaam" to achternaam,
                                 "email" to email,
                                 "createdAt" to System.currentTimeMillis()
                             )
@@ -319,6 +322,25 @@ fun LoginScherm(navController: NavController) {
                 value = voornaam,
                 onValueChange = { voornaam = it },
                 label = { Text("Voornaam") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = DonkerGroen,
+                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                )
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = achternaam,
+                onValueChange = { achternaam = it },
+                label = { Text("Achternaam") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
@@ -551,6 +573,15 @@ fun HoofdMenu(navController: NavController) {
         }
     }
 
+    val tuintipViewModel: TuintipViewModel = viewModel()
+    val tuintip by tuintipViewModel.tuintip
+    val isTuintipLaden by tuintipViewModel.isLoading
+    var toonTuintip by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        tuintipViewModel.getTuintip()
+    }
+
     // Gebruik de nieuwe botanische achtergrond
     TuinAchtergrond {
         Column(
@@ -614,39 +645,66 @@ fun HoofdMenu(navController: NavController) {
 
                Spacer(modifier = Modifier.height(16.dp))
 
-                // De Glass-effect Badges (Planten teller)
-                Surface(
-                    color = Color.White.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(50.dp), // Pil-vorm
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
-                    modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(50.dp))
+                // De Glass-effect Badges (Planten teller) + Tuintip lampje
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    Surface(
+                        color = Color.White.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(50.dp), // Pil-vorm
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(50.dp))
                     ) {
-                        Icon(Icons.Default.LocalFlorist, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "${aantalPlanten.intValue} Planten in je collectie",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = DonkerGroen
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LocalFlorist,
+                                contentDescription = null,
+                                tint = DonkerGroen,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "${aantalPlanten.intValue} Planten",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DonkerGroen
+                            )
+                        }
+                    }
+
+                    if (!toonTuintip) {
+                        IconButton(
+                            onClick = { toonTuintip = true },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .neumorphicShadow(shape = CircleShape)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Lightbulb,
+                                contentDescription = "Toon Tuintip",
+                                tint = DonkerGroen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(56.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Actie titel
-            Text(
-                "Wat gaan we doen?",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = DonkerGroen,
-                letterSpacing = 1.sp
-            )
+            if (toonTuintip) {
+                TuintipCard(
+                    tip = tuintip,
+                    isLoading = isTuintipLaden,
+                    onDismiss = { toonTuintip = false }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -656,6 +714,126 @@ fun HoofdMenu(navController: NavController) {
             MenuKnop("Plant Toevoegen", Icons.Default.Add) { navController.navigate("toevoegen") }
             MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { navController.navigate("kalender") }
             MenuKnop("Instellingen", Icons.Default.Settings) { navController.navigate("instellingen") }
+
+            Spacer(modifier = Modifier.height(64.dp)) // Extra ruimte onderaan voor navigatiebalk
+        }
+    }
+}
+
+@Composable
+fun TuintipCard(tip: String, isLoading: Boolean, onDismiss: () -> Unit) {
+    val tuintipViewModel: TuintipViewModel = viewModel()
+
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Lightbulb,
+                        contentDescription = null,
+                        tint = DonkerGroen,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Tuintip",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = DonkerGroen
+                    )
+                }
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { tuintipViewModel.getVolgendeTip() },
+                        modifier = Modifier.size(32.dp),
+                        enabled = !isLoading
+                    ) {
+                        Icon(Icons.Default.ArrowForward, contentDescription = "Volgende tip", tint = DonkerGroen, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Sluiten", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = DonkerGroen,
+                        strokeWidth = 2.dp
+                    )
+                }
+            } else {
+                Text(
+                    text = tip,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
+            }
+        }
+    }
+}
+
+class TuintipViewModel : ViewModel() {
+    private val _tuintip = mutableStateOf("Laden...")
+    val tuintip: State<String> = _tuintip
+
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> = _isLoading
+
+    private var hasFetched = false
+
+    fun getTuintip() {
+        if (hasFetched) return
+        hasFetched = true
+        fetchTip()
+    }
+
+    fun getVolgendeTip() {
+        fetchTip()
+    }
+
+    private fun fetchTip() {
+        val vertexAI = Firebase.vertexAI
+        val generativeModel = vertexAI.generativeModel(modelName = "gemini-2.5-flash-lite")
+        
+        _isLoading.value = true
+        
+        val prompt = "Je bent een ervaren hovenier. Geef één korte, praktische tuintip voor een tuinier in Nederland. De tip mag over planten, onderhoud, gereedschap of seizoenen gaan. Houd de tip onder de 25 woorden en begin met een vrolijke emoji."
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = generativeModel.generateContent(prompt)
+                withContext(Dispatchers.Main) {
+                    _tuintip.value = response.text ?: "Geen tip gevonden."
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _tuintip.value = "Kon geen tip ophalen. Probeer het later opnieuw."
+                    _isLoading.value = false
+                }
+            }
         }
     }
 }
@@ -716,6 +894,10 @@ fun PlantToevoegenScherm(
     var naam by remember { mutableStateOf("") }
     var geselecteerdeLocatie by remember { mutableStateOf("") }
     var omschrijving by remember { mutableStateOf("") }
+    var waterBehoefte by remember { mutableStateOf("") }
+    var lichtBehoefte by remember { mutableStateOf("") }
+    var voedingAdvies by remember { mutableStateOf("") }
+    var ehboSignaal by remember { mutableStateOf("") }
     val geselecteerdeMaanden = remember { mutableStateListOf<String>() }
     var snoeiAdvies by remember { mutableStateOf("") }
     var beschikbareLocaties by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -747,6 +929,10 @@ fun PlantToevoegenScherm(
                         naam = plant.naam
                         geselecteerdeLocatie = plant.locatie
                         omschrijving = plant.omschrijving
+                        waterBehoefte = plant.waterBehoefte
+                        lichtBehoefte = plant.lichtBehoefte
+                        voedingAdvies = plant.voedingAdvies
+                        ehboSignaal = plant.ehboSignaal
                         // Parse string back to list
                         geselecteerdeMaanden.clear()
                         if (plant.snoeiMaand.isNotBlank()) {
@@ -776,11 +962,11 @@ fun PlantToevoegenScherm(
         ActivityResultContracts.TakePicturePreview()
     ) { result -> if (result != null) bitmap = result }
 
+    val context = LocalContext.current as FragmentActivity
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            val context = navController.context
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
                 bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
@@ -791,7 +977,6 @@ fun PlantToevoegenScherm(
         }
     }
 
-    val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -828,6 +1013,10 @@ fun PlantToevoegenScherm(
                                     "naam" to naam,
                                     "locatie" to geselecteerdeLocatie,
                                     "omschrijving" to omschrijving,
+                                    "waterBehoefte" to waterBehoefte,
+                                    "lichtBehoefte" to lichtBehoefte,
+                                    "voedingAdvies" to voedingAdvies,
+                                    "ehboSignaal" to ehboSignaal,
                                     "snoeiMaand" to geselecteerdeMaanden.joinToString(", "),
                                     "snoeiAdvies" to snoeiAdvies,
                                     "userId" to userId
@@ -968,6 +1157,10 @@ fun PlantToevoegenScherm(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
                                 naam = suggestie.naam
                                 omschrijving = suggestie.omschrijving
+                                waterBehoefte = suggestie.waterBehoefte
+                                lichtBehoefte = suggestie.lichtBehoefte
+                                voedingAdvies = suggestie.voedingAdvies
+                                ehboSignaal = suggestie.ehboSignaal
                                 snoeiAdvies = suggestie.snoeiAdvies
                                 
                                 // Parse AI maand suggesties naar chips
@@ -1018,6 +1211,27 @@ fun PlantToevoegenScherm(
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
+                // Tip bovenaan
+                Surface(
+                    color = DonkerGroen.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Voeg een foto van je plant toe, en laat AI alle informatie invullen",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DonkerGroen,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
                 // 1. Naam (Nu met InvoerVeldMetIcoon)
                 InvoerVeldMetIcoon(
                     label = "Naam",
@@ -1059,7 +1273,7 @@ fun PlantToevoegenScherm(
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = laatLocatieMenuZien) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.Black,
@@ -1144,6 +1358,10 @@ fun PlantToevoegenScherm(
                 }
                 
                 InvoerVeldMetIcoon("Snoeiadvies", snoeiAdvies, { snoeiAdvies = it }, Icons.Default.ContentCut, true)
+                InvoerVeldMetIcoon("Lichtbehoefte", lichtBehoefte, { lichtBehoefte = it }, Icons.Default.WbSunny)
+                InvoerVeldMetIcoon("Waterbehoefte", waterBehoefte, { waterBehoefte = it }, Icons.Default.WaterDrop)
+                InvoerVeldMetIcoon("Voedingsadvies", voedingAdvies, { voedingAdvies = it }, Icons.Default.Agriculture)
+                InvoerVeldMetIcoon("EHBO Signaal", ehboSignaal, { ehboSignaal = it }, Icons.Default.ReportProblem)
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -1182,7 +1400,7 @@ fun InvoerVeldMetIcoon(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
     val auth = Firebase.auth
@@ -1249,6 +1467,26 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                         }
+
+                        // Locatie overlay op foto
+                        if (p.locatie.isNotBlank()) {
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(end = 16.dp, bottom = 46.dp), // Verhoogd om boven info kaart te blijven
+                                color = DonkerGroen.copy(alpha = 0.7f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Place, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(p.locatie, color = Color.White, style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
                     }
 
                     // ... (Bovenkant van het scherm en Pager blijven gelijk)
@@ -1261,41 +1499,28 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
                             Text(text = p.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
-                            //Text(text = , style = MaterialTheme.typography.titleMedium, color = DonkerGroen.copy(alpha = 0.6f))
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // Badges
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                DetailBadge(Icons.Default.CalendarMonth, "Snoeimaand", p.snoeiMaand, Modifier.weight(1f)) {
-                                    navController.navigate("toevoegen?plantId=${p.firestoreId}&focus=snoeimaand")
-                                }
-                                DetailBadge(Icons.Default.Place, "Locatie", p.locatie, Modifier.weight(1f)) {
-                                    navController.navigate("toevoegen?plantId=${p.firestoreId}")
-                                }
+                            
+                            if (p.omschrijving.isNotBlank()) {
+                                Text(
+                                    text = p.omschrijving,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = DonkerGroen.copy(alpha = 0.7f),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(32.dp))
 
-                            // Omschrijving
-                            SectionHeader("Omschrijving")
-                            Text(
-                                text = if (p.omschrijving.isNotBlank()) p.omschrijving else "Geen omschrijving beschikbaar.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = DonkerGroen.copy(alpha = 0.8f),
-                                lineHeight = 22.sp
-                            )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // Snoeiadvies
-                            SectionHeader("Snoeiadvies")
-                            Text(
-                                text = if (p.snoeiAdvies.isNotBlank()) p.snoeiAdvies else "Geen specifiek snoeiadvies bekend.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = DonkerGroen.copy(alpha = 0.8f),
-                                lineHeight = 22.sp
-                            )
+                            // 6-punts Overzicht
+                            SectionHeader("Verzorging")
+                            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                                VerzorgingItem(Icons.Default.CalendarMonth, "Snoeimaand", p.snoeiMaand)
+                                VerzorgingItem(Icons.Default.ContentCut, "Snoeiadvies", p.snoeiAdvies)
+                                VerzorgingItem(Icons.Default.WbSunny, "Licht", p.lichtBehoefte)
+                                VerzorgingItem(Icons.Default.WaterDrop, "Water", p.waterBehoefte)
+                                VerzorgingItem(Icons.Default.Agriculture, "Voeding", p.voedingAdvies)
+                                VerzorgingItem(Icons.Default.ReportProblem, "EHBO", p.ehboSignaal)
+                            }
 
                             Spacer(modifier = Modifier.height(120.dp)) // Extra scrollruimte voor de vaste knop
                         }
@@ -1329,44 +1554,47 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
 }
 
 @Composable
+fun VerzorgingItem(icoon: ImageVector, label: String, waarde: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Surface(
+            modifier = Modifier.size(40.dp),
+            color = DonkerGroen.copy(alpha = 0.1f),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(20.dp))
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = DonkerGroen,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (waarde.isNotBlank()) waarde else "Geen info beschikbaar",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DonkerGroen.copy(alpha = 0.7f),
+                lineHeight = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
 fun SectionHeader(titel: String) {
     Text(
         text = titel,
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
         color = DonkerGroen,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(bottom = 12.dp)
     )
-}
-
-@Composable
-fun DetailBadge(icoon: ImageVector, label: String, waarde: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.neumorphicShadow(shape = RoundedCornerShape(16.dp)),
-        color = Color.White.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icoon, null, tint = GrasGroen, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            Text(waarde, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = DonkerGroen, textAlign = TextAlign.Center)
-        }
-    }
-}
-
-@Composable
-fun InfoSectie(titel: String, inhoud: String, icoon: ImageVector) {
-    Column(modifier = Modifier.padding(vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(titel, style = MaterialTheme.typography.labelLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
-        }
-        Text(inhoud, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 4.dp, start = 28.dp))
-    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -2117,6 +2345,10 @@ data class GeminiPlantResult(
     val omschrijving: String,
     val snoeiAdvies: String,
     val snoeiMaand: String,
+    val waterBehoefte: String,
+    val lichtBehoefte: String,
+    val voedingAdvies: String,
+    val ehboSignaal: String,
     val zoekTerm: String
 )
 
@@ -2133,17 +2365,29 @@ suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context)
             image(bitmap)
             text("""
                 Identificeer deze plant en geef 3 mogelijke resultaten terug.
+                Geef voor elk resultaat een 6-punts overzicht met de volgende velden:
+                1. Water: Hoe de grond moet aanvoelen (max 10 woorden).
+                2. Licht: De ideale standplaats (max 10 woorden).
+                3. Maand: De cruciale maanden voor snoeien of bloei (max 10 woorden).
+                4. Voeding: De energiebehoefte/bemesting (max 10 woorden).
+                5. EHBO: Belangrijke signalen dat er iets mis is (max 10 woorden).
+                6. Snoeiadvies: Hoe en wanneer te snoeien (max 10 woorden).
+
                 Geef het antwoord strikt in het volgende JSON formaat als een lijst van objecten:
                 [
                   {
                     "naam": "Naam van de plant",
-                    "omschrijving": "Korte omschrijving van de plant",
-                    "snoeiAdvies": "Kort advies over hoe te snoeien",
-                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'",
-                    "zoekTerm": "Eén specifieke zoekterm voor Google Afbeeldingen (bijv. 'Monstera Deliciosa')"
+                    "omschrijving": "Korte algemene omschrijving",
+                    "waterBehoefte": "Water advies (max 10 woorden)",
+                    "lichtBehoefte": "Licht advies (max 10 woorden)",
+                    "snoeiMaand": "Cruciale maanden, bijv. 'Maart, April'",
+                    "voedingAdvies": "Voeding advies (max 10 woorden)",
+                    "ehboSignaal": "EHBO signaal (max 10 woorden)",
+                    "snoeiAdvies": "Snoei advies (max 10 woorden)",
+                    "zoekTerm": "Eén specifieke zoekterm voor Google Afbeeldingen"
                   }
                 ]
-                Gebruik alleen de JSON structuur in je antwoord, geen extra tekst.
+                Gebruik alleen de JSON structuur in je antwoord, geen extra tekst. Gebruik Nederlands.
             """.trimIndent())
         }
 
@@ -2166,37 +2410,32 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
     val resultaten = mutableListOf<GeminiPlantResult>()
     try {
         // Robuustere parsing voor JSON met mogelijke line-breaks en spaties
-        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)",\s*"zoekTerm"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
-        val matches = objectRegex.findAll(json)
-        matches.forEach { match ->
-            val (naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm) = match.destructured
-            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm))
+        // We zoeken naar alle velden.
+        val namen = Regex(""""naam"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val water = Regex(""""waterBehoefte"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val licht = Regex(""""lichtBehoefte"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val voeding = Regex(""""voedingAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val ehbo = Regex(""""ehboSignaal"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        val zoekTermen = Regex(""""zoekTerm"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+        
+        for (i in 0 until minOf(namen.size, 3)) {
+            resultaten.add(GeminiPlantResult(
+                naam = namen.getOrElse(i) { "" },
+                omschrijving = omschrijvingen.getOrElse(i) { "" },
+                waterBehoefte = water.getOrElse(i) { "" },
+                lichtBehoefte = licht.getOrElse(i) { "" },
+                snoeiMaand = maanden.getOrElse(i) { "" },
+                voedingAdvies = voeding.getOrElse(i) { "" },
+                ehboSignaal = ehbo.getOrElse(i) { "" },
+                snoeiAdvies = adviezen.getOrElse(i) { "" },
+                zoekTerm = zoekTermen.getOrElse(i) { "" }
+            ))
         }
     } catch (e: Exception) {
         Log.e("TuinMaat", "Parsing error: ${e.message}")
-    }
-    
-    // Tweede poging: Zoek individuele velden als objecten niet in één keer matchen
-    if (resultaten.isEmpty()) {
-        try {
-            val namen = Regex(""""naam"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-            val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-            val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-            val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-            val zoekTermen = Regex(""""zoekTerm"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-            
-            for (i in 0 until minOf(namen.size, 3)) {
-                resultaten.add(GeminiPlantResult(
-                    namen.getOrElse(i) { "" },
-                    omschrijvingen.getOrElse(i) { "" },
-                    adviezen.getOrElse(i) { "" },
-                    maanden.getOrElse(i) { "" },
-                    zoekTermen.getOrElse(i) { "" }
-                ))
-            }
-        } catch (e: Exception) {
-            Log.e("TuinMaat", "Fallback parsing error: ${e.message}")
-        }
     }
     
     return resultaten.take(3)
