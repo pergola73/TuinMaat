@@ -987,6 +987,25 @@ fun PlantToevoegenScherm(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // Plant referentie afbeelding via loremflickr op basis van zoekTerm
+                                Surface(
+                                    modifier = Modifier.size(60.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp)),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = ZachtBeige
+                                ) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context)
+                                            .data("https://loremflickr.com/320/240/${suggestie.zoekTerm.replace(" ", ",")}")
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Referentiefoto",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(suggestie.naam, fontWeight = FontWeight.Bold, color = DonkerGroen)
                                     Text(suggestie.omschrijving, maxLines = 2, style = MaterialTheme.typography.bodySmall)
@@ -2097,7 +2116,8 @@ data class GeminiPlantResult(
     val naam: String,
     val omschrijving: String,
     val snoeiAdvies: String,
-    val snoeiMaand: String
+    val snoeiMaand: String,
+    val zoekTerm: String
 )
 
 // Helperfunctie voor Gemini AI plantidentificatie met Vertex AI in Firebase
@@ -2119,7 +2139,8 @@ suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context)
                     "naam": "Naam van de plant",
                     "omschrijving": "Korte omschrijving van de plant",
                     "snoeiAdvies": "Kort advies over hoe te snoeien",
-                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'"
+                    "snoeiMaand": "De beste maand(en) om te snoeien, bijv. 'Maart - April'",
+                    "zoekTerm": "Eén specifieke zoekterm voor Google Afbeeldingen (bijv. 'Monstera Deliciosa')"
                   }
                 ]
                 Gebruik alleen de JSON structuur in je antwoord, geen extra tekst.
@@ -2145,11 +2166,11 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
     val resultaten = mutableListOf<GeminiPlantResult>()
     try {
         // Robuustere parsing voor JSON met mogelijke line-breaks en spaties
-        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
+        val objectRegex = Regex("""\{"naam"\s*:\s*"(.*?)",\s*"omschrijving"\s*:\s*"(.*?)",\s*"snoeiAdvies"\s*:\s*"(.*?)",\s*"snoeiMaand"\s*:\s*"(.*?)",\s*"zoekTerm"\s*:\s*"(.*?)"\}""", RegexOption.DOT_MATCHES_ALL)
         val matches = objectRegex.findAll(json)
         matches.forEach { match ->
-            val (naam, omschrijving, snoeiAdvies, snoeiMaand) = match.destructured
-            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand))
+            val (naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm) = match.destructured
+            resultaten.add(GeminiPlantResult(naam, omschrijving, snoeiAdvies, snoeiMaand, zoekTerm))
         }
     } catch (e: Exception) {
         Log.e("TuinMaat", "Parsing error: ${e.message}")
@@ -2162,13 +2183,15 @@ fun parseGeminiJson(json: String): List<GeminiPlantResult> {
             val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
+            val zoekTermen = Regex(""""zoekTerm"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
             
             for (i in 0 until minOf(namen.size, 3)) {
                 resultaten.add(GeminiPlantResult(
                     namen.getOrElse(i) { "" },
                     omschrijvingen.getOrElse(i) { "" },
                     adviezen.getOrElse(i) { "" },
-                    maanden.getOrElse(i) { "" }
+                    maanden.getOrElse(i) { "" },
+                    zoekTermen.getOrElse(i) { "" }
                 ))
             }
         } catch (e: Exception) {

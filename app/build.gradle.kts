@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -18,8 +20,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Voeg de API key toe aan BuildConfig
-        val geminiApiKey: String = project.findProperty("GEMINI_API_KEY") as String? ?: ""
+        // Lees de API key uit local.properties (of gradle.properties als fallback)
+        val properties = Properties()
+        val localPropertiesFile = project.rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            properties.load(localPropertiesFile.inputStream())
+        }
+        val geminiApiKey: String = properties.getProperty("GEMINI_API_KEY") ?: (project.findProperty("GEMINI_API_KEY") as String? ?: "")
+
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
