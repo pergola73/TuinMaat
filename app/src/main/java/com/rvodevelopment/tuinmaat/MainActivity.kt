@@ -104,6 +104,15 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import com.google.firebase.firestore.FieldValue
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -954,8 +963,7 @@ fun PlantToevoegenScherm(
     }
 
     // Gemini AI State
-    var aiSuggesties by remember { mutableStateOf<List<GeminiPlantResult>>(emptyList()) }
-    var laatSuggestiesZien by remember { mutableStateOf(false) }
+    var aiResultaat by remember { mutableStateOf<GeminiPlantResult?>(null) }
     var isAIBezig by remember { mutableStateOf(false) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -1107,7 +1115,6 @@ fun PlantToevoegenScherm(
                             try {
                                 var bitmapToProcess = bitmap
                                 if (bitmapToProcess == null && bestaandeFotoUri != null) {
-                                    // Download en converteer bestaande foto naar bitmap voor AI
                                     val loader = ImageLoader(context)
                                     val request = ImageRequest.Builder(context)
                                         .data(bestaandeFotoUri)
@@ -1118,15 +1125,28 @@ fun PlantToevoegenScherm(
                                 }
 
                                 if (bitmapToProcess != null) {
-                                    val resultaten = zoekPlantInfoMetAI(bitmapToProcess, context)
-                                    if (resultaten.isNotEmpty()) {
-                                        aiSuggesties = resultaten
-                                        laatSuggestiesZien = true
+                                    val resultaat = identificeerPlantEnHaalInfoOp(bitmapToProcess, context)
+                                    if (resultaat != null) {
+                                        aiResultaat = resultaat
+                                        naam = resultaat.naam
+                                        omschrijving = resultaat.omschrijving
+                                        waterBehoefte = resultaat.waterBehoefte
+                                        lichtBehoefte = resultaat.lichtBehoefte
+                                        voedingAdvies = resultaat.voedingAdvies
+                                        ehboSignaal = resultaat.ehboSignaal
+                                        snoeiAdvies = resultaat.snoeiAdvies
+                                        
+                                        // Update snoeimaanden
+                                        geselecteerdeMaanden.clear()
+                                        maandenLijst.forEach { maand ->
+                                            if (resultaat.snoeiMaand.contains(maand, ignoreCase = true)) {
+                                                geselecteerdeMaanden.add(maand)
+                                            }
+                                        }
+                                        Toast.makeText(context, "Plant herkend via Pl@ntNet", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(context, "AI kon plant niet identificeren", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Plant kon niet worden geïdentificeerd", Toast.LENGTH_SHORT).show()
                                     }
-                                } else {
-                                    Toast.makeText(context, "Kon foto niet laden voor AI", Toast.LENGTH_SHORT).show()
                                 }
                             } catch (e: Exception) {
                                 Log.e("TuinMaat", "AI Error: ${e.message}")
@@ -1144,70 +1164,19 @@ fun PlantToevoegenScherm(
                     else {
                         Icon(Icons.Default.AutoAwesome, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Identificeer met Gemini AI", fontWeight = FontWeight.Bold)
+                        Text("Identificeer Plant", fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            if (laatSuggestiesZien) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    Text("Selecteer de juiste plant:", fontWeight = FontWeight.Bold, color = DonkerGroen)
-                    aiSuggesties.forEach { suggestie ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
-                                naam = suggestie.naam
-                                omschrijving = suggestie.omschrijving
-                                waterBehoefte = suggestie.waterBehoefte
-                                lichtBehoefte = suggestie.lichtBehoefte
-                                voedingAdvies = suggestie.voedingAdvies
-                                ehboSignaal = suggestie.ehboSignaal
-                                snoeiAdvies = suggestie.snoeiAdvies
-                                
-                                // Parse AI maand suggesties naar chips
-                                geselecteerdeMaanden.clear()
-                                maandenLijst.forEach { maand ->
-                                    if (suggestie.snoeiMaand.contains(maand, ignoreCase = true)) {
-                                        geselecteerdeMaanden.add(maand)
-                                    }
-                                }
-                                
-                                laatSuggestiesZien = false
-                            },
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            border = BorderStroke(1.dp, GrasGroen.copy(alpha = 0.5f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Plant referentie afbeelding via loremflickr op basis van zoekTerm
-                                Surface(
-                                    modifier = Modifier.size(60.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp)),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = ZachtBeige
-                                ) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data("https://loremflickr.com/320/240/${suggestie.zoekTerm.replace(" ", ",")}")
-                                            .crossfade(true)
-                                            .build(),
-                                        contentDescription = "Referentiefoto",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(suggestie.naam, fontWeight = FontWeight.Bold, color = DonkerGroen)
-                                    Text(suggestie.omschrijving, maxLines = 2, style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-                    TextButton(onClick = { laatSuggestiesZien = false }) { Text("Annuleren", color = Color.Gray) }
-                }
+            // Bronvermelding
+            aiResultaat?.let { result ->
+                Text(
+                    text = "Bron: ${result.bron}",
+                    fontSize = 10.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                )
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
@@ -2341,105 +2310,150 @@ fun PlantenLijstScherm(navController: NavController) {
 
 // Data class voor Gemini AI resultaten
 data class GeminiPlantResult(
-    val naam: String,
-    val omschrijving: String,
-    val snoeiAdvies: String,
-    val snoeiMaand: String,
-    val waterBehoefte: String,
-    val lichtBehoefte: String,
-    val voedingAdvies: String,
-    val ehboSignaal: String,
-    val zoekTerm: String
+    val naam: String = "",
+    val omschrijving: String = "",
+    val snoeiAdvies: String = "",
+    val snoeiMaand: String = "",
+    val waterBehoefte: String = "",
+    val lichtBehoefte: String = "",
+    val voedingAdvies: String = "",
+    val ehboSignaal: String = "",
+    val zoekTerm: String = "",
+    val bron: String = "Gemini AI"
 )
 
-// Helperfunctie voor Gemini AI plantidentificatie met Vertex AI in Firebase
-suspend fun zoekPlantInfoMetAI(bitmap: Bitmap, context: android.content.Context): List<GeminiPlantResult> {
-    return try {
-        // Gebruik Vertex AI van Firebase
-        val vertexAI = Firebase.vertexAI
-        val generativeModel = vertexAI.generativeModel(
-            modelName = "gemini-2.5-flash-lite"
-        )
-
-        val prompt = content {
-            image(bitmap)
-            text("""
-                Identificeer deze plant en geef 3 mogelijke resultaten terug.
-                Geef voor elk resultaat een 6-punts overzicht met de volgende velden:
-                1. Water: Hoe de grond moet aanvoelen (max 10 woorden).
-                2. Licht: De ideale standplaats (max 10 woorden).
-                3. Maand: De cruciale maanden voor snoeien of bloei (max 10 woorden).
-                4. Voeding: De energiebehoefte/bemesting (max 10 woorden).
-                5. EHBO: Belangrijke signalen dat er iets mis is (max 10 woorden).
-                6. Snoeiadvies: Hoe en wanneer te snoeien (max 10 woorden).
-
-                Geef het antwoord strikt in het volgende JSON formaat als een lijst van objecten:
-                [
-                  {
-                    "naam": "Naam van de plant",
-                    "omschrijving": "Korte algemene omschrijving",
-                    "waterBehoefte": "Water advies (max 10 woorden)",
-                    "lichtBehoefte": "Licht advies (max 10 woorden)",
-                    "snoeiMaand": "Cruciale maanden, bijv. 'Maart, April'",
-                    "voedingAdvies": "Voeding advies (max 10 woorden)",
-                    "ehboSignaal": "EHBO signaal (max 10 woorden)",
-                    "snoeiAdvies": "Snoei advies (max 10 woorden)",
-                    "zoekTerm": "Eén specifieke zoekterm voor Google Afbeeldingen"
-                  }
-                ]
-                Gebruik alleen de JSON structuur in je antwoord, geen extra tekst. Gebruik Nederlands.
-            """.trimIndent())
+// Helperfunctie voor gelaagde plantinformatie (Pl@ntNet -> Wikipedia -> Gemini)
+suspend fun identificeerPlantEnHaalInfoOp(bitmap: Bitmap, context: android.content.Context): GeminiPlantResult? {
+    return withContext(Dispatchers.IO) {
+        try {
+            // Stap 1: Pl@ntNet Identificatie
+            val plantNetResult = identificeerMetPlantNet(bitmap) ?: return@withContext null
+            val plantNaam = plantNetResult.first // Best scorende commonName of scientificName
+            
+            // Stap 2: Wikipedia Extractie
+            val wikipediaInfo = haalWikipediaInfoOp(plantNaam)
+            
+            // Stap 3: Gemini Verrijking
+            val finaleInfo = verrijkMetGemini(plantNaam, wikipediaInfo)
+            
+            // Bron bepalen
+            val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia/Gemini AI" else "Pl@ntNet • Gemini AI"
+            
+            finaleInfo.copy(naam = plantNaam, bron = bron)
+        } catch (e: Exception) {
+            Log.e("TuinMaat", "Fout in flow: ${e.message}")
+            null
         }
-
-        val response = withContext(Dispatchers.IO) {
-            generativeModel.generateContent(prompt)
-        }
-
-        val jsonText = response.text?.replace("```json", "")?.replace("```", "")?.trim() ?: "[]"
-        
-        // Simpele handmatige parsing of gebruik een JSON library als die beschikbaar is
-        // Voor nu een simpele extractie om externe afhankelijkheden te beperken
-        parseGeminiJson(jsonText)
-    } catch (e: Exception) {
-        Log.e("TuinMaat", "Gemini AI Fout: ${e.message}")
-        emptyList()
     }
 }
 
-fun parseGeminiJson(json: String): List<GeminiPlantResult> {
-    val resultaten = mutableListOf<GeminiPlantResult>()
-    try {
-        // Robuustere parsing voor JSON met mogelijke line-breaks en spaties
-        // We zoeken naar alle velden.
-        val namen = Regex(""""naam"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val omschrijvingen = Regex(""""omschrijving"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val water = Regex(""""waterBehoefte"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val licht = Regex(""""lichtBehoefte"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val maanden = Regex(""""snoeiMaand"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val voeding = Regex(""""voedingAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val ehbo = Regex(""""ehboSignaal"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val adviezen = Regex(""""snoeiAdvies"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        val zoekTermen = Regex(""""zoekTerm"\s*:\s*"(.*?)"""").findAll(json).map { it.groupValues[1] }.toList()
-        
-        for (i in 0 until minOf(namen.size, 3)) {
-            resultaten.add(GeminiPlantResult(
-                naam = namen.getOrElse(i) { "" },
-                omschrijving = omschrijvingen.getOrElse(i) { "" },
-                waterBehoefte = water.getOrElse(i) { "" },
-                lichtBehoefte = licht.getOrElse(i) { "" },
-                snoeiMaand = maanden.getOrElse(i) { "" },
-                voedingAdvies = voeding.getOrElse(i) { "" },
-                ehboSignaal = ehbo.getOrElse(i) { "" },
-                snoeiAdvies = adviezen.getOrElse(i) { "" },
-                zoekTerm = zoekTermen.getOrElse(i) { "" }
-            ))
-        }
-    } catch (e: Exception) {
-        Log.e("TuinMaat", "Parsing error: ${e.message}")
-    }
+private suspend fun identificeerMetPlantNet(bitmap: Bitmap): Pair<String, String>? {
+    val client = OkHttpClient()
     
-    return resultaten.take(3)
+    // Converteer bitmap naar byte array
+    val stream = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+    val byteArray = stream.toByteArray()
+    
+    val requestBody = MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("organs", "flower") // Default organ, Pl@ntNet verwacht dit
+        .addFormDataPart("images", "image.jpg", byteArray.toRequestBody("image/jpeg".toMediaType()))
+        .build()
+
+    val request = Request.Builder()
+        .url("https://my-api.plantnet.org/v2/identify/all?api-key=${BuildConfig.PLANTNET_API_KEY}&lang=nl")
+        .post(requestBody)
+        .build()
+
+    return try {
+        val response = client.newCall(request).execute()
+        val jsonResponse = response.body?.string() ?: ""
+        val jsonObject = JSONObject(jsonResponse)
+        val results = jsonObject.getJSONArray("results")
+        
+        if (results.length() > 0) {
+            val bestMatch = results.getJSONObject(0)
+            val species = bestMatch.getJSONObject("species")
+            val scientificName = species.getString("scientificNameWithoutAuthor")
+            val commonNames = species.optJSONArray("commonNames")
+            val commonName = if (commonNames != null && commonNames.length() > 0) commonNames.getString(0) else scientificName
+            
+            Pair(commonName, scientificName)
+        } else null
+    } catch (e: Exception) {
+        Log.e("TuinMaat", "Pl@ntNet Error: ${e.message}")
+        null
+    }
 }
+
+private suspend fun haalWikipediaInfoOp(naam: String): String? {
+    val client = OkHttpClient()
+    val url = "https://nl.wikipedia.org/api/rest_v1/page/summary/${naam.replace(" ", "_")}"
+    
+    val request = Request.Builder().url(url).build()
+    
+    return try {
+        val response = client.newCall(request).execute()
+        if (response.isSuccessful) {
+            val json = JSONObject(response.body?.string() ?: "")
+            json.optString("extract")
+        } else null
+    } catch (e: Exception) {
+        Log.e("TuinMaat", "Wikipedia Error: ${e.message}")
+        null
+    }
+}
+
+private suspend fun verrijkMetGemini(plantNaam: String, wikipediaInfo: String?): GeminiPlantResult {
+    val generativeModel = Firebase.vertexAI.generativeModel(modelName = "gemini-2.5-flash-lite")
+    
+    val wikiText = wikipediaInfo ?: "Geen Wikipedia informatie beschikbaar."
+    val prompt = """
+        Je bent een hovenier. Gebruik de Wikipedia-info: $wikiText. 
+        Vul aan voor $plantNaam: 
+        1. Water (vingertest), 
+        2. Licht (plek), 
+        3. Voeding (wanneer), 
+        4. EHBO (signaal), 
+        5. Snoeimaanden (lijst van maanden gescheiden door komma's), 
+        6. Snoei-instructie (korte hoveniers-tip max 15 woorden). 
+        Als Wikipedia onvoldoende info heeft, gebruik dan je eigen kennis. 
+        
+        Antwoord strikt in dit JSON formaat:
+        {
+          "waterBehoefte": "...",
+          "lichtBehoefte": "...",
+          "voedingAdvies": "...",
+          "ehboSignaal": "...",
+          "snoeiMaand": "Maand1, Maand2",
+          "snoeiAdvies": "...",
+          "omschrijving": "..."
+        }
+        Gebruik alleen de JSON structuur, geen extra tekst. Nederlands.
+    """.trimIndent()
+
+    return try {
+        val response = generativeModel.generateContent(prompt)
+        val jsonText = response.text?.replace("```json", "")?.replace("```", "")?.trim() ?: "{}"
+        val json = JSONObject(jsonText)
+        
+        GeminiPlantResult(
+            naam = plantNaam,
+            omschrijving = json.optString("omschrijving"),
+            waterBehoefte = json.optString("waterBehoefte"),
+            lichtBehoefte = json.optString("lichtBehoefte"),
+            voedingAdvies = json.optString("voedingAdvies"),
+            ehboSignaal = json.optString("ehboSignaal"),
+            snoeiMaand = json.optString("snoeiMaand"),
+            snoeiAdvies = json.optString("snoeiAdvies")
+        )
+    } catch (e: Exception) {
+        Log.e("TuinMaat", "Gemini Verrijking Error: ${e.message}")
+        GeminiPlantResult(naam = plantNaam, omschrijving = wikiText)
+    }
+}
+
 
 fun Modifier.neumorphicShadow(
     shape: Shape = RoundedCornerShape(20.dp),

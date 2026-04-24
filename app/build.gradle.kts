@@ -27,8 +27,10 @@ android {
             properties.load(localPropertiesFile.inputStream())
         }
         val geminiApiKey: String = properties.getProperty("GEMINI_API_KEY") ?: (project.findProperty("GEMINI_API_KEY") as String? ?: "")
+        val plantnetApiKey: String = properties.getProperty("PLANTNET_API_KEY") ?: (project.findProperty("PLANTNET_API_KEY") as String? ?: "")
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "PLANTNET_API_KEY", "\"$plantnetApiKey\"")
     }
 
     buildTypes {
