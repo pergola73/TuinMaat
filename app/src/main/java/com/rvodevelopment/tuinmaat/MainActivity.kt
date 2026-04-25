@@ -14,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.focus.FocusRequester
@@ -75,7 +74,6 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,7 +96,6 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 import com.google.firebase.vertexai.vertexAI
-import com.google.firebase.vertexai.type.content
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -110,10 +107,7 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -922,6 +916,7 @@ fun PlantToevoegenScherm(
     var naam by remember { mutableStateOf("") }
     var wetenschappelijkeNaam by remember { mutableStateOf("") }
     var geselecteerdeLocatie by remember { mutableStateOf("") }
+    var standaardLocatie by remember { mutableStateOf("") }
     var omschrijving by remember { mutableStateOf("") }
     var waterBehoefte by remember { mutableStateOf("") }
     var lichtBehoefte by remember { mutableStateOf("") }
@@ -955,6 +950,7 @@ fun PlantToevoegenScherm(
                 @Suppress("UNCHECKED_CAST")
                 val locs = gardenDoc.get("locaties") as? List<String> ?: listOf("Tuin")
                 beschikbareLocaties = locs
+                standaardLocatie = gardenDoc.getString("standaardLocatie") ?: ""
                 
                 if (bewerkPlantFirestoreId != null) {
                     isLaden = true
@@ -978,8 +974,13 @@ fun PlantToevoegenScherm(
                         snoeiAdvies = plant.snoeiAdvies
                         bestaandeFotoUri = plant.fotoUri
                     }
-                } else if (geselecteerdeLocatie.isEmpty() && locs.isNotEmpty()) {
-                    geselecteerdeLocatie = locs.first()
+                } else {
+                    // Bij nieuwe plant, gebruik standaardlocatie of eerste beschikbare
+                    if (standaardLocatie.isNotEmpty()) {
+                        geselecteerdeLocatie = standaardLocatie
+                    } else if (locs.isNotEmpty()) {
+                        geselecteerdeLocatie = locs.first()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("TuinMaat", "Fout bij laden data: ${e.message}")
@@ -989,23 +990,90 @@ fun PlantToevoegenScherm(
         }
     }
 
-    // Gemini AI State
     var aiResultaat by remember { mutableStateOf<GeminiPlantResult?>(null) }
     var isAIBezig by remember { mutableStateOf(false) }
+    val context = LocalContext.current as FragmentActivity
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
-    ) { result -> if (result != null) bitmap = result }
+    ) { result -> 
+        if (result != null) {
+            bitmap = result 
+            // Voer direct identificatie uit
+            coroutineScope.launch {
+                isAIBezig = true
+                try {
+                    val resultaat = identificeerPlantEnHaalInfoOp(result, context)
+                    if (resultaat != null) {
+                        aiResultaat = resultaat
+                        naam = resultaat.naam
+                        wetenschappelijkeNaam = resultaat.wetenschappelijkeNaam
+                        omschrijving = resultaat.omschrijving
+                        waterBehoefte = resultaat.waterBehoefte
+                        lichtBehoefte = resultaat.lichtBehoefte
+                        voedingAdvies = resultaat.voedingAdvies
+                        ehboSignaal = resultaat.ehboSignaal
+                        snoeiAdvies = resultaat.snoeiAdvies
+                        geselecteerdeMaanden.clear()
+                        if (resultaat.snoeiMaand.isNotBlank()) {
+                            val eersteMaand = resultaat.snoeiMaand.split(",").firstOrNull()?.trim()
+                            maandenLijst.firstOrNull { it.equals(eersteMaand, ignoreCase = true) }?.let {
+                                geselecteerdeMaanden.add(it)
+                            }
+                        }
+                        Toast.makeText(context, "Plant herkend via Pl@ntNet", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("TuinMaat", "Auto AI Error: ${e.message}")
+                } finally {
+                    isAIBezig = false
+                }
+            }
+        }
+    }
 
-    val context = LocalContext.current as FragmentActivity
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
-                bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                val selectedBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                bitmap = selectedBitmap
                 inputStream?.close()
+                
+                if (selectedBitmap != null) {
+                    // Voer direct identificatie uit
+                    coroutineScope.launch {
+                        isAIBezig = true
+                        try {
+                            val resultaat = identificeerPlantEnHaalInfoOp(selectedBitmap, context)
+                            if (resultaat != null) {
+                                aiResultaat = resultaat
+                                naam = resultaat.naam
+                                wetenschappelijkeNaam = resultaat.wetenschappelijkeNaam
+                                omschrijving = resultaat.omschrijving
+                                waterBehoefte = resultaat.waterBehoefte
+                                lichtBehoefte = resultaat.lichtBehoefte
+                                voedingAdvies = resultaat.voedingAdvies
+                                ehboSignaal = resultaat.ehboSignaal
+                                snoeiAdvies = resultaat.snoeiAdvies
+                                geselecteerdeMaanden.clear()
+                                if (resultaat.snoeiMaand.isNotBlank()) {
+                                    val eersteMaand = resultaat.snoeiMaand.split(",").firstOrNull()?.trim()
+                                    maandenLijst.firstOrNull { it.equals(eersteMaand, ignoreCase = true) }?.let {
+                                        geselecteerdeMaanden.add(it)
+                                    }
+                                }
+                                Toast.makeText(context, "Plant herkend via Pl@ntNet", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("TuinMaat", "Auto AI Error: ${e.message}")
+                        } finally {
+                            isAIBezig = false
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 Log.e("TuinMaat", "Error loading image: ${e.message}")
             }
@@ -1412,8 +1480,10 @@ fun InvoerVeldMetIcoon(
 fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
     val auth = Firebase.auth
     val db = Firebase.firestore
+    val scope = rememberCoroutineScope()
     var allePlanten by remember { mutableStateOf<List<Plant>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var showDeleteDialog by remember { mutableStateOf<Plant?>(null) }
 
     // 1. Haal de collectie op om te kunnen swipen
     LaunchedEffect(Unit) {
@@ -1473,6 +1543,13 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                             modifier = Modifier.statusBarsPadding().padding(16.dp).background(Color.White.copy(alpha = 0.5f), CircleShape)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                        }
+
+                        IconButton(
+                            onClick = { showDeleteDialog = p },
+                            modifier = Modifier.statusBarsPadding().align(Alignment.TopEnd).padding(16.dp).background(Color.White.copy(alpha = 0.5f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Delete, null, tint = Color.Red.copy(alpha = 0.8f))
                         }
 
                         // Locatie overlay op foto
@@ -1567,6 +1644,44 @@ fun PlantDetailScherm(initialPlantId: String?, navController: NavController) {
                     Text("Gegevens Bewerken", fontWeight = FontWeight.Bold)
                 }
             }
+        }
+
+        if (showDeleteDialog != null) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = null },
+                title = { Text("Plant Verwijderen") },
+                text = { Text("Weet je zeker dat je '${showDeleteDialog?.naam}' wilt verwijderen uit je tuin? Dit kan niet ongedaan worden gemaakt.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val plantToDelete = showDeleteDialog
+                            showDeleteDialog = null
+                            val userId = auth.currentUser?.uid ?: return@TextButton
+                            scope.launch {
+                                try {
+                                    val userDoc = db.collection("users").document(userId).get().await()
+                                    val gardenId = userDoc.getString("sharedGardenId") ?: userId
+                                    plantToDelete?.firestoreId?.let { id ->
+                                        db.collection("tuinen").document(gardenId).collection("planten").document(id).delete().await()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("TuinMaat", "Fout bij verwijderen: ${e.message}")
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Text("Verwijderen", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = null }) {
+                        Text("Annuleren", color = DonkerGroen)
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(24.dp)
+            )
         }
     }
 }
@@ -1857,6 +1972,7 @@ fun LocatieBeheerScherm(navController: NavController) {
     val auth = Firebase.auth
     val userId = auth.currentUser?.uid ?: ""
     var locaties by remember { mutableStateOf<List<String>>(emptyList()) }
+    var standaardLocatie by remember { mutableStateOf("") }
     var nieuweLocatie by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
@@ -1864,11 +1980,12 @@ fun LocatieBeheerScherm(navController: NavController) {
         try {
             val userDoc = db.collection("users").document(userId).get().await()
             val gardenId = userDoc.getString("sharedGardenId") ?: userId
-            db.collection("tuinen").document(gardenId).get().addOnSuccessListener { doc ->
-                @Suppress("UNCHECKED_CAST")
-                locaties = doc.get("locaties") as? List<String> ?: listOf("Tuin")
-            }.addOnFailureListener { e ->
-                Log.e("TuinMaat", "Fout bij laden locaties: ${e.message}")
+            db.collection("tuinen").document(gardenId).addSnapshotListener { doc, _ ->
+                if (doc != null) {
+                    @Suppress("UNCHECKED_CAST")
+                    locaties = doc.get("locaties") as? List<String> ?: listOf("Tuin")
+                    standaardLocatie = doc.getString("standaardLocatie") ?: ""
+                }
             }
         } catch (e: Exception) {
             Log.e("TuinMaat", "Fout bij ophalen gardenId voor locaties: ${e.message}")
@@ -1905,7 +2022,6 @@ fun LocatieBeheerScherm(navController: NavController) {
                             val gardenId = userDoc.getString("sharedGardenId") ?: userId
                             val updatedList = locaties + nieuweLocatie
                             db.collection("tuinen").document(gardenId).set(mapOf("locaties" to updatedList), SetOptions.merge())
-                            locaties = updatedList
                             nieuweLocatie = ""
                         }
                     }
@@ -1915,16 +2031,35 @@ fun LocatieBeheerScherm(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             locaties.forEach { loc ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    onClick = {
+                        scope.launch {
+                            val userDoc = db.collection("users").document(userId).get().await()
+                            val gardenId = userDoc.getString("sharedGardenId") ?: userId
+                            db.collection("tuinen").document(gardenId).update("standaardLocatie", loc)
+                        }
+                    }
+                ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(loc, modifier = Modifier.weight(1f))
+                        Icon(
+                            if (loc == standaardLocatie) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = null,
+                            tint = if (loc == standaardLocatie) Color(0xFFFFD700) else Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(loc, modifier = Modifier.weight(1f), fontWeight = if (loc == standaardLocatie) FontWeight.Bold else FontWeight.Normal)
                         IconButton(onClick = {
                             scope.launch {
                                 val userDoc = db.collection("users").document(userId).get().await()
                                 val gardenId = userDoc.getString("sharedGardenId") ?: userId
                                 val updatedList = locaties - loc
-                                db.collection("tuinen").document(gardenId).set(mapOf("locaties" to updatedList), SetOptions.merge())
-                                locaties = updatedList
+                                val updates = mutableMapOf<String, Any>("locaties" to updatedList)
+                                if (standaardLocatie == loc) {
+                                    updates["standaardLocatie"] = ""
+                                }
+                                db.collection("tuinen").document(gardenId).update(updates)
                             }
                         }) { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) }
                     }
@@ -2230,16 +2365,20 @@ fun PlantenLijstScherm(navController: NavController) {
     var allePlanten by remember { mutableStateOf<List<Plant>>(emptyList()) }
     var zoekTerm by remember { mutableStateOf("") }
     var tuinnaam by remember { mutableStateOf("Laden...") }
+    var locaties by remember { mutableStateOf<List<String>>(emptyList()) }
+    var geselecteerdeFilterLocatie by remember { mutableStateOf("Alle") }
 
     LaunchedEffect(Unit) {
         try {
             val userDoc = db.collection("users").document(userId).get().await()
             val gardenId = userDoc.getString("sharedGardenId") ?: userId
 
-            // 1. Luister naar de tuinnaam
+            // 1. Luister naar de tuinnaam en locaties
             db.collection("tuinen").document(gardenId).addSnapshotListener { gardenDoc, _ ->
                 if (gardenDoc != null && gardenDoc.exists()) {
                     tuinnaam = gardenDoc.getString("naam") ?: "Mijn Tuin"
+                    @Suppress("UNCHECKED_CAST")
+                    locaties = gardenDoc.get("locaties") as? List<String> ?: listOf("Tuin")
                 } else {
                     tuinnaam = "Mijn Tuin"
                 }
@@ -2260,8 +2399,10 @@ fun PlantenLijstScherm(navController: NavController) {
     }
 
     val gefilterdePlanten = allePlanten.filter { plant ->
-        plant.naam.contains(zoekTerm, ignoreCase = true) ||
+        val matchesSearch = plant.naam.contains(zoekTerm, ignoreCase = true) ||
                 plant.locatie.contains(zoekTerm, ignoreCase = true)
+        val matchesLocation = geselecteerdeFilterLocatie == "Alle" || plant.locatie == geselecteerdeFilterLocatie
+        matchesSearch && matchesLocation
     }
 
     // Gebruik de nieuwe wrapper voor de hele pagina
@@ -2288,6 +2429,64 @@ fun PlantenLijstScherm(navController: NavController) {
                 )
             }
 
+            // Locatie filters
+            androidx.compose.foundation.lazy.LazyRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    Surface(
+                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp)),
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.Transparent
+                    ) {
+                        FilterChip(
+                            selected = geselecteerdeFilterLocatie == "Alle",
+                            onClick = { geselecteerdeFilterLocatie = "Alle" },
+                            label = { Text("Alle") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = GrasGroen,
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.White.copy(alpha = 0.6f),
+                                labelColor = DonkerGroen
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = geselecteerdeFilterLocatie == "Alle",
+                                borderColor = Color.Transparent,
+                                selectedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+                }
+                items(locaties.size) { index ->
+                    val loc = locaties[index]
+                    Surface(
+                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp)),
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.Transparent
+                    ) {
+                        FilterChip(
+                            selected = geselecteerdeFilterLocatie == loc,
+                            onClick = { geselecteerdeFilterLocatie = loc },
+                            label = { Text(loc) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = GrasGroen,
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.White.copy(alpha = 0.6f),
+                                labelColor = DonkerGroen
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = geselecteerdeFilterLocatie == loc,
+                                borderColor = Color.Transparent,
+                                selectedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+                }
+            }
+
             // Neumorphic Zoekbalk
             Surface(
                 modifier = Modifier
@@ -2301,7 +2500,7 @@ fun PlantenLijstScherm(navController: NavController) {
                 TextField(
                     value = zoekTerm,
                     onValueChange = { zoekTerm = it },
-                    placeholder = { Text("Zoek op naam of plek...", color = DonkerGroen.copy(alpha = 0.5f)) },
+                    placeholder = { Text("Zoek op naam...", color = DonkerGroen.copy(alpha = 0.5f)) },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = DonkerGroen) },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
