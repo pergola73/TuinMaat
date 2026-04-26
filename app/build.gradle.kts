@@ -69,6 +69,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.biometric)
     implementation(libs.play.services.base)
+    implementation(libs.play.services.auth)
 
 
     // Firebase

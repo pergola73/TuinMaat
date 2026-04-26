@@ -63,6 +63,11 @@ fun SecurityWrapper(content: @Composable () -> Unit) {
                 securityType = snapshot?.getString("securityType") ?: "NONE"
                 savedPin = snapshot?.getString("securityPin") ?: ""
             }
+        } else {
+            // Als er geen gebruiker is, reset de beveiligingsstatus
+            securityType = "NONE"
+            savedPin = ""
+            isLocked = false
         }
     }
 

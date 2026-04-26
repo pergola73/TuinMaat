@@ -1,5 +1,32 @@
 package com.rvodevelopment.tuinmaat
 
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.storage
+import com.google.firebase.vertexai.vertexAI
+import com.google.firebase.appcheck.appCheck
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.FirebaseAuthActionCodeException
+import com.google.firebase.auth.FirebaseAuthEmailException
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.Dispatchers
+import androidx.lifecycle.ViewModel
+import coil.compose.AsyncImage
+import coil.ImageLoader
+import coil.request.ImageRequest
+import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
+import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -20,6 +47,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -74,34 +103,49 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.lifecycle.ViewModel
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.autofill.AutofillType
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
+import androidx.biometric.BiometricPrompt
+import androidx.biometric.BiometricManager
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.ImageLoader
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
-import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
-import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
-import com.rvodevelopment.tuinmaat.ui.theme.TuinMaatTheme
-import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
-import com.google.firebase.Firebase
-import com.google.firebase.appcheck.appCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
-import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.auth
-import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.firestore
-import com.google.firebase.storage.storage
-import com.google.firebase.vertexai.vertexAI
-import kotlinx.coroutines.Dispatchers
+import android.content.Context
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.ui.ExperimentalComposeUiApi
+import android.content.SharedPreferences
+import androidx.compose.ui.autofill.Autofill
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.compose.ui.res.painterResource
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.firestore.FieldValue
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
+import com.rvodevelopment.tuinmaat.ui.theme.TuinMaatTheme
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -118,10 +162,6 @@ class MainActivity : FragmentActivity() {
         )
         super.onCreate(savedInstanceState)
 
-        // Initialize Firebase App Check
-        // Firebase is initialized automatically, but if you need manual initialization:
-        // com.google.firebase.FirebaseApp.initializeApp(this)
-
         Firebase.appCheck.installAppCheckProviderFactory(
             if (BuildConfig.DEBUG) {
                 DebugAppCheckProviderFactory.getInstance()
@@ -133,17 +173,19 @@ class MainActivity : FragmentActivity() {
         setContent {
             TuinMaatTheme {
                 val view = LocalView.current
+                val navController = rememberNavController()
 
-                // Globale instelling voor de statusbalk iconen
+                LaunchedEffect(intent) {
+                    handleIntent(intent, navController)
+                }
+
                 if (!view.isInEditMode) {
                     SideEffect {
                         val window = (view.context as Activity).window
-                        // forceer DONKERE iconen (zwart) in de statusbalk
                         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
                     }
                 }
 
-                val navController = rememberNavController()
                 val auth = Firebase.auth
                 val startDestination = if (auth.currentUser != null) "hoofdmenu" else "login"
 
@@ -153,7 +195,10 @@ class MainActivity : FragmentActivity() {
                 ) {
                     SecurityWrapper {
                         NavHost(navController = navController, startDestination = startDestination) {
-                            composable("login") { LoginScherm(navController) }
+                            composable("login?autoBiometric={autoBiometric}") { backStackEntry ->
+                                val autoBiometric = backStackEntry.arguments?.getString("autoBiometric")?.toBoolean() ?: true
+                                LoginScherm(navController, autoBiometric)
+                            }
                             composable("hoofdmenu") { HoofdMenu(navController) }
                             composable("lijst") { PlantenLijstScherm(navController) }
                             composable("toevoegen?plantId={plantId}&focus={focus}") { backStackEntry ->
@@ -178,11 +223,56 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?, navController: NavController) {
+        val appLinkData = intent?.data
+        if (appLinkData != null && 
+            ((appLinkData.scheme == "tuinmaat" && appLinkData.host == "join") ||
+             (appLinkData.scheme == "https" && appLinkData.host == "tuinmaat.rvodevelopment.com" && appLinkData.path == "/join"))) {
+            val gardenId = appLinkData.getQueryParameter("id")
+            if (gardenId != null) {
+                val user = Firebase.auth.currentUser
+                if (user != null) {
+                    val db = Firebase.firestore
+                    lifecycleScope.launch {
+                        try {
+                            // Check of de tuin bestaat
+                            val gardenDoc = db.collection("tuinen").document(gardenId).get().await()
+                            if (gardenDoc.exists()) {
+                                db.collection("users").document(user.uid)
+                                    .update("sharedGardenId", gardenId)
+                                    .await()
+                                Toast.makeText(this@MainActivity, "Tuin succesvol gekoppeld!", Toast.LENGTH_LONG).show()
+                                navController.navigate("hoofdmenu") {
+                                    popUpTo(0)
+                                }
+                            } else {
+                                Toast.makeText(this@MainActivity, "Deze tuin bestaat niet meer.", Toast.LENGTH_LONG).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(this@MainActivity, "Fout bij koppelen: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } else {
+                    navController.navigate("login")
+                }
+            }
+        }
+    }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun LoginScherm(navController: NavController) {
-    var email by rememberSaveable { mutableStateOf("") }
+fun LoginScherm(navController: NavController, autoBiometric: Boolean = true) {
+    val context = LocalContext.current as FragmentActivity
+    val prefs: SharedPreferences = remember { context.getSharedPreferences("tuinmaat_prefs", Context.MODE_PRIVATE) }
+    
+    var email by rememberSaveable { mutableStateOf(prefs.getString("remembered_email", "") ?: "") }
     var wachtwoord by rememberSaveable { mutableStateOf("") }
     var voornaam by rememberSaveable { mutableStateOf("") }
     var achternaam by rememberSaveable { mutableStateOf("") }
@@ -190,11 +280,11 @@ fun LoginScherm(navController: NavController) {
     var wachtwoordZichtbaar by rememberSaveable { mutableStateOf(false) }
     var isLaden by remember { mutableStateOf(false) }
     var foutMelding by rememberSaveable { mutableStateOf<String?>(null) }
+    var onthoudEmail by remember { mutableStateOf(prefs.getBoolean("should_remember_email", false)) }
+    var biometrieIngeschakeld by remember { mutableStateOf(prefs.getBoolean("biometric_enabled", false)) }
 
     val auth = Firebase.auth
     val db = Firebase.firestore
-    val context = LocalContext.current as FragmentActivity
-    val focusManager = LocalFocusManager.current
 
     // Vertaalt technische Firebase fouten naar begrijpelijk Nederlands
     fun vertaalFoutmelding(exception: Exception?): String {
@@ -224,6 +314,114 @@ fun LoginScherm(navController: NavController) {
         }
     }
 
+    val focusManager = LocalFocusManager.current
+    val autofill = LocalAutofill.current
+    val autofillTree = LocalAutofillTree.current
+
+    val emailAutofillNode = remember {
+        AutofillNode(
+            autofillTypes = listOf(AutofillType.EmailAddress),
+            onFill = { email = it }
+        )
+    }
+    val passwordAutofillNode = remember {
+        AutofillNode(
+            autofillTypes = listOf(AutofillType.Password),
+            onFill = { wachtwoord = it }
+        )
+    }
+
+    SideEffect {
+        autofillTree += emailAutofillNode
+        autofillTree += passwordAutofillNode
+    }
+
+    val googleSignInClient = remember {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)!!
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                isLaden = true
+                auth.signInWithCredential(credential).addOnCompleteListener { authTask ->
+                    if (authTask.isSuccessful) {
+                        val user = auth.currentUser
+                        if (authTask.result.additionalUserInfo?.isNewUser == true) {
+                            val profile = hashMapOf(
+                                "voornaam" to (account.givenName ?: ""),
+                                "achternaam" to (account.familyName ?: ""),
+                                "email" to (account.email ?: ""),
+                                "createdAt" to System.currentTimeMillis()
+                            )
+                            db.collection("users").document(user!!.uid).set(profile)
+                                .addOnSuccessListener {
+                                    val tuin = hashMapOf("naam" to "Mijn Tuin", "locaties" to listOf("Tuin"))
+                                    db.collection("tuinen").document(user.uid).set(tuin, SetOptions.merge())
+                                    navController.navigate("hoofdmenu") { popUpTo(0) }
+                                }
+                        } else {
+                            navController.navigate("hoofdmenu") { popUpTo("login") { inclusive = true } }
+                        }
+                    } else {
+                        isLaden = false
+                        foutMelding = vertaalFoutmelding(authTask.exception)
+                    }
+                }
+            } catch (e: ApiException) {
+                foutMelding = "Google Login mislukt: ${e.message}"
+            }
+        }
+    }
+
+    fun launchBiometricPrompt() {
+        val biometricManager = BiometricManager.from(context)
+        if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS) {
+            val executor = ContextCompat.getMainExecutor(context)
+            val biometricPrompt = BiometricPrompt(context, executor, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    val savedEmail = prefs.getString("saved_email_biometric", "")
+                    val savedPass = prefs.getString("saved_pass_biometric", "")
+                    if (!savedEmail.isNullOrBlank() && !savedPass.isNullOrBlank()) {
+                        isLaden = true
+                        auth.signInWithEmailAndPassword(savedEmail, savedPass)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    navController.navigate("hoofdmenu") { popUpTo("login") { inclusive = true } }
+                                } else {
+                                    isLaden = false
+                                    foutMelding = "Automatisch inloggen mislukt. Log handmatig in."
+                                }
+                            }
+                    }
+                }
+            })
+
+            val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Inloggen bij TuinMaat")
+                .setSubtitle("Gebruik je vingerafdruk")
+                .setNegativeButtonText("Annuleren")
+                .build()
+
+            biometricPrompt.authenticate(promptInfo)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (biometrieIngeschakeld && autoBiometric) {
+            launchBiometricPrompt()
+        }
+    }
+
     fun herstelWachtwoord() {
         val emailAdres = email.trim()
         if (emailAdres.isBlank()) {
@@ -250,6 +448,15 @@ fun LoginScherm(navController: NavController) {
                 auth.createUserWithEmailAndPassword(email, wachtwoord)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            if (onthoudEmail) {
+                                prefs.edit().putString("remembered_email", email).apply()
+                            }
+                            if (biometrieIngeschakeld) {
+                                prefs.edit()
+                                    .putString("saved_email_biometric", email)
+                                    .putString("saved_pass_biometric", wachtwoord)
+                                    .apply()
+                            }
                             val user = auth.currentUser
                             user?.sendEmailVerification()
                                 ?.addOnCompleteListener { verificationTask ->
@@ -287,6 +494,17 @@ fun LoginScherm(navController: NavController) {
                 auth.signInWithEmailAndPassword(email, wachtwoord)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            if (onthoudEmail) {
+                                prefs.edit().putString("remembered_email", email).apply()
+                            } else {
+                                prefs.edit().remove("remembered_email").apply()
+                            }
+                            if (biometrieIngeschakeld) {
+                                prefs.edit()
+                                    .putString("saved_email_biometric", email)
+                                    .putString("saved_pass_biometric", wachtwoord)
+                                    .apply()
+                            }
                             navController.navigate("hoofdmenu") { popUpTo("login") { inclusive = true } }
                         } else {
                             isLaden = false
@@ -365,7 +583,14 @@ fun LoginScherm(navController: NavController) {
             value = email,
             onValueChange = { email = it; foutMelding = null },
             label = { Text("E-mailadres") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { emailAutofillNode.boundingBox = it.boundsInWindow() }
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        autofill?.requestAutofillForNode(emailAutofillNode)
+                    }
+                },
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -386,7 +611,14 @@ fun LoginScherm(navController: NavController) {
             value = wachtwoord,
             onValueChange = { wachtwoord = it; foutMelding = null },
             label = { Text("Wachtwoord") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { passwordAutofillNode.boundingBox = it.boundsInWindow() }
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        autofill?.requestAutofillForNode(passwordAutofillNode)
+                    }
+                },
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             visualTransformation = if (wachtwoordZichtbaar) VisualTransformation.None else PasswordVisualTransformation(),
@@ -414,6 +646,47 @@ fun LoginScherm(navController: NavController) {
                 unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
             )
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = onthoudEmail,
+                    onValueChange = { 
+                        onthoudEmail = it
+                        prefs.edit().putBoolean("should_remember_email", it).apply()
+                    },
+                    role = Role.Checkbox
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(checked = onthoudEmail, onCheckedChange = null)
+            Text("E-mailadres onthouden", color = DonkerGroen, modifier = Modifier.padding(start = 8.dp))
+        }
+
+        val biometricManager = BiometricManager.from(context)
+        if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .toggleable(
+                        value = biometrieIngeschakeld,
+                        onValueChange = { 
+                            biometrieIngeschakeld = it
+                            prefs.edit().putBoolean("biometric_enabled", it).apply()
+                        },
+                        role = Role.Checkbox
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(checked = biometrieIngeschakeld, onCheckedChange = null)
+                Icon(Icons.Default.Fingerprint, null, tint = DonkerGroen, modifier = Modifier.padding(start = 8.dp).size(20.dp))
+                Text("Inloggen met vingerafdruk", color = DonkerGroen, modifier = Modifier.padding(start = 4.dp))
+            }
+        }
 
         if (foutMelding != null) {
             Text(
@@ -453,6 +726,28 @@ fun LoginScherm(navController: NavController) {
                 if (isRegistreren) "Heb je al een account? Log in" else "Nog geen account? Registreer hier",
                 color = DonkerGroen
             )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), thickness = 1.dp, color = DonkerGroen.copy(alpha = 0.2f))
+
+        OutlinedButton(
+            onClick = { googleSignInLauncher.launch(googleSignInClient.signInIntent) },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, DonkerGroen),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = DonkerGroen)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.AccountCircle, // Gebruik AccountCircle als tijdelijk icoon
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(if (isRegistreren) "Google Account" else "Inloggen met Google", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -591,6 +886,7 @@ fun HoofdMenu(navController: NavController) {
     val tuintip by tuintipViewModel.tuintip
     val isTuintipLaden by tuintipViewModel.isLoading
     var toonTuintip by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         tuintipViewModel.getTuintip()
@@ -605,6 +901,68 @@ fun HoofdMenu(navController: NavController) {
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Snel wisselen tussen tuinen
+            if (auth.currentUser != null) {
+                var eigenGid by remember { mutableStateOf<String?>(null) }
+                var gekoppeldeGid by remember { mutableStateOf<String?>(null) }
+                var actieveGid by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(Unit) {
+                    val uid = auth.currentUser?.uid ?: return@LaunchedEffect
+                    eigenGid = uid
+                    db.collection("users").document(uid).addSnapshotListener { userDoc, _ ->
+                        gekoppeldeGid = userDoc?.getString("sharedGardenId")
+                        actieveGid = gekoppeldeGid ?: eigenGid
+                    }
+                }
+
+                if (gekoppeldeGid != null && gekoppeldeGid != eigenGid) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        db.collection("users").document(auth.currentUser!!.uid).update("sharedGardenId", eigenGid)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).height(40.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (actieveGid == eigenGid) GrasGroen else Color.Transparent,
+                                    contentColor = if (actieveGid == eigenGid) Color.White else DonkerGroen
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text("Mijn Tuin", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        db.collection("users").document(auth.currentUser!!.uid).update("sharedGardenId", gekoppeldeGid)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).height(40.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (actieveGid == gekoppeldeGid) GrasGroen else Color.Transparent,
+                                    contentColor = if (actieveGid == gekoppeldeGid) Color.White else DonkerGroen
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text("Gedeelde Tuin", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
             // 1. Logo (iets subtieler bovenaan)
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
                 Icon(
@@ -1838,7 +2196,7 @@ fun InstellingenScherm(navController: NavController) {
             Button(
                 onClick = {
                     Firebase.auth.signOut()
-                    navController.navigate("login") { popUpTo(0) }
+                    navController.navigate("login?autoBiometric=false") { popUpTo(0) }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f), contentColor = Color.Red)
@@ -2120,36 +2478,48 @@ fun ProfielBewerkenScherm(navController: NavController) {
                 OutlinedTextField(
                     value = voornaam,
                     onValueChange = { voornaam = it },
-                    label = { Text("Voornaam") },
+                    label = { Text("Voornaam", color = DonkerGroen) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.8f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.8f)
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
                     )
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = achternaam,
                     onValueChange = { achternaam = it },
-                    label = { Text("Achternaam") },
+                    label = { Text("Achternaam", color = DonkerGroen) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.8f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.8f)
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
                     )
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = tuinnaam,
                     onValueChange = { tuinnaam = it },
-                    label = { Text("Tuinnaam") },
+                    label = { Text("Tuinnaam", color = DonkerGroen) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.8f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.8f)
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
                     )
                 )
 
@@ -2231,89 +2601,48 @@ fun TuinDelenScherm(navController: NavController) {
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
-                Text("Deel je tuin", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                Text("Samen tuinieren", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
                 Text(
-                    "Geef onderstaande ID aan iemand anders om samen in jouw tuin te werken.",
+                    "Stuur een uitnodiging naar iemand anders om samen in jouw tuin te werken. De ontvanger hoeft alleen op de link te klikken.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = DonkerGroen.copy(alpha = 0.7f),
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
-                Surface(
-                    color = Color.White.copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(vertical = 16.dp).fillMaxWidth()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(12.dp)) {
-                        SelectionContainer {
-                            Text(userId, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), color = DonkerGroen)
-                        }
-                        IconButton(onClick = {
-                            val sendIntent: Intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, userId)
-                                type = "text/plain"
-                            }
-                            val shareIntent = Intent.createChooser(sendIntent, null)
-                            context.startActivity(shareIntent)
-                        }) { Icon(Icons.Default.Share, "Deel ID", tint = DonkerGroen) }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text("Koppel aan een andere tuin", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
-                Text(
-                    "Vul hier de ID in van de tuin die je wilt beheren.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DonkerGroen.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-
-                OutlinedTextField(
-                    value = gardenIdToJoin,
-                    onValueChange = { gardenIdToJoin = it },
-                    label = { Text("Voer Tuin ID in") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.8f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.8f)
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     onClick = {
-                        scope.launch {
-                            if (gardenIdToJoin.isNotBlank()) {
-                                isLaden = true
-                                try {
-                                    db.collection("users").document(userId)
-                                        .update("sharedGardenId", gardenIdToJoin)
-                                        .await()
-                                    Toast.makeText(context, "Tuin gekoppeld!", Toast.LENGTH_SHORT).show()
-                                    isGekoppeld = true
-                                    navController.popBackStack()
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "ID niet gevonden", Toast.LENGTH_SHORT).show()
-                                } finally { isLaden = false }
-                            }
+                        val shareUrl = "https://tuinmaat.rvodevelopment.com/join?id=$userId"
+                        val sendIntent: Intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, "Wil je samen met mij aan mijn tuin werken in TuinMaat? Klik op deze link: $shareUrl")
+                            type = "text/plain"
                         }
+                        val shareIntent = Intent.createChooser(sendIntent, "Deel je tuin via...")
+                        context.startActivity(shareIntent)
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
-                    enabled = !isLaden
+                    modifier = Modifier.fillMaxWidth().height(64.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
                 ) {
-                    if (isLaden) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    else Text("Koppel Tuin", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Share, null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Verstuur Uitnodiging", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
 
-                Spacer(modifier = Modifier.height(120.dp))
+                Spacer(modifier = Modifier.height(48.dp))
+                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(32.dp))
+
+                if (!isGekoppeld) {
+                    Text(
+                        "Je beheert momenteel je eigen tuin. Zodra je een uitnodiging van iemand anders accepteert, kun je hier ook hun tuin zien.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DonkerGroen.copy(alpha = 0.6f),
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
             }
         }
 

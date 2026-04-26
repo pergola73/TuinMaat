@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TuinMaat</string>
+    <string name="default_web_client_id" translatable="false">408553659599-336i1t1gibivhh54svaujc0kbvkf1b61.apps.googleusercontent.com</string>
 </resources>
