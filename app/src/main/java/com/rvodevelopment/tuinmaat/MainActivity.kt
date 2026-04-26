@@ -187,7 +187,11 @@ class MainActivity : FragmentActivity() {
                 }
 
                 val auth = Firebase.auth
-                val startDestination = if (auth.currentUser != null) "hoofdmenu" else "login"
+                val prefs = getSharedPreferences("tuinmaat_prefs", Context.MODE_PRIVATE)
+                val biometrieIngeschakeld = prefs.getBoolean("biometric_enabled", false)
+                
+                // Als biometrie aan staat, start altijd op login scherm voor verificatie
+                val startDestination = if (auth.currentUser != null && !biometrieIngeschakeld) "hoofdmenu" else "login"
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
