@@ -187,7 +187,11 @@ class MainActivity : FragmentActivity() {
                 }
 
                 val auth = Firebase.auth
-                val startDestination = if (auth.currentUser != null) "hoofdmenu" else "login"
+                val prefs = getSharedPreferences("tuinmaat_prefs", Context.MODE_PRIVATE)
+                val biometrieIngeschakeld = prefs.getBoolean("biometric_enabled", false)
+                
+                // Als biometrie aan staat, start altijd op login scherm voor verificatie
+                val startDestination = if (auth.currentUser != null && !biometrieIngeschakeld) "hoofdmenu" else "login"
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -378,7 +382,13 @@ fun LoginScherm(navController: NavController, autoBiometric: Boolean = true) {
                     }
                 }
             } catch (e: ApiException) {
-                foutMelding = "Google Login mislukt: ${e.message}"
+                Log.e("TuinMaatAuth", "Google Login ApiException: Code ${e.statusCode}, Message: ${e.message}")
+                foutMelding = when (e.statusCode) {
+                    10 -> "Google Login configuratiefout (Code 10). Controleer of de SHA-1 vingerafdruk in de Firebase Console staat."
+                    7 -> "Netwerkfout bij inloggen met Google."
+                    12501 -> "Google Login geannuleerd."
+                    else -> "Google Login mislukt (${e.statusCode}): ${e.message}"
+                }
             }
         }
     }
