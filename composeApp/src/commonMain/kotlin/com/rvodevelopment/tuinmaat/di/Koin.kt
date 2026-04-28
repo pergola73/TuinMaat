@@ -1,0 +1,58 @@
+package com.rvodevelopment.tuinmaat.di
+
+import io.ktor.client.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.*
+import com.rvodevelopment.tuinmaat.repository.*
+import com.rvodevelopment.tuinmaat.service.*
+import com.rvodevelopment.tuinmaat.data.*
+import com.rvodevelopment.tuinmaat.ui.viewmodel.*
+import org.koin.core.context.startKoin
+import org.koin.core.module.Module
+import org.koin.dsl.KoinAppDeclaration
+import org.koin.dsl.module
+
+fun initKoin(appDeclaration: KoinAppDeclaration = {}) =
+    startKoin {
+        appDeclaration()
+        modules(commonModule(), platformModule())
+    }
+
+// called by iOS etc
+fun initKoin() = initKoin {}
+
+fun commonModule() = module {
+    single { 
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                })
+            }
+        }
+    }
+    single { MessageService() }
+    single { DeepLinkHandler(get(), get(), get()) }
+    single<TuintipService> { DefaultTuintipService() }
+    single<UserRepository> { FirebaseUserRepository() }
+    single<TuinRepository> { FirebaseTuinRepository() }
+    single<AuthService> { FirebaseAuthService() }
+    single<StorageService> { FirebaseStorageService() }
+    single { get<PlantDatabase>().plantDao() }
+    single<AiService> { CommonAiService(
+        client = get(),
+        plantnetApiKey = get(org.koin.core.qualifier.named("PLANTNET_API_KEY")),
+        geminiApiKey = get(org.koin.core.qualifier.named("GEMINI_API_KEY"))
+    ) }
+    factory { LoginViewModel(get(), get(), get()) }
+    factory { HoofdMenuViewModel(get(), get(), get(), get()) }
+    factory { PlantenLijstViewModel(get(), get(), get()) }
+    factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), plantId) }
+    factory { SnoeiKalenderViewModel(get(), get(), get()) }
+    factory { InstellingenViewModel(get(), get(), get()) }
+}
+
+expect fun platformModule(): Module

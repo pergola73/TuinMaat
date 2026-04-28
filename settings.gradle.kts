@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TuinMaat"
 include(":app")
+include(":composeApp")

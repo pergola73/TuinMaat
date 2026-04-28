@@ -1,0 +1,243 @@
+package com.rvodevelopment.tuinmaat.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.rvodevelopment.tuinmaat.ui.components.MenuKnop
+import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
+import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
+import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
+import com.rvodevelopment.tuinmaat.ui.viewmodel.HoofdMenuViewModel
+
+@Composable
+fun HoofdMenuScherm(
+    viewModel: HoofdMenuViewModel,
+    onNavigate: (String) -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    var toonTuintip by remember { mutableStateOf(true) }
+
+    TuinAchtergrond {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Garden Switcher
+            if (state.gekoppeldeGid != null && state.gekoppeldeGid != state.eigenGid) {
+                Surface(
+                    color = Color.White.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { state.eigenGid?.let { viewModel.switchGarden(it) } },
+                            modifier = Modifier.weight(1f).height(40.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (state.actieveGid == state.eigenGid) GrasGroen else Color.Transparent,
+                                contentColor = if (state.actieveGid == state.eigenGid) Color.White else DonkerGroen
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("Mijn Tuin", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = { state.gekoppeldeGid?.let { viewModel.switchGarden(it) } },
+                            modifier = Modifier.weight(1f).height(40.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (state.actieveGid == state.gekoppeldeGid) GrasGroen else Color.Transparent,
+                                contentColor = if (state.actieveGid == state.gekoppeldeGid) Color.White else DonkerGroen
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("Gedeelde Tuin", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            // Logo
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
+                Icon(
+                    Icons.Default.Park,
+                    contentDescription = null,
+                    tint = DonkerGroen.copy(alpha = 0.2f),
+                    modifier = Modifier.size(60.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Header Section
+            Column {
+                Text(
+                    text = "Hallo ${state.voornaam}, welkom in",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = DonkerGroen.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    text = state.tuinnaam,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DonkerGroen,
+                    lineHeight = 42.sp
+                )
+
+                if (state.eigenaarNaam != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.People,
+                            contentDescription = null,
+                            tint = DonkerGroen.copy(alpha = 0.4f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Tuin van ${state.eigenaarNaam}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DonkerGroen.copy(alpha = 0.4f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Stats and Tuintip Toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(50.dp),
+                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(50.dp))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LocalFlorist,
+                                contentDescription = null,
+                                tint = DonkerGroen,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "${state.aantalPlanten} Planten",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DonkerGroen
+                            )
+                        }
+                    }
+
+                    if (!toonTuintip) {
+                        IconButton(
+                            onClick = { toonTuintip = true },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .neumorphicShadow(shape = CircleShape)
+                                .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Lightbulb,
+                                contentDescription = "Toon Tuintip",
+                                tint = DonkerGroen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (toonTuintip) {
+                TuintipCard(
+                    tip = state.tuintip,
+                    isLoading = state.isTuintipLaden,
+                    onDismiss = { toonTuintip = false }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Menu Items
+            MenuKnop("Mijn Planten", Icons.AutoMirrored.Filled.List) { onNavigate("lijst") }
+            MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
+            MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("kalender") }
+            MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
+
+            Spacer(modifier = Modifier.height(64.dp))
+        }
+    }
+}
+
+@Composable
+fun TuintipCard(
+    tip: String,
+    isLoading: Boolean,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        color = Color.White.copy(alpha = 0.8f),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .neumorphicShadow(shape = RoundedCornerShape(16.dp))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = DonkerGroen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Tuintip van de dag", fontWeight = FontWeight.Bold, color = DonkerGroen)
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Sluiten", tint = DonkerGroen.copy(alpha = 0.5f))
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DonkerGroen)
+            } else {
+                Text(tip, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+            }
+        }
+    }
+}
