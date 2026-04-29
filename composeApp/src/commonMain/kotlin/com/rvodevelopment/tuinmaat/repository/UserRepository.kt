@@ -1,14 +1,22 @@
 package com.rvodevelopment.tuinmaat.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class UserData(
-    val voornaam: String,
-    val achternaam: String,
-    val email: String,
+    val id: String = "",
+    val voornaam: String = "",
+    val achternaam: String = "",
+    val email: String = "",
+    @SerialName("tuinNaam")
     val tuinnaam: String = "Mijn Tuin",
     val sharedGardenId: String? = null,
     val biometrieIngeschakeld: Boolean = false,
+    val securityType: String = "NONE",
+    val securityPin: String = "",
+    val activeGardenId: String? = null,
     val locaties: List<String> = listOf("Tuin", "Balkon", "Kas"),
     val standaardLocatie: String = "Tuin"
 )
@@ -20,4 +28,5 @@ interface UserRepository {
     suspend fun updateBiometrie(uid: String, ingeschakeld: Boolean): Result<Unit>
     suspend fun updateLocaties(uid: String, locaties: List<String>, standaardLocatie: String): Result<Unit>
     suspend fun unlinkGarden(uid: String): Result<Unit>
+    suspend fun setActiveGarden(uid: String, gardenId: String): Result<Unit>
 }

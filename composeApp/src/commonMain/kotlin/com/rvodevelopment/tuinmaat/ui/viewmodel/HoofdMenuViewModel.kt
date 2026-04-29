@@ -38,13 +38,14 @@ class HoofdMenuViewModel(
 
     private fun observeUserData() {
         viewModelScope.launch {
-            authService.currentUser.collect { user ->
+            authService.currentUser.collectLatest { user ->
                 if (user != null) {
-                    userRepository.getUserData(user.uid).collect { userData ->
+                    userRepository.getUserData(user.uid).collectLatest { userData ->
                         if (userData != null) {
                             val activeGid = userData.sharedGardenId ?: user.uid
                             _state.update { it.copy(
                                 voornaam = userData.voornaam,
+                                tuinnaam = userData.tuinnaam,
                                 gekoppeldeGid = userData.sharedGardenId,
                                 eigenGid = user.uid,
                                 actieveGid = activeGid
@@ -61,8 +62,6 @@ class HoofdMenuViewModel(
     private fun observeGardenData(gardenId: String) {
         gardenJob?.cancel()
         gardenJob = viewModelScope.launch {
-            // We need to add getGardenData and getPlanten to TuinRepository
-            // For now, I'll just use getPlanten to get the count
             tuinRepository.getPlanten(gardenId).collect { planten ->
                 _state.update { it.copy(aantalPlanten = planten.size) }
             }

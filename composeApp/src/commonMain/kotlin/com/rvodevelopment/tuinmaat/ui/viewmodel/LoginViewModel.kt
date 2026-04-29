@@ -12,7 +12,8 @@ import androidx.lifecycle.viewModelScope
 class LoginViewModel(
     private val authService: AuthService,
     private val biometricService: BiometricService,
-    private val storageService: StorageService
+    private val storageService: StorageService,
+    private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository
 ) : ViewModel() {
 
     private val _email = MutableStateFlow(storageService.getString("remembered_email", ""))
@@ -70,8 +71,10 @@ class LoginViewModel(
                 }
                 _isLaden.value = true
                 authService.signUp(_email.value, _wachtwoord.value, _voornaam.value, _achternaam.value)
-                    .onSuccess {
+                    .onSuccess { profile ->
                         savePrefs()
+                        // Na registratie migratie draaien (ook al is er waarschijnlijk nog niks)
+                        tuinRepository.migrateLegacyData(profile.uid, profile.uid)
                         onSuccess()
                     }
                     .onFailure { _foutMelding.value = it.message }
@@ -82,8 +85,10 @@ class LoginViewModel(
                 }
                 _isLaden.value = true
                 authService.signIn(_email.value, _wachtwoord.value)
-                    .onSuccess {
+                    .onSuccess { profile ->
                         savePrefs()
+                        // Migreer data na inloggen
+                        tuinRepository.migrateLegacyData(profile.uid, profile.uid)
                         onSuccess()
                     }
                     .onFailure { _foutMelding.value = it.message }
@@ -104,7 +109,11 @@ class LoginViewModel(
         viewModelScope.launch {
             _isLaden.value = true
             authService.signInWithGoogle()
-                .onSuccess { onSuccess() }
+                .onSuccess { profile ->
+                    // Migreer data na inloggen
+                    tuinRepository.migrateLegacyData(profile.uid, profile.uid)
+                    onSuccess()
+                }
                 .onFailure { _foutMelding.value = it.message }
             _isLaden.value = false
         }

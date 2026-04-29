@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
@@ -43,14 +44,21 @@ fun PlantKaart(plant: Plant, onNavigateToDetail: (String) -> Unit) {
                 color = Color.White.copy(alpha = 0.4f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
             ) {
-                // Image loading will be handled differently in KMP (e.g., using Coil3 or Compose ImageLoader)
-                // For now, we'll use a placeholder
-                Icon(
-                    Icons.Default.LocalFlorist,
-                    contentDescription = null,
-                    tint = DonkerGroen.copy(alpha = 0.3f),
-                    modifier = Modifier.padding(12.dp)
-                )
+                if (plant.fotoUri != null) {
+                    AsyncImage(
+                        model = plant.fotoUri,
+                        contentDescription = "Plant foto",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.LocalFlorist,
+                        contentDescription = null,
+                        tint = DonkerGroen.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))

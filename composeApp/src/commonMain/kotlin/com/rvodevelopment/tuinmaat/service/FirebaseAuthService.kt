@@ -36,7 +36,7 @@ class FirebaseAuthService : AuthService {
                 "achternaam" to achternaam,
                 "email" to email
             )
-            firestore.collection("gebruikers").document(user.uid).set(profile)
+            firestore.collection("users").document(user.uid).set(profile)
             
             Result.success(UserProfile(user.uid, email, voornaam, achternaam))
         } catch (e: Exception) {
@@ -45,7 +45,35 @@ class FirebaseAuthService : AuthService {
     }
 
     override suspend fun signInWithGoogle(): Result<UserProfile> {
-        return Result.failure(Exception("Google Sign-In vereist platform-specifieke implementatie"))
+        return try {
+            val idToken = getGoogleIdToken() ?: throw Exception("Google login geannuleerd")
+            val credential = dev.gitlive.firebase.auth.GoogleAuthProvider.credential(idToken, null)
+            val result = auth.signInWithCredential(credential)
+            val user = result.user ?: throw Exception("Firebase login mislukt")
+            
+            // Controleer of gebruiker al bestaat in Firestore, zo niet: aanmaken
+            val doc = firestore.collection("users").document(user.uid).get()
+            if (!doc.exists) {
+                val names = user.displayName?.split(" ")
+                val voornaam = names?.firstOrNull() ?: ""
+                val achternaam = names?.drop(1)?.joinToString(" ") ?: ""
+                
+                val profile = mapOf(
+                    "voornaam" to voornaam,
+                    "achternaam" to achternaam,
+                    "email" to (user.email ?: ""),
+                    "tuinNaam" to "Mijn Tuin",
+                    "biometrieIngeschakeld" to false,
+                    "locaties" to listOf("Tuin", "Balkon", "Kas"),
+                    "standaardLocatie" to "Tuin"
+                )
+                firestore.collection("users").document(user.uid).set(profile)
+            }
+
+            Result.success(UserProfile(user.uid, user.email, null, null))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun signOut() {
@@ -70,3 +98,5 @@ class FirebaseAuthService : AuthService {
         }
     }
 }
+
+expect suspend fun getGoogleIdToken(): String?

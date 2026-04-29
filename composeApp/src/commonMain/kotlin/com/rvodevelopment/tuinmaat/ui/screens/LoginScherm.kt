@@ -1,9 +1,11 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -11,8 +13,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -22,7 +27,11 @@ import com.rvodevelopment.tuinmaat.ui.components.InvoerVeldMetIcoon
 import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.LoginViewModel
+import org.jetbrains.compose.resources.painterResource
+import tuinmaat.composeapp.generated.resources.Res
+import tuinmaat.composeapp.generated.resources.Tuinmaat_Logo
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScherm(
     viewModel: LoginViewModel,
@@ -55,7 +64,19 @@ fun LoginScherm(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(Icons.Default.Park, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(80.dp))
+            Surface(
+                modifier = Modifier.size(100.dp).neumorphicShadow(shape = CircleShape),
+                shape = CircleShape,
+                color = Color.White
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.Tuinmaat_Logo),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(12.dp).clip(CircleShape),
+                    contentScale = ContentScale.Fit
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = if (isRegistreren) "Nieuw Account" else "TuinMaat",
                 style = MaterialTheme.typography.headlineLarge,
@@ -84,7 +105,14 @@ fun LoginScherm(
                 label = "E-mailadres",
                 waarde = email,
                 onWaardeChange = { viewModel.onEmailChanged(it) },
-                icoon = Icons.Default.Email
+                icoon = Icons.Default.Email,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                    autoCorrectEnabled = false
+                ),
+                autofillTypes = listOf(androidx.compose.ui.autofill.AutofillType.EmailAddress)
             )
 
             InvoerVeldMetIcoon(
@@ -92,7 +120,14 @@ fun LoginScherm(
                 waarde = wachtwoord,
                 onWaardeChange = { viewModel.onWachtwoordChanged(it) },
                 icoon = Icons.Default.Lock,
+                modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (wachtwoordZichtbaar) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                    autoCorrectEnabled = false
+                ),
+                autofillTypes = listOf(androidx.compose.ui.autofill.AutofillType.Password),
                 trailingIcon = {
                     IconButton(onClick = { viewModel.toggleWachtwoordZichtbaarheid() }) {
                         Icon(

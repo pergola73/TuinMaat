@@ -1,6 +1,7 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,17 +13,20 @@ import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.rvodevelopment.tuinmaat.ui.components.InvoerVeldMetIcoon
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantToevoegenViewModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun PlantToevoegenScherm(
     viewModel: PlantToevoegenViewModel,
@@ -33,6 +37,7 @@ fun PlantToevoegenScherm(
     val maandenLijst = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
     
     var laatLocatieMenuZien by remember { mutableStateOf(false) }
+    var laatFotoMenuZien by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = ZachtBeige,
@@ -52,7 +57,7 @@ fun PlantToevoegenScherm(
                 color = Color.White
             ) {
                 Button(
-                    onClick = { viewModel.savePlant(null) { onNavigateBack() } },
+                    onClick = { viewModel.savePlant { onNavigateBack() } },
                     enabled = state.plant.naam.isNotBlank() && !state.isLaden,
                     colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
                     modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
@@ -67,12 +72,94 @@ fun PlantToevoegenScherm(
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(scrollState).background(ZachtBeige)
         ) {
-            // Foto placeholder
+            // Foto Sectie
             Box(
-                modifier = Modifier.fillMaxWidth().height(250.dp).background(Color.LightGray),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .background(Color.LightGray)
+                    .clickable { laatFotoMenuZien = true },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                if (state.selectedImageBytes != null) {
+                    AsyncImage(
+                        model = state.selectedImageBytes,
+                        contentDescription = "Geselecteerde plant foto",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else if (state.plant.fotoUri != null) {
+                    AsyncImage(
+                        model = state.plant.fotoUri,
+                        contentDescription = "Plant foto",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (state.isAIBezig) {
+                            CircularProgressIndicator(color = DonkerGroen)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Plant herkennen...", color = DonkerGroen)
+                        } else {
+                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                            Text("Tik om foto toe te voegen", color = Color.Gray, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+
+                // Knoppen voor Camera en Galerij over de foto heen
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilledIconButton(
+                        onClick = { viewModel.takePhoto() },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = DonkerGroen.copy(alpha = 0.7f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, contentDescription = "Camera")
+                    }
+                    FilledIconButton(
+                        onClick = { viewModel.pickImage() },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = DonkerGroen.copy(alpha = 0.7f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = "Galerij")
+                    }
+                }
+            }
+
+            if (laatFotoMenuZien) {
+                ModalBottomSheet(onDismissRequest = { laatFotoMenuZien = false }) {
+                    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                        Text("Foto toevoegen", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ListItem(
+                            headlineContent = { Text("Camera") },
+                            leadingContent = { Icon(Icons.Default.PhotoCamera, null) },
+                            modifier = Modifier.clickable {
+                                viewModel.takePhoto()
+                                laatFotoMenuZien = false
+                            }
+                        )
+                        ListItem(
+                            headlineContent = { Text("Galerij") },
+                            leadingContent = { Icon(Icons.Default.PhotoLibrary, null) },
+                            modifier = Modifier.clickable {
+                                viewModel.pickImage()
+                                laatFotoMenuZien = false
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                }
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
@@ -130,7 +217,7 @@ fun PlantToevoegenScherm(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                InvoerVeldMetIcoon("Omschrijving", state.plant.omschrijving, { viewModel.updatePlant { p -> p.copy(omschrijving = it) } }, Icons.Default.Info, true)
+                InvoerVeldMetIcoon("Omschrijving", state.plant.omschrijving, { viewModel.updatePlant { p -> p.copy(omschrijving = it) } }, Icons.Default.Info, isMultiLine = true)
                 
                 // Snoeimaand Chips
                 Spacer(modifier = Modifier.height(16.dp))
@@ -158,7 +245,7 @@ fun PlantToevoegenScherm(
                     }
                 }
                 
-                InvoerVeldMetIcoon("Snoeiadvies", state.plant.snoeiAdvies, { viewModel.updatePlant { p -> p.copy(snoeiAdvies = it) } }, Icons.Default.ContentCut, true)
+                InvoerVeldMetIcoon("Snoeiadvies", state.plant.snoeiAdvies, { viewModel.updatePlant { p -> p.copy(snoeiAdvies = it) } }, Icons.Default.ContentCut, isMultiLine = true)
                 InvoerVeldMetIcoon("Lichtbehoefte", state.plant.lichtBehoefte, { viewModel.updatePlant { p -> p.copy(lichtBehoefte = it) } }, Icons.Default.WbSunny)
                 InvoerVeldMetIcoon("Waterbehoefte", state.plant.waterBehoefte, { viewModel.updatePlant { p -> p.copy(waterBehoefte = it) } }, Icons.Default.WaterDrop)
                 InvoerVeldMetIcoon("Voedingsadvies", state.plant.voedingAdvies, { viewModel.updatePlant { p -> p.copy(voedingAdvies = it) } }, Icons.Default.Agriculture)

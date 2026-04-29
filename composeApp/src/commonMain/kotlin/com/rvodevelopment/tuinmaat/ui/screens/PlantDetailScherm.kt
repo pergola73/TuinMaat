@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
@@ -53,10 +54,17 @@ fun PlantDetailScherm(
 
                     // 1. Foto Header
                     Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
-                        // In KMP we would use a library like Coil3 for image loading
-                        // For now placeholder
-                        Box(modifier = Modifier.fillMaxSize().background(DonkerGroen.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.LocalFlorist, null, tint = DonkerGroen, modifier = Modifier.size(80.dp))
+                        if (p.fotoUri != null) {
+                            AsyncImage(
+                                model = p.fotoUri,
+                                contentDescription = "Plant foto",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize().background(DonkerGroen.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.LocalFlorist, null, tint = DonkerGroen, modifier = Modifier.size(80.dp))
+                            }
                         }
 
                         IconButton(

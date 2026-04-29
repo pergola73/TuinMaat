@@ -51,6 +51,11 @@ class MainActivity : FragmentActivity() {
         handleIntent(intent)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        ActivityProvider.onActivityResult(requestCode, resultCode, data)
+    }
+
     private fun handleIntent(intent: Intent?) {
         val appLinkData = intent?.data
         if (appLinkData != null) {

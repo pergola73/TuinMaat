@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Gebruikersprofiel regels
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Tuinen regels
+    match /tuinen/{gardenId} {
+      // Sta lezen en schrijven toe als de gebruiker de eigenaar is OF als de gardenId overeenkomt met de sharedGardenId van de gebruiker
+      allow read, write: if request.auth != null && (
+        resource == null ||
+        resource.data.eigenaar == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sharedGardenId == gardenId
+      );
+
+      // Subcollecties (planten en locaties) overerven de toegang van de tuin
+      match /{path=**} {
+        allow read, write: if request.auth != null && (
+          get(/databases/$(database)/documents/tuinen/$(gardenId)).data.eigenaar == request.auth.uid ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sharedGardenId == gardenId
+        );
+      }
+    }
+  }
+}

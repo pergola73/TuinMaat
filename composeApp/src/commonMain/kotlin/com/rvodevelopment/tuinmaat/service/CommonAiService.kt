@@ -78,33 +78,36 @@ class CommonAiService(
     private suspend fun verrijkMetGemini(plantNaam: String, wikipediaInfo: String?): AiPlantResult {
         val wikiText = wikipediaInfo ?: "Geen Wikipedia informatie beschikbaar."
         val prompt = """
-            Je bent een hovenier. Gebruik de Wikipedia-info: $wikiText. 
-            Vul aan voor $plantNaam: 
-            1. Water (vingertest), 
-            2. Licht (plek), 
-            3. Voeding (wanneer), 
-            4. EHBO (signaal), 
-            5. Snoeimaanden (lijst van maanden gescheiden door komma's), 
-            6. Snoei-instructie (korte hoveniers-tip max 15 words),
-            7. Bemesting (specifieke voedingstips).
-            Als Wikipedia onvoldoende info heeft, gebruik dan je eigen kennis. 
+            Je bent een expert hovenier. 
+            Gebruik deze informatie van Wikipedia: $wikiText
             
-            Antwoord strikt in dit JSON formaat:
+            Vul dit aan met jouw kennis voor de plant: $plantNaam.
+            
+            Geef de volgende details in het Nederlands:
+            1. waterBehoefte: Hoe en wanneer water geven? (kort)
+            2. lichtBehoefte: Wat is de beste plek? (zon/halfschaduw/schaduw)
+            3. voedingAdvies: Wanneer heeft de plant voeding nodig?
+            4. ehboSignaal: Waaraan zie je dat de plant ongezond is? (geel blad, hangend, etc.)
+            5. snoeiMaand: Welke maanden snoeien? Geef een lijst van maanden gescheiden door komma's (bijv: Maart, April, Augustus).
+            6. snoeiAdvies: Korte, praktische instructie (max 20 woorden).
+            7. omschrijving: Een korte, pakkende tekst over de plant.
+            8. bemesting: Welke specifieke voeding is het best?
+            
+            ANTWOORD UITSLUITEND IN DIT JSON FORMAAT:
             {
               "waterBehoefte": "...",
               "lichtBehoefte": "...",
               "voedingAdvies": "...",
               "ehboSignaal": "...",
-              "snoeiMaand": "Maand1, Maand2",
+              "snoeiMaand": "...",
               "snoeiAdvies": "...",
               "omschrijving": "...",
               "bemesting": "..."
             }
-            Gebruik alleen de JSON structuur, geen extra tekst. Nederlands.
         """.trimIndent()
 
         return try {
-            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$geminiApiKey") {
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     putJsonArray("contents") {
@@ -124,8 +127,13 @@ class CommonAiService(
                 ?.get("parts")?.jsonArray?.get(0)?.jsonObject
                 ?.get("text")?.jsonPrimitive?.content ?: "{}"
 
-            val cleanJson = textResult.replace("```json", "").replace("```", "").trim()
-            val json = Json.parseToJsonElement(cleanJson).jsonObject
+            // Verwijder eventuele markdown code blocks die Gemini soms toevoegt
+            val cleanJson = textResult
+                .replace("```json", "")
+                .replace("```", "")
+                .trim()
+
+            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(cleanJson).jsonObject
 
             AiPlantResult(
                 naam = plantNaam,
@@ -139,7 +147,11 @@ class CommonAiService(
                 bemesting = json["bemesting"]?.jsonPrimitive?.content ?: ""
             )
         } catch (e: Exception) {
-            AiPlantResult(naam = plantNaam, omschrijving = wikiText)
+            println("Gemini Error: ${e.message}")
+            AiPlantResult(
+                naam = plantNaam, 
+                omschrijving = wikipediaInfo ?: "Helaas kon er geen extra informatie worden opgehaald voor deze plant."
+            )
         }
     }
 }

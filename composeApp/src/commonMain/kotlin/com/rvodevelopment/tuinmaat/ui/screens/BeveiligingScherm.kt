@@ -29,6 +29,7 @@ fun BeveiligingScherm(
 ) {
     val userData by viewModel.userData.collectAsState()
     val isBiometrieIngeschakeld = userData?.biometrieIngeschakeld ?: false
+    val isBiometrieBeschikbaar by viewModel.isBiometrieBeschikbaar.collectAsState()
     val isLaden by viewModel.isLaden.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
@@ -51,10 +52,11 @@ fun BeveiligingScherm(
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
-                        color = DonkerGroen
+                        color = if (isBiometrieBeschikbaar) DonkerGroen else Color.Gray
                     )
                     Switch(
                         checked = isBiometrieIngeschakeld,
+                        enabled = isBiometrieBeschikbaar,
                         onCheckedChange = { ingeschakeld ->
                             viewModel.updateBiometrie(ingeschakeld)
                         },
@@ -68,9 +70,12 @@ fun BeveiligingScherm(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Gebruik vingerafdruk of gezichtsherkenning om de app te openen bij inactiviteit.",
+                    if (isBiometrieBeschikbaar) 
+                        "Gebruik vingerafdruk of gezichtsherkenning om de app te openen bij inactiviteit."
+                    else 
+                        "Biometrische beveiliging is niet beschikbaar op dit toestel.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = DonkerGroen.copy(alpha = 0.6f)
+                    color = if (isBiometrieBeschikbaar) DonkerGroen.copy(alpha = 0.6f) else Color.Red.copy(alpha = 0.6f)
                 )
             }
         }

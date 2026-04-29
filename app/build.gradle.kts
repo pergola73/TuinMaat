@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.googleServices)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -74,6 +75,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.biometric)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.play.services.base)
     implementation(libs.play.services.auth)
 

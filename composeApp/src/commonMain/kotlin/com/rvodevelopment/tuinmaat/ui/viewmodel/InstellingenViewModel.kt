@@ -11,11 +11,15 @@ import kotlinx.coroutines.launch
 class InstellingenViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val sharingService: com.rvodevelopment.tuinmaat.service.SharingService
+    private val sharingService: com.rvodevelopment.tuinmaat.service.SharingService,
+    private val biometricService: com.rvodevelopment.tuinmaat.service.BiometricService
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow<UserData?>(null)
     val userData: StateFlow<UserData?> = _userData
+
+    private val _isBiometrieBeschikbaar = MutableStateFlow(false)
+    val isBiometrieBeschikbaar: StateFlow<Boolean> = _isBiometrieBeschikbaar
 
     private val _isLaden = MutableStateFlow(false)
     val isLaden: StateFlow<Boolean> = _isLaden
@@ -34,6 +38,7 @@ class InstellingenViewModel(
         }
         
         viewModelScope.launch {
+            _isBiometrieBeschikbaar.value = biometricService.isBiometricAvailable()
             userFlow.collect {
                 _userData.value = it
             }

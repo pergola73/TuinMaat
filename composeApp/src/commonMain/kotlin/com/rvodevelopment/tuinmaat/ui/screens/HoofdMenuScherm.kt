@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.ui.components.MenuKnop
 import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
+import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
@@ -37,7 +38,6 @@ fun HoofdMenuScherm(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             // Garden Switcher
@@ -45,7 +45,7 @@ fun HoofdMenuScherm(
                 Surface(
                     color = Color.White.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp))
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp))
                 ) {
                     Row(
                         modifier = Modifier.padding(8.dp),
@@ -79,59 +79,59 @@ fun HoofdMenuScherm(
                 }
             }
 
-            // Logo
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
-                Icon(
-                    Icons.Default.Park,
-                    contentDescription = null,
-                    tint = DonkerGroen.copy(alpha = 0.2f),
-                    modifier = Modifier.size(60.dp)
-                )
-            }
+            // Header Section with Logo
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Hallo ${state.voornaam}, welkom in",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = DonkerGroen.copy(alpha = 0.6f),
+                        fontWeight = FontWeight.Medium
+                    )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = state.tuinnaam,
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DonkerGroen,
+                        lineHeight = 42.sp
+                    )
 
-            // Header Section
-            Column {
-                Text(
-                    text = "Hallo ${state.voornaam}, welkom in",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = DonkerGroen.copy(alpha = 0.6f),
-                    fontWeight = FontWeight.Medium
-                )
-
-                Text(
-                    text = state.tuinnaam,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DonkerGroen,
-                    lineHeight = 42.sp
-                )
-
-                if (state.eigenaarNaam != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.People,
-                            contentDescription = null,
-                            tint = DonkerGroen.copy(alpha = 0.4f),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Tuin van ${state.eigenaarNaam}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = DonkerGroen.copy(alpha = 0.4f),
-                            fontWeight = FontWeight.Medium
-                        )
+                    if (state.eigenaarNaam != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.People,
+                                contentDescription = null,
+                                tint = DonkerGroen.copy(alpha = 0.4f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Tuin van ${state.eigenaarNaam}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = DonkerGroen.copy(alpha = 0.4f),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                TuinMaatLogo(modifier = Modifier.padding(start = 16.dp))
+            }
 
-                // Stats and Tuintip Toggle
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Stats and Tuintip Toggle
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -179,25 +179,26 @@ fun HoofdMenuScherm(
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (toonTuintip) {
-                TuintipCard(
-                    tip = state.tuintip,
-                    isLoading = state.isTuintipLaden,
-                    onDismiss = { toonTuintip = false }
-                )
+                if (toonTuintip) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TuintipCard(
+                        tip = state.tuintip,
+                        isLoading = state.isTuintipLaden,
+                        onDismiss = { toonTuintip = false }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Menu Items
-            MenuKnop("Mijn Planten", Icons.AutoMirrored.Filled.List) { onNavigate("lijst") }
-            MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
-            MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("kalender") }
-            MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                MenuKnop("Mijn Planten", Icons.AutoMirrored.Filled.List) { onNavigate("lijst") }
+                MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
+                MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
+                MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
+            }
 
             Spacer(modifier = Modifier.height(64.dp))
         }

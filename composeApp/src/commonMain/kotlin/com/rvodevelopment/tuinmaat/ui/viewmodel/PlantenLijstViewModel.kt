@@ -31,23 +31,32 @@ class PlantenLijstViewModel(
         observeData()
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun observeData() {
         viewModelScope.launch {
-            authService.currentUser.collectLatest { user ->
-                if (user == null) return@collectLatest
-                userRepository.getUserData(user.uid).collect { userData ->
-                    val gardenId = userData?.sharedGardenId ?: user.uid
-                    
-                    // Fetch planten
-                    tuinRepository.getPlanten(gardenId).collect { planten ->
-                        _state.update { it.copy(
-                            planten = planten.sortedBy { p -> p.naam },
-                            locaties = planten.map { p -> p.locatie }.distinct().filter { l -> l.isNotBlank() }
-                        ) }
-                        updateFilteredList()
+            authService.currentUser
+                .filterNotNull()
+                .flatMapLatest { user ->
+                    userRepository.getUserData(user.uid)
+                }
+                .filterNotNull()
+                .flatMapLatest { userData ->
+                    val gardenId = userData.sharedGardenId ?: userData.id
+                    combine(
+                        tuinRepository.getTuinnaam(gardenId),
+                        tuinRepository.getPlanten(gardenId)
+                    ) { tuinnaam, planten ->
+                        tuinnaam to planten
                     }
                 }
-            }
+                .collect { (tuinnaam, planten) ->
+                    _state.update { it.copy(
+                        tuinnaam = tuinnaam,
+                        planten = planten.sortedBy { p -> p.naam },
+                        locaties = planten.map { p -> p.locatie }.distinct().filter { l -> l.isNotBlank() }
+                    ) }
+                    updateFilteredList()
+                }
         }
     }
 

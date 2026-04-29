@@ -38,7 +38,9 @@ fun SecurityWrapper(
     var isLocked by remember { mutableStateOf(false) }
     var securityType by remember { mutableStateOf("NONE") }
     var savedPin by remember { mutableStateOf("") }
-    var lastActiveTime by remember { mutableStateOf(0L) }
+    
+    // Gebruik een Ref-achtig object om de lastActiveTime bij te houden zonder recomposities te triggeren
+    val activityState = remember { object { var lastActiveTime = 0L } }
 
     val timeoutMillis = 5 * 60 * 1000
 
@@ -46,8 +48,8 @@ fun SecurityWrapper(
         val uid = currentUser?.uid
         if (uid != null) {
             userRepository.getUserData(uid).collect { userData ->
-                // securityType = userData?.securityType ?: "NONE"
-                // savedPin = userData?.securityPin ?: ""
+                securityType = userData?.securityType ?: "NONE"
+                savedPin = userData?.securityPin ?: ""
             }
         } else {
             securityType = "NONE"
@@ -58,11 +60,13 @@ fun SecurityWrapper(
 
     LaunchedEffect(currentUser, securityType, isLocked) {
         if (currentUser != null && securityType != "NONE" && !isLocked) {
-            if (lastActiveTime == 0L) lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
+            if (activityState.lastActiveTime == 0L) {
+                activityState.lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
+            }
             
             while (true) {
                 delay(10000)
-                if (com.rvodevelopment.tuinmaat.currentTimeMillis() - lastActiveTime > timeoutMillis) {
+                if (com.rvodevelopment.tuinmaat.currentTimeMillis() - activityState.lastActiveTime > timeoutMillis) {
                     isLocked = true
                     break
                 }
@@ -76,8 +80,9 @@ fun SecurityWrapper(
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
-                        awaitPointerEvent()
-                        lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
+                        // We luisteren op de Main pass om de UI niet te blokkeren
+                        awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Main)
+                        activityState.lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
                     }
                 }
             }
@@ -91,7 +96,7 @@ fun SecurityWrapper(
                 biometricService = biometricService,
                 onUnlock = {
                     isLocked = false
-                    lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
+                    activityState.lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
                 }
             )
         }

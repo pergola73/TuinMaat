@@ -10,6 +10,7 @@ import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.service.AiService
 import com.rvodevelopment.tuinmaat.service.AuthService
+import com.rvodevelopment.tuinmaat.service.MediaService
 import com.rvodevelopment.tuinmaat.service.StorageService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,8 @@ data class PlantToevoegenState(
     val isAIBezig: Boolean = false,
     val beschikbareLocaties: List<String> = listOf("Tuin"),
     val geselecteerdeMaanden: List<String> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val selectedImageBytes: ByteArray? = null
 )
 
 class PlantToevoegenViewModel(
@@ -33,6 +35,7 @@ class PlantToevoegenViewModel(
     private val tuinRepository: TuinRepository,
     private val aiService: AiService,
     private val storageService: StorageService,
+    private val mediaService: MediaService,
     private val plantId: String?
 ) : ViewModel() {
 
@@ -107,12 +110,13 @@ class PlantToevoegenViewModel(
         }
     }
 
-    fun savePlant(imageBytes: ByteArray?, onSuccess: () -> Unit) {
+    fun savePlant(onSuccess: () -> Unit) {
         viewModelScope.launch {
             _state.update { it.copy(isLaden = true) }
             val user = authService.currentUser.first() ?: return@launch
             
             var plantToSave = _state.value.plant
+            val imageBytes = _state.value.selectedImageBytes
             
             if (imageBytes != null) {
                 val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
@@ -126,6 +130,24 @@ class PlantToevoegenViewModel(
                 onSuccess()
             }.onFailure { e ->
                 _state.update { it.copy(isLaden = false, error = e.message) }
+            }
+        }
+    }
+
+    fun pickImage() {
+        viewModelScope.launch {
+            mediaService.pickImage()?.let { bytes ->
+                _state.update { it.copy(selectedImageBytes = bytes) }
+                identifyPlant(bytes)
+            }
+        }
+    }
+
+    fun takePhoto() {
+        viewModelScope.launch {
+            mediaService.takePhoto()?.let { bytes ->
+                _state.update { it.copy(selectedImageBytes = bytes) }
+                identifyPlant(bytes)
             }
         }
     }

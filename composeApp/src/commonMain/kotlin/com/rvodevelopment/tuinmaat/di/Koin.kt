@@ -40,19 +40,20 @@ fun commonModule() = module {
     single<TuinRepository> { FirebaseTuinRepository() }
     single<AuthService> { FirebaseAuthService() }
     single<StorageService> { FirebaseStorageService() }
+    single<MediaService> { get() }
     single { get<PlantDatabase>().plantDao() }
     single<AiService> { CommonAiService(
         client = get(),
         plantnetApiKey = get(org.koin.core.qualifier.named("PLANTNET_API_KEY")),
         geminiApiKey = get(org.koin.core.qualifier.named("GEMINI_API_KEY"))
     ) }
-    factory { LoginViewModel(get(), get(), get()) }
+    factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HoofdMenuViewModel(get(), get(), get(), get()) }
     factory { PlantenLijstViewModel(get(), get(), get()) }
     factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), plantId) }
-    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get()) }
-    factory { InstellingenViewModel(get(), get(), get()) }
+    factory { InstellingenViewModel(get(), get(), get(), get()) }
 }
 
 expect fun platformModule(): Module

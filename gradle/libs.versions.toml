@@ -19,7 +19,7 @@ firebaseBom = "33.7.0"
 kotlinxCoroutinesPlayServices = "1.10.2"
 biometric = "1.1.0"
 generativeai = "0.9.0"
-coil = "2.7.0"
+coil = "3.0.4"
 koin = "4.0.0"
 navigation-multiplatform = "2.8.0-alpha10"
 materialIconsExtended = "1.7.8"
@@ -74,7 +74,8 @@ firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appc
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 google-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-ktor-v3 = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
@@ -96,3 +97,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
