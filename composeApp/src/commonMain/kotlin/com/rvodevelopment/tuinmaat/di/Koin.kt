@@ -51,7 +51,7 @@ fun commonModule() = module {
     factory { HoofdMenuViewModel(get(), get(), get(), get()) }
     factory { PlantenLijstViewModel(get(), get(), get()) }
     factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), plantId) }
-    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get()) }
     factory { InstellingenViewModel(get(), get(), get(), get()) }
 }

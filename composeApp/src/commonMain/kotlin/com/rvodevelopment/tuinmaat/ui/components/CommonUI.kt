@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
 import tuinmaat.composeapp.generated.resources.Res
-import tuinmaat.composeapp.generated.resources.Tuinmaat_Logo
+import tuinmaat.composeapp.generated.resources.tuin_logo
 
 @Composable
 fun TuinMaatLogo(modifier: Modifier = Modifier) {
@@ -47,7 +47,7 @@ fun TuinMaatLogo(modifier: Modifier = Modifier) {
             color = Color.White
         ) {
             Image(
-                painter = painterResource(Res.drawable.Tuinmaat_Logo),
+                painter = painterResource(Res.drawable.tuin_logo),
                 contentDescription = "TuinMaat Logo",
                 modifier = Modifier.fillMaxSize().padding(8.dp).clip(CircleShape),
                 contentScale = ContentScale.Fit

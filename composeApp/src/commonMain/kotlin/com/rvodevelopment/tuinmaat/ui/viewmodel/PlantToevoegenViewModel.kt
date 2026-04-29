@@ -8,10 +8,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
+import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.service.AiService
 import com.rvodevelopment.tuinmaat.service.AuthService
 import com.rvodevelopment.tuinmaat.service.MediaService
 import com.rvodevelopment.tuinmaat.service.StorageService
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,15 +31,18 @@ data class PlantToevoegenState(
     val beschikbareLocaties: List<String> = listOf("Tuin"),
     val geselecteerdeMaanden: List<String> = emptyList(),
     val error: String? = null,
+    val infoBericht: String? = null,
     val selectedImageBytes: ByteArray? = null
 )
 
 class PlantToevoegenViewModel(
     private val authService: AuthService,
+    private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
     private val aiService: AiService,
     private val storageService: StorageService,
     private val mediaService: MediaService,
+    private val client: HttpClient,
     private val plantId: String?
 ) : ViewModel() {
 
@@ -48,21 +55,37 @@ class PlantToevoegenViewModel(
 
     private fun loadData() {
         viewModelScope.launch {
-            val user = authService.currentUser.first() ?: return@launch
+            val profile = authService.currentUser.first() ?: return@launch
             _state.update { it.copy(isLaden = true) }
             
-            // In a real app we would also fetch garden-specific locations
-            
-            if (plantId != null) {
-                tuinRepository.getPlant(user.uid, plantId).collect { plant ->
-                    if (plant != null) {
-                        val maanden = plant.snoeiMaand.split(", ").filter { it.isNotBlank() }
-                        _state.update { it.copy(
-                            plant = plant,
-                            geselecteerdeMaanden = maanden,
-                            isLaden = false
-                        ) }
+            // Haal gebruikersgegevens op voor locaties en gardenId
+            val userData = userRepository.getUserData(profile.uid).first()
+            if (userData != null) {
+                val gardenId = userData.sharedGardenId ?: profile.uid
+                _state.update { 
+                    it.copy(
+                        beschikbareLocaties = userData.locaties,
+                        // Als het een nieuwe plant is, gebruik de standaardlocatie
+                        plant = if (plantId == null && it.plant.locatie.isBlank()) 
+                            it.plant.copy(locatie = userData.standaardLocatie) 
+                        else it.plant
+                    )
+                }
+
+                // Als we een plantId hebben, haal de plantgegevens op
+                if (plantId != null) {
+                    tuinRepository.getPlant(gardenId, plantId).collect { plant ->
+                        if (plant != null) {
+                            val maanden = plant.snoeiMaand.split(", ").filter { it.isNotBlank() }
+                            _state.update { it.copy(
+                                plant = plant,
+                                geselecteerdeMaanden = maanden,
+                                isLaden = false
+                            ) }
+                        }
                     }
+                } else {
+                    _state.update { it.copy(isLaden = false) }
                 }
             } else {
                 _state.update { it.copy(isLaden = false) }
@@ -75,18 +98,17 @@ class PlantToevoegenViewModel(
     }
 
     fun toggleMaand(maand: String) {
-        val huidige = _state.value.geselecteerdeMaanden.toMutableList()
-        if (huidige.contains(maand)) huidige.remove(maand)
-        else huidige.add(maand)
+        // We gebruiken nu slechts 1 snoeimaand
+        val nieuweSelectie = listOf(maand)
         _state.update { it.copy(
-            geselecteerdeMaanden = huidige,
-            plant = it.plant.copy(snoeiMaand = huidige.joinToString(", "))
+            geselecteerdeMaanden = nieuweSelectie,
+            plant = it.plant.copy(snoeiMaand = maand)
         ) }
     }
 
     fun identifyPlant(imageBytes: ByteArray) {
         viewModelScope.launch {
-            _state.update { it.copy(isAIBezig = true) }
+            _state.update { it.copy(isAIBezig = true, error = null, infoBericht = null) }
             aiService.identifyPlant(imageBytes).onSuccess { result ->
                 _state.update { it.copy(
                     plant = it.plant.copy(
@@ -99,13 +121,36 @@ class PlantToevoegenViewModel(
                         lichtBehoefte = result.lichtBehoefte,
                         voedingAdvies = result.voedingAdvies,
                         bemesting = result.bemesting,
-                        ehboSignaal = result.ehboSignaal
+                        ehboSignaal = result.ehboSignaal,
+                        bron = result.bron
                     ),
-                    geselecteerdeMaanden = result.snoeiMaand.split(", ").filter { it.isNotBlank() },
-                    isAIBezig = false
+                    geselecteerdeMaanden = if (result.snoeiMaand.isNotBlank()) listOf(result.snoeiMaand) else emptyList(),
+                    isAIBezig = false,
+                    infoBericht = "Plant succesvol herkend!"
                 ) }
             }.onFailure { e ->
-                _state.update { it.copy(isAIBezig = false, error = e.message) }
+                _state.update { it.copy(isAIBezig = false, error = "Herkenning mislukt: ${e.message}") }
+            }
+        }
+    }
+
+    fun reIdentify() {
+        viewModelScope.launch {
+            val bytes = _state.value.selectedImageBytes
+            if (bytes != null) {
+                identifyPlant(bytes)
+            } else {
+                val uri = _state.value.plant.fotoUri
+                if (!uri.isNullOrBlank()) {
+                    _state.update { it.copy(isAIBezig = true, error = null) }
+                    try {
+                        val downloadedBytes = client.get(uri).body<ByteArray>()
+                        _state.update { it.copy(selectedImageBytes = downloadedBytes) }
+                        identifyPlant(downloadedBytes)
+                    } catch (e: Exception) {
+                        _state.update { it.copy(isAIBezig = false, error = "Afbeelding ophalen mislukt: ${e.message}") }
+                    }
+                }
             }
         }
     }
@@ -113,23 +158,44 @@ class PlantToevoegenViewModel(
     fun savePlant(onSuccess: () -> Unit) {
         viewModelScope.launch {
             _state.update { it.copy(isLaden = true) }
-            val user = authService.currentUser.first() ?: return@launch
+            val profile = authService.currentUser.first() ?: return@launch
             
+            val userData = userRepository.getUserData(profile.uid).first()
+            val gardenId = userData?.sharedGardenId ?: profile.uid
+
             var plantToSave = _state.value.plant
             val imageBytes = _state.value.selectedImageBytes
             
             if (imageBytes != null) {
                 val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
-                val path = "planten/${user.uid}_$timestamp.jpg"
+                val path = "planten/${profile.uid}_$timestamp.jpg"
                 storageService.uploadFile(path, imageBytes).onSuccess { url ->
                     plantToSave = plantToSave.copy(fotoUri = url)
                 }
             }
             
-            tuinRepository.savePlant(user.uid, plantToSave).onSuccess {
+            tuinRepository.savePlant(gardenId, plantToSave).onSuccess {
                 onSuccess()
             }.onFailure { e ->
                 _state.update { it.copy(isLaden = false, error = e.message) }
+            }
+        }
+    }
+
+    fun deletePlant(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLaden = true) }
+            val profile = authService.currentUser.first() ?: return@launch
+            val userData = userRepository.getUserData(profile.uid).first()
+            val gardenId = userData?.sharedGardenId ?: profile.uid
+            val plantId = _state.value.plant.firestoreId
+            
+            if (plantId.isNotEmpty()) {
+                tuinRepository.deletePlant(gardenId, plantId).onSuccess {
+                    onSuccess()
+                }.onFailure { e ->
+                    _state.update { it.copy(isLaden = false, error = e.message) }
+                }
             }
         }
     }

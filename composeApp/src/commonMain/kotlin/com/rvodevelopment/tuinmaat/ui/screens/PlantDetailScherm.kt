@@ -33,7 +33,6 @@ fun PlantDetailScherm(
     onNavigateToEdit: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var showDeleteDialog by remember { mutableStateOf<Plant?>(null) }
 
     if (state.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -74,13 +73,6 @@ fun PlantDetailScherm(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                         }
 
-                        IconButton(
-                            onClick = { showDeleteDialog = p },
-                            modifier = Modifier.statusBarsPadding().align(Alignment.TopEnd).padding(16.dp).background(Color.White.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(Icons.Default.Delete, null, tint = Color.Red.copy(alpha = 0.8f))
-                        }
-
                         if (p.locatie.isNotBlank()) {
                             Surface(
                                 modifier = Modifier
@@ -108,7 +100,27 @@ fun PlantDetailScherm(
                         color = ZachtBeige
                     ) {
                         Column(modifier = Modifier.padding(24.dp)) {
-                            Text(text = p.naam, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = p.naam,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = DonkerGroen,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { onNavigateToEdit(p.firestoreId) },
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .background(DonkerGroen.copy(alpha = 0.1f), CircleShape)
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Bewerken", tint = DonkerGroen, modifier = Modifier.size(20.dp))
+                                }
+                            }
                             
                             if (p.wetenschappelijkeNaam.isNotBlank()) {
                                 Text(
@@ -146,55 +158,7 @@ fun PlantDetailScherm(
                         }
                     }
                 }
-
-                Button(
-                    onClick = { onNavigateToEdit(p.firestoreId) },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(24.dp)
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.9f),
-                        contentColor = DonkerGroen
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
-                ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Gegevens Bewerken", fontWeight = FontWeight.Bold)
-                }
             }
-        }
-
-        if (showDeleteDialog != null) {
-            AlertDialog(
-                onDismissRequest = { showDeleteDialog = null },
-                title = { Text("Plant Verwijderen") },
-                text = { Text("Weet je zeker dat je '${showDeleteDialog?.naam}' wilt verwijderen uit je tuin? Dit kan niet ongedaan worden gemaakt.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val plantToDelete = showDeleteDialog ?: return@TextButton
-                            viewModel.deletePlant(plantToDelete)
-                            showDeleteDialog = null
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
-                    ) {
-                        Text("Verwijderen", fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = null }) {
-                        Text("Annuleren", color = DonkerGroen)
-                    }
-                },
-                containerColor = Color.White,
-                shape = RoundedCornerShape(24.dp)
-            )
         }
     }
 }
@@ -203,7 +167,7 @@ fun PlantDetailScherm(
 fun SectionHeader(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.bodyLarge, // Zelfde grootte als de gewone tekst
         fontWeight = FontWeight.Bold,
         color = DonkerGroen,
         modifier = Modifier.padding(bottom = 16.dp)
@@ -216,14 +180,24 @@ fun VerzorgingItem(icoon: ImageVector, label: String, waarde: String) {
         Surface(
             modifier = Modifier.size(40.dp),
             shape = RoundedCornerShape(10.dp),
-            color = Color.White.copy(alpha = 0.5f)
+            color = DonkerGroen.copy(alpha = 0.2f) // Iets donkerder groen voor meer contrast
         ) {
             Icon(icoon, null, tint = DonkerGroen, modifier = Modifier.padding(10.dp))
         }
         Spacer(Modifier.width(16.dp))
         Column {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.5f))
-            Text(if (waarde.isBlank()) "Onbekend" else waarde, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = DonkerGroen)
+            Text(
+                text = label, 
+                style = MaterialTheme.typography.labelSmall, 
+                color = DonkerGroen, 
+                fontWeight = FontWeight.Bold // Titel nu dikgedrukt
+            )
+            Text(
+                text = if (waarde.isBlank()) "Onbekend" else waarde, 
+                style = MaterialTheme.typography.bodyMedium, 
+                fontWeight = FontWeight.Normal, // Waarde nu normaal
+                color = DonkerGroen.copy(alpha = 0.7f)
+            )
         }
     }
 }

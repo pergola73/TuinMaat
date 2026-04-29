@@ -23,9 +23,15 @@ class CommonAiService(
             val plantNetResult = identificeerMetPlantNet(imageBytes)
             val plantNaam = plantNetResult?.first ?: return@withContext Result.failure(Exception("Pl@ntNet kon de plant niet identificeren"))
             val scientificName = plantNetResult.second
-            val wikipediaInfo = haalWikipediaInfoOp(plantNaam)
-            val finaleInfo = verrijkMetGemini(plantNaam, wikipediaInfo)
-            val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia/Gemini AI" else "Pl@ntNet • Gemini AI"
+            
+            // Probeer Wikipedia met de gewone naam, dan met de wetenschappelijke naam
+            var wikipediaInfo = haalWikipediaInfoOp(plantNaam)
+            if (wikipediaInfo == null && scientificName.isNotEmpty() && scientificName != plantNaam) {
+                wikipediaInfo = haalWikipediaInfoOp(scientificName)
+            }
+            
+            val finaleInfo = verrijkMetGemini(plantNaam, scientificName, wikipediaInfo)
+            val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia • Gemini AI" else "Pl@ntNet • Gemini AI"
             
             Result.success(finaleInfo.copy(
                 naam = plantNaam,
@@ -42,7 +48,7 @@ class CommonAiService(
             val response: String = client.submitFormWithBinaryData(
                 url = "https://my-api.plantnet.org/v2/identify/all?api-key=$plantnetApiKey&lang=nl",
                 formData = formData {
-                    append("organs", "flower")
+                    append("organs", "leaf")
                     append("images", imageBytes, Headers.build {
                         append(HttpHeaders.ContentType, "image/jpeg")
                         append(HttpHeaders.ContentDisposition, "filename=\"image.jpg\"")
@@ -56,11 +62,18 @@ class CommonAiService(
                 val bestMatch = results[0].jsonObject
                 val species = bestMatch["species"]?.jsonObject
                 val scientificName = species?.get("scientificNameWithoutAuthor")?.jsonPrimitive?.content ?: ""
+                
+                // Zoek naar een Nederlandse naam
                 val commonNames = species?.get("commonNames")?.jsonArray
-                val commonName = if (commonNames != null && commonNames.isNotEmpty()) commonNames[0].jsonPrimitive.content else scientificName
+                val commonName = if (commonNames != null && commonNames.isNotEmpty()) {
+                    commonNames[0].jsonPrimitive.content
+                } else {
+                    scientificName
+                }
                 Pair(commonName, scientificName)
             } else null
         } catch (e: Exception) {
+            println("PlantNet Error: ${e.message}")
             null
         }
     }
@@ -68,46 +81,77 @@ class CommonAiService(
     private suspend fun haalWikipediaInfoOp(naam: String): String? {
         return try {
             val encodedNaam = naam.replace(" ", "_")
-            val response: JsonObject = client.get("https://nl.wikipedia.org/api/rest_v1/page/summary/$encodedNaam").body()
-            response["extract"]?.jsonPrimitive?.content
+            // Eerst direct proberen via de summary API
+            val response: JsonObject = client.get("https://nl.wikipedia.org/api/rest_v1/page/summary/$encodedNaam") {
+                accept(ContentType.Application.Json)
+            }.body()
+            
+            val extract = response["extract"]?.jsonPrimitive?.content
+            if (!extract.isNullOrBlank()) return extract
+
+            // Als dat faalt, probeer de search API om de juiste titel te vinden
+            val searchResponse: JsonObject = client.get("https://nl.wikipedia.org/w/api.php") {
+                parameter("action", "query")
+                parameter("list", "search")
+                parameter("srsearch", naam)
+                parameter("format", "json")
+                parameter("origin", "*")
+            }.body()
+
+            val searchResults = searchResponse["query"]?.jsonObject?.get("search")?.jsonArray
+            if (searchResults != null && searchResults.isNotEmpty()) {
+                val bestTitle = searchResults[0].jsonObject["title"]?.jsonPrimitive?.content
+                if (bestTitle != null) {
+                    val encodedTitle = bestTitle.replace(" ", "_")
+                    val summaryResponse: JsonObject = client.get("https://nl.wikipedia.org/api/rest_v1/page/summary/$encodedTitle") {
+                        accept(ContentType.Application.Json)
+                    }.body()
+                    return summaryResponse["extract"]?.jsonPrimitive?.content
+                }
+            }
+            null
         } catch (e: Exception) {
+            println("Wikipedia Error for $naam: ${e.message}")
             null
         }
     }
 
-    private suspend fun verrijkMetGemini(plantNaam: String, wikipediaInfo: String?): AiPlantResult {
-        val wikiText = wikipediaInfo ?: "Geen Wikipedia informatie beschikbaar."
+    private suspend fun verrijkMetGemini(plantNaam: String, scientificName: String, wikipediaInfo: String?): AiPlantResult {
+        val wikiText = wikipediaInfo ?: "Geen extra Wikipedia informatie beschikbaar. Gebruik je eigen kennis."
         val prompt = """
-            Je bent een expert hovenier. 
-            Gebruik deze informatie van Wikipedia: $wikiText
+            Je bent een expert hovenier met diepgaande kennis van botanie en plantenverzorging.
+            Geef gedetailleerde verzorgingsinformatie voor de plant: $plantNaam ($scientificName).
+            Wikipedia context: $wikiText
             
-            Vul dit aan met jouw kennis voor de plant: $plantNaam.
+            Vul alle onderstaande velden in het Nederlands in voor een tuinier-app. 
+            Zorg dat ELK veld zinvol en volledig is ingevuld.
             
-            Geef de volgende details in het Nederlands:
-            1. waterBehoefte: Hoe en wanneer water geven? (kort)
-            2. lichtBehoefte: Wat is de beste plek? (zon/halfschaduw/schaduw)
-            3. voedingAdvies: Wanneer heeft de plant voeding nodig?
-            4. ehboSignaal: Waaraan zie je dat de plant ongezond is? (geel blad, hangend, etc.)
-            5. snoeiMaand: Welke maanden snoeien? Geef een lijst van maanden gescheiden door komma's (bijv: Maart, April, Augustus).
-            6. snoeiAdvies: Korte, praktische instructie (max 20 woorden).
-            7. omschrijving: Een korte, pakkende tekst over de plant.
-            8. bemesting: Welke specifieke voeding is het best?
-            
+            Velden uitleg:
+            1. omschrijving: Een boeiende tekst over de plant, uiterlijk, herkomst en waarom hij leuk is (max 60 woorden).
+            2. waterBehoefte: Hoe vaak en hoeveel water? Specifiek advies.
+            3. lichtBehoefte: De ideale standplaats (bijv. volle zon, halfschaduw, schaduw).
+            4. voedingAdvies: Wanneer en hoe vaak heeft de plant extra plantenvoeding nodig?
+            5. bemesting: Welke specifieke soort meststof of bodemverbeteraar is het best?
+            6. snoeiMaand: De BESTE maand om te snoeien. Geef slechts ÉÉN maand. Gebruik uitsluitend een van deze namen: Januari, Februari, Maart, April, Mei, Juni, Juli, Augustus, September, Oktober, November, December. Laat leeg als snoeien niet nodig is.
+            7. snoeiAdvies: Korte, praktische instructies over de techniek van het snoeien (max 30 woorden).
+            8. ehboSignaal: Hoe zie je dat de plant ongezond is? (bijv. bruine randen, slap hangen, gele bladeren).
+
             ANTWOORD UITSLUITEND IN DIT JSON FORMAAT:
             {
+              "omschrijving": "...",
               "waterBehoefte": "...",
               "lichtBehoefte": "...",
               "voedingAdvies": "...",
-              "ehboSignaal": "...",
+              "bemesting": "...",
               "snoeiMaand": "...",
               "snoeiAdvies": "...",
-              "omschrijving": "...",
-              "bemesting": "..."
+              "ehboSignaal": "..."
             }
         """.trimIndent()
 
         return try {
-            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$geminiApiKey") {
+            // Gebruik gemini-2.5-flash-lite op verzoek van de gebruiker voor de beste resultaten
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     putJsonArray("contents") {
@@ -119,6 +163,9 @@ class CommonAiService(
                             }
                         }
                     }
+                    putJsonObject("generationConfig") {
+                        put("response_mime_type", "application/json")
+                    }
                 })
             }.body()
 
@@ -127,13 +174,7 @@ class CommonAiService(
                 ?.get("parts")?.jsonArray?.get(0)?.jsonObject
                 ?.get("text")?.jsonPrimitive?.content ?: "{}"
 
-            // Verwijder eventuele markdown code blocks die Gemini soms toevoegt
-            val cleanJson = textResult
-                .replace("```json", "")
-                .replace("```", "")
-                .trim()
-
-            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(cleanJson).jsonObject
+            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(textResult).jsonObject
 
             AiPlantResult(
                 naam = plantNaam,

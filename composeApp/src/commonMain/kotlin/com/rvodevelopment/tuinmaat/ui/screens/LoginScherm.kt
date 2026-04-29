@@ -29,7 +29,7 @@ import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.LoginViewModel
 import org.jetbrains.compose.resources.painterResource
 import tuinmaat.composeapp.generated.resources.Res
-import tuinmaat.composeapp.generated.resources.Tuinmaat_Logo
+import tuinmaat.composeapp.generated.resources.tuin_logo
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -70,7 +70,7 @@ fun LoginScherm(
                 color = Color.White
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.Tuinmaat_Logo),
+                    painter = painterResource(Res.drawable.tuin_logo),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize().padding(12.dp).clip(CircleShape),
                     contentScale = ContentScale.Fit
