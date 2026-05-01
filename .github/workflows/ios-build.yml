@@ -45,4 +45,6 @@ jobs:
                    -sdk iphonesimulator \
                    -configuration Debug \
                    build \
+                   PRODUCT_NAME="iosApp" \
+                   PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
                    CODE_SIGNING_ALLOWED=NO
