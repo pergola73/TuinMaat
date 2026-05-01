@@ -30,6 +30,12 @@ jobs:
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> local.properties
         echo "PLANTNET_API_KEY=${{ secrets.PLANTNET_API_KEY }}" >> local.properties
 
+    - name: Isolate iOS Build
+      run: |
+        # Verwijder de Android app module uit settings.gradle.kts voor deze run
+        # Dit voorkomt Java-compilatiefouten in de Android-module tijdens iOS builds
+        sed -i '' 's/include(":app")//g' settings.gradle.kts
+
     - name: Setup Firebase iOS Config
       run: |
         mkdir -p iosApp/iosApp/Preview\ Content
@@ -38,13 +44,14 @@ jobs:
 
     - name: Build iOS App
       run: |
-        # We bouwen met xcodebuild. 
-        # Door xcodebuild aan te roepen, worden de juiste variabelen naar Gradle gepusht.
+        # We bouwen met xcodebuild en geven de architectuur expliciet door.
+        # We gebruiken ook 'ARCHS=arm64' om te matchen met de GitHub runner.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   -arch arm64 \
+                   ARCHS=arm64 \
+                   ONLY_ACTIVE_ARCH=YES \
                    build \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
