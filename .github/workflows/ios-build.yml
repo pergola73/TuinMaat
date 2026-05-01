@@ -38,9 +38,9 @@ jobs:
 
     - name: Build Kotlin Framework
       run: |
-        # In plaats van te vertrouwen op Xcode's magische taken, 
-        # bouwen we expliciet het simulator framework.
-        ./gradlew :composeApp:assembleDebugAppleFrameworkIosSimulatorArm64 -PskipAndroidApp=true
+        # We bouwen expliciet voor IosSimulatorArm64
+        # We gebruiken de universele assemble taak voor dat specifieke target
+        ./gradlew :composeApp:assembleIosSimulatorArm64 -PskipAndroidApp=true
 
     - name: Build iOS App
       run: |
