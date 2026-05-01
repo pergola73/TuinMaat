@@ -36,11 +36,11 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Build Kotlin Framework
+    - name: Build All Frameworks
       run: |
-        # We bouwen expliciet voor IosSimulatorArm64
-        # We gebruiken de universele assemble taak voor dat specifieke target
-        ./gradlew :composeApp:assembleIosSimulatorArm64 -PskipAndroidApp=true
+        # As an absolute fallback, build EVERYTHING in the composeApp module 
+        # that doesn't belong to Android. 
+        ./gradlew :composeApp:assemble -PskipAndroidApp=true
 
     - name: Build iOS App
       run: |
