@@ -34,8 +34,9 @@ jobs:
 
     - name: Setup Firebase iOS Config
       run: |
-        # Zorg dat de map bestaat voordat we het bestand schrijven
-        mkdir -p iosApp/iosApp
+        # Zorg dat de mappen bestaan die Xcode verwacht maar mogelijk niet in Git staan
+        mkdir -p iosApp/iosApp/Preview\ Content
+        mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
     - name: Build iOS App
