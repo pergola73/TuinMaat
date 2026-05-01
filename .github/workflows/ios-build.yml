@@ -39,6 +39,9 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
+    - name: Build Kotlin Framework for Simulator
+      run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
+
     - name: Build iOS App
       run: |
         xcodebuild -project iosApp/iosApp.xcodeproj \
