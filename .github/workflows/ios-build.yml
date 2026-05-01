@@ -38,11 +38,13 @@ jobs:
 
     - name: Build iOS App
       run: |
-        # We bouwen met xcodebuild en slaan de Android app over via de nieuwe property
+        # We bouwen met xcodebuild. 
+        # We geven ARCHS mee zodat de Kotlin plugin weet welke simulator hij moet bouwen.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
+                   ARCHS=arm64 \
                    build \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
