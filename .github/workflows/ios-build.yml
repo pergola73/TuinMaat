@@ -36,24 +36,18 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Discovery and Build Kotlin Framework
+    - name: Gradle Project Check
+      run: ./gradlew projects --stacktrace
+
+    - name: Build Kotlin Framework
       run: |
-        echo "Searching for available iOS framework tasks..."
-        # We zoeken naar de taak die het framework bouwt voor de simulator
-        # De naam is meestal assembleComposeAppDebugFrameworkIosSimulatorArm64
-        # of assembleDebugFrameworkIosSimulatorArm64
-        TASK_NAME=$(./gradlew :composeApp:tasks --all | grep -oE "assemble[a-zA-Z0-9]*DebugFrameworkIosSimulatorArm64" | head -n 1)
-        
-        if [ -z "$TASK_NAME" ]; then
-          echo "Specific task not found, trying fallback: assemble"
-          ./gradlew :composeApp:assembleDebug || ./gradlew assemble
-        else
-          echo "Found task: $TASK_NAME. Starting build..."
-          ./gradlew :composeApp:$TASK_NAME
-        fi
+        # We bouwen specifiek het framework. We negeren de Android app module.
+        # De taaknaam voor KMP is meestal: :composeApp:linkDebugFrameworkIosSimulatorArm64
+        ./gradlew :composeApp:assembleDebugAppleFrameworkIosSimulatorArm64 --stacktrace || ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 --stacktrace
 
     - name: Build iOS App
       run: |
+        # We vertellen Xcode om de Android module te negeren
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
