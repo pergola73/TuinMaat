@@ -34,21 +34,24 @@ jobs:
 
     - name: Setup Firebase iOS Config
       run: |
-        # Zorg dat de mappen bestaan die Xcode verwacht maar mogelijk niet in Git staan
         mkdir -p iosApp/iosApp/Preview\ Content
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Build Kotlin Framework for Simulator
-      run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
-
     - name: Build iOS App
       run: |
+        # We bouwen direct met xcodebuild. 
+        # De 'embedAndSign' taak wordt door de Kotlin plugin aangemaakt 
+        # mits xcodebuild de juiste variabelen doorgeeft.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
+                   -arch arm64 \
                    build \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
-                   CODE_SIGNING_ALLOWED=NO
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGN_IDENTITY="" \
+                   ONLY_ACTIVE_ARCH=NO
