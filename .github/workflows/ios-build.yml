@@ -36,18 +36,11 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Gradle Project Check
-      run: ./gradlew projects --stacktrace
-
-    - name: Build Kotlin Framework
-      run: |
-        # We bouwen specifiek het framework. We negeren de Android app module.
-        # De taaknaam voor KMP is meestal: :composeApp:linkDebugFrameworkIosSimulatorArm64
-        ./gradlew :composeApp:assembleDebugAppleFrameworkIosSimulatorArm64 --stacktrace || ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 --stacktrace
+    - name: List All Gradle Tasks
+      run: ./gradlew :composeApp:tasks --all
 
     - name: Build iOS App
       run: |
-        # We vertellen Xcode om de Android module te negeren
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
