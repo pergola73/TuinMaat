@@ -16,6 +16,14 @@ data class AiPlantResult(
     val bron: String = ""
 )
 
+data class AiGardenTip(
+    val temperatuur: Int,
+    val conditie: String,
+    val icoon: String,
+    val tip: String
+)
+
 interface AiService {
     suspend fun identifyPlant(imageBytes: ByteArray): Result<AiPlantResult>
+    suspend fun generateGardenTip(plantNames: List<String> = emptyList()): Result<AiGardenTip>
 }

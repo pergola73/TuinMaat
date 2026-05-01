@@ -61,11 +61,7 @@ class AndroidMediaService : MediaService {
             if (requestCode == 1002 && resultCode == Activity.RESULT_OK) {
                 try {
                     val bytes = photoFile.readBytes()
-                    // Optioneel: verklein de foto als deze te groot is voor de AI
-                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    val stream = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                    continuation.resume(stream.toByteArray())
+                    continuation.resume(bytes)
                 } catch (e: Exception) {
                     continuation.resume(null)
                 } finally {
@@ -85,5 +81,41 @@ class AndroidMediaService : MediaService {
             photoFile.delete()
             continuation.resume(null)
         }
+    }
+
+    override suspend fun resizeImage(imageBytes: ByteArray, maxDimension: Int): ByteArray {
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
+        
+        var width = options.outWidth
+        var height = options.outHeight
+        
+        if (width <= 0 || height <= 0) return imageBytes
+        if (width <= maxDimension && height <= maxDimension) {
+            return imageBytes
+        }
+        
+        val ratio = width.toFloat() / height.toFloat()
+        if (width > height) {
+            width = maxDimension
+            height = (maxDimension / ratio).toInt()
+        } else {
+            height = maxDimension
+            width = (maxDimension * ratio).toInt()
+        }
+        
+        val originalBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size) ?: return imageBytes
+        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, width, height, true)
+        
+        val stream = ByteArrayOutputStream()
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream)
+        val result = stream.toByteArray()
+        
+        originalBitmap.recycle()
+        resizedBitmap.recycle()
+        
+        return result
     }
 }

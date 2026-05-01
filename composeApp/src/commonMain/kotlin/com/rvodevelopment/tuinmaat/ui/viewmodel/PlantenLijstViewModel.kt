@@ -15,7 +15,8 @@ data class PlantenLijstState(
     val gefilterdePlanten: List<Plant> = emptyList(),
     val locaties: List<String> = emptyList(),
     val geselecteerdeLocatie: String = "Alle",
-    val zoekTerm: String = ""
+    val zoekTerm: String = "",
+    val isZoekenZichtbaar: Boolean = false
 )
 
 class PlantenLijstViewModel(
@@ -68,6 +69,16 @@ class PlantenLijstViewModel(
     fun onLocatieSelectie(locatie: String) {
         _state.update { it.copy(geselecteerdeLocatie = locatie) }
         updateFilteredList()
+    }
+
+    fun toggleZoekveld() {
+        _state.update { 
+            val nieuwZichtbaar = !it.isZoekenZichtbaar
+            it.copy(isZoekenZichtbaar = nieuwZichtbaar) 
+        }
+        if (!_state.value.isZoekenZichtbaar) {
+            onZoekTermChange("")
+        }
     }
 
     private fun updateFilteredList() {

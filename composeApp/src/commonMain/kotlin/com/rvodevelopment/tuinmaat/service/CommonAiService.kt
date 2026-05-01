@@ -7,30 +7,43 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.util.*
 import kotlinx.serialization.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class CommonAiService(
     private val client: HttpClient,
     private val plantnetApiKey: String,
-    private val geminiApiKey: String
+    private val geminiApiKey: String,
+    private val geminiModel: String,
+    private val mediaService: MediaService
 ) : AiService {
 
     override suspend fun identifyPlant(imageBytes: ByteArray): Result<AiPlantResult> = withContext(Dispatchers.IO) {
         try {
-            val plantNetResult = identificeerMetPlantNet(imageBytes)
+            // Stap 1: Resize voor Pl@ntNet (max 1280px)
+            val plantnetImage = mediaService.resizeImage(imageBytes, 1280)
+            val plantNetResult = identificeerMetPlantNet(plantnetImage)
+            
             val plantNaam = plantNetResult?.first ?: return@withContext Result.failure(Exception("Pl@ntNet kon de plant niet identificeren"))
             val scientificName = plantNetResult.second
             
-            // Probeer Wikipedia met de gewone naam, dan met de wetenschappelijke naam
+            // Stap 2: Resize voor Gemini (max 768px)
+            val geminiImage = mediaService.resizeImage(imageBytes, 768)
+            
+            // Stap 3: Probeer Wikipedia met de gewone naam, dan met de wetenschappelijke naam
             var wikipediaInfo = haalWikipediaInfoOp(plantNaam)
             if (wikipediaInfo == null && scientificName.isNotEmpty() && scientificName != plantNaam) {
                 wikipediaInfo = haalWikipediaInfoOp(scientificName)
             }
             
-            val finaleInfo = verrijkMetGemini(plantNaam, scientificName, wikipediaInfo)
+            // Stap 4: Verrijk met Gemini (met foto voor betere context)
+            val finaleInfo = verrijkMetGemini(plantNaam, scientificName, wikipediaInfo, geminiImage)
             val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia • Gemini AI" else "Pl@ntNet • Gemini AI"
             
             Result.success(finaleInfo.copy(
@@ -116,11 +129,16 @@ class CommonAiService(
         }
     }
 
-    private suspend fun verrijkMetGemini(plantNaam: String, scientificName: String, wikipediaInfo: String?): AiPlantResult {
-        val wikiText = wikipediaInfo ?: "Geen extra Wikipedia informatie beschikbaar. Gebruik je eigen kennis."
+    private suspend fun verrijkMetGemini(
+        plantNaam: String, 
+        scientificName: String, 
+        wikipediaInfo: String?,
+        imageBytes: ByteArray
+    ): AiPlantResult {
+        val wikiText = wikipediaInfo ?: "Geen extra Wikipedia informatie beschikbaar. Gebruik je eigen kennis en de bijgevoegde foto."
         val prompt = """
             Je bent een expert hovenier met diepgaande kennis van botanie en plantenverzorging.
-            Geef gedetailleerde verzorgingsinformatie voor de plant: $plantNaam ($scientificName).
+            Geef gedetailleerde verzorgingsinformatie voor de plant op de foto: $plantNaam ($scientificName).
             Wikipedia context: $wikiText
             
             Vul alle onderstaande velden in het Nederlands in voor een tuinier-app. 
@@ -150,8 +168,10 @@ class CommonAiService(
         """.trimIndent()
 
         return try {
-            // Gebruik gemini-2.5-flash-lite op verzoek van de gebruiker voor de beste resultaten
-            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$geminiApiKey") {
+            // We gebruiken de 768px foto om tokens te besparen
+            val base64Image = imageBytes.encodeBase64()
+            
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     putJsonArray("contents") {
@@ -159,6 +179,12 @@ class CommonAiService(
                             putJsonArray("parts") {
                                 addJsonObject {
                                     put("text", prompt)
+                                }
+                                addJsonObject {
+                                    putJsonObject("inline_data") {
+                                        put("mime_type", "image/jpeg")
+                                        put("data", base64Image)
+                                    }
                                 }
                             }
                         }
@@ -193,6 +219,101 @@ class CommonAiService(
                 naam = plantNaam, 
                 omschrijving = wikipediaInfo ?: "Helaas kon er geen extra informatie worden opgehaald voor deze plant."
             )
+        }
+    }
+
+    override suspend fun generateGardenTip(plantNames: List<String>): Result<AiGardenTip> = withContext(Dispatchers.IO) {
+        try {
+            // Stap 1: Haal actueel weer op (Open-Meteo, geen API key nodig)
+            // We gebruiken een centrale locatie in Nederland als default
+            val weatherResponse: JsonObject = client.get("https://api.open-meteo.com/v1/forecast?latitude=52.1326&longitude=5.2913&current_weather=true").body()
+            val current = weatherResponse["current_weather"]?.jsonObject
+            val temp = current?.get("temperature")?.jsonPrimitive?.content?.toDoubleOrNull()?.toInt() ?: 15
+            val weatherCode = current?.get("weathercode")?.jsonPrimitive?.content?.toIntOrNull() ?: 0
+            
+            val conditie = when (weatherCode) {
+                0 -> "Zonnig"
+                1, 2, 3 -> "Licht bewolkt"
+                45, 48 -> "Mistig"
+                51, 53, 55, 61, 63, 65 -> "Regenachtig"
+                71, 73, 75 -> "Sneeuw"
+                95, 96, 99 -> "Onweer"
+                else -> "Wisselvallig"
+            }
+            
+            val icoon = when (weatherCode) {
+                0, 1 -> "Sunny"
+                2, 3 -> "Cloudy"
+                51, 53, 55, 61, 63, 65, 80, 81, 82 -> "Rain"
+                else -> "Cloudy"
+            }
+
+            // Stap 2: Genereer tip met Gemini
+            val nu = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val maandNaam = when(nu.monthNumber) {
+                1 -> "Januari"
+                2 -> "Februari"
+                3 -> "Maart"
+                4 -> "April"
+                5 -> "Mei"
+                6 -> "Juni"
+                7 -> "Juli"
+                8 -> "Augustus"
+                9 -> "September"
+                10 -> "Oktober"
+                11 -> "November"
+                12 -> "December"
+                else -> "deze maand"
+            }
+
+            val plantContext = if (plantNames.isNotEmpty()) {
+                "De gebruiker heeft de volgende planten in de tuin: ${plantNames.joinToString(", ")}. "
+            } else ""
+
+            val prompt = """
+                Je bent een expert hovenier. Het is nu $maandNaam en het weer is: $conditie met $temp graden.
+                $plantContext
+                Geef een concrete, inspirerende en unieke tuintip voor deze dag. 
+                Focus op onderhoud, zaaien, snoeien of genieten van de tuin passend bij dit specifieke weer en de maand.
+                Als er planten genoemd zijn, probeer de tip relevant te maken voor (een van) die planten.
+                De tip moet kort en krachtig zijn, maximaal 2 zinnen.
+                
+                ANTWOORD UITSLUITEND IN DIT JSON FORMAAT:
+                {
+                  "tip": "De tekst van jouw tip (max 2 zinnen)"
+                }
+            """.trimIndent()
+
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
+                    putJsonArray("contents") {
+                        addJsonObject {
+                            putJsonArray("parts") {
+                                addJsonObject {
+                                    put("text", prompt)
+                                }
+                            }
+                        }
+                    }
+                    putJsonObject("generationConfig") {
+                        put("response_mime_type", "application/json")
+                    }
+                })
+            }.body()
+
+            val textResult = response["candidates"]?.jsonArray?.get(0)?.jsonObject
+                ?.get("content")?.jsonObject
+                ?.get("parts")?.jsonArray?.get(0)?.jsonObject
+                ?.get("text")?.jsonPrimitive?.content ?: "{}"
+
+            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(textResult).jsonObject
+            val tip = json["tip"]?.jsonPrimitive?.content ?: "Geniet van je tuin vandaag!"
+
+            Result.success(AiGardenTip(temp, conditie, icoon, tip))
+        } catch (e: Exception) {
+            println("Garden Tip Error: ${e.message}")
+            Result.failure(e)
         }
     }
 }

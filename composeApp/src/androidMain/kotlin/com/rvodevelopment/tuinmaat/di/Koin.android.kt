@@ -5,7 +5,7 @@ import com.rvodevelopment.tuinmaat.data.*
 import org.koin.dsl.module
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
-import com.rvodevelopment.tuinmaat.BuildConfig
+import com.rvodevelopment.tuinmaat.composeapp.BuildConfig
 import com.rvodevelopment.tuinmaat.util.ActivityProvider
 
 actual fun platformModule(): Module = module {

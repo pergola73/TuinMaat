@@ -1,5 +1,8 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -8,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,7 +47,7 @@ fun PlantenLijstScherm(
             // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp)
             ) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
@@ -52,8 +56,16 @@ fun PlantenLijstScherm(
                     text = state.tuinnaam,
                     style = MaterialTheme.typography.headlineSmall,
                     color = DonkerGroen,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f)
                 )
+                IconButton(onClick = { viewModel.toggleZoekveld() }) {
+                    Icon(
+                        if (state.isZoekenZichtbaar) Icons.Default.Close else Icons.Default.Search,
+                        contentDescription = "Zoeken",
+                        tint = DonkerGroen
+                    )
+                }
             }
 
             // Locatie filters
@@ -78,30 +90,36 @@ fun PlantenLijstScherm(
             }
 
             // Neumorphic Zoekbalk
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                    .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White.copy(alpha = 0.6f)
+            AnimatedVisibility(
+                visible = state.isZoekenZichtbaar,
+                enter = expandVertically(),
+                exit = shrinkVertically()
             ) {
-                TextField(
-                    value = state.zoekTerm,
-                    onValueChange = { viewModel.onZoekTermChange(it) },
-                    placeholder = { Text("Zoek op naam...", color = DonkerGroen.copy(alpha = 0.5f)) },
-                    leadingIcon = { Icon(Icons.Default.Search, null, tint = DonkerGroen) },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = DonkerGroen,
-                        unfocusedTextColor = DonkerGroen
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                        .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White.copy(alpha = 0.6f)
+                ) {
+                    TextField(
+                        value = state.zoekTerm,
+                        onValueChange = { viewModel.onZoekTermChange(it) },
+                        placeholder = { Text("Zoek op naam...", color = DonkerGroen.copy(alpha = 0.5f)) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = DonkerGroen) },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = DonkerGroen,
+                            unfocusedTextColor = DonkerGroen
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

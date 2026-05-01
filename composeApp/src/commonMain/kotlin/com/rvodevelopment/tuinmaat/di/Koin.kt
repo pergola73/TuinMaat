@@ -12,6 +12,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
+import org.koin.core.qualifier.named
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) =
     startKoin {
@@ -35,18 +36,25 @@ fun commonModule() = module {
     }
     single { MessageService() }
     single { DeepLinkHandler(get(), get(), get()) }
-    single<TuintipService> { DefaultTuintipService() }
+    single<TuintipService> { DefaultTuintipService(get()) }
     single<UserRepository> { FirebaseUserRepository() }
     single<TuinRepository> { FirebaseTuinRepository() }
     single<AuthService> { FirebaseAuthService() }
     single<StorageService> { FirebaseStorageService() }
     single<MediaService> { get() }
     single { get<PlantDatabase>().plantDao() }
+
+    // Centrale plek voor het Gemini model
+    single(named("GEMINI_MODEL")) { "gemini-flash-lite-latest" }
+
     single<AiService> { CommonAiService(
         client = get(),
-        plantnetApiKey = get(org.koin.core.qualifier.named("PLANTNET_API_KEY")),
-        geminiApiKey = get(org.koin.core.qualifier.named("GEMINI_API_KEY"))
+        plantnetApiKey = get(named("PLANTNET_API_KEY")),
+        geminiApiKey = get(named("GEMINI_API_KEY")),
+        geminiModel = get(named("GEMINI_MODEL")),
+        mediaService = get()
     ) }
+
     factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HoofdMenuViewModel(get(), get(), get(), get()) }
     factory { PlantenLijstViewModel(get(), get(), get()) }

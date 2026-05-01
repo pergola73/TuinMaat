@@ -59,11 +59,12 @@ fun LoginScherm(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .imePadding()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(40.dp))
             Surface(
                 modifier = Modifier.size(100.dp).neumorphicShadow(shape = CircleShape),
                 shape = CircleShape,
@@ -184,7 +185,23 @@ fun LoginScherm(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
+                Text(
+                    " of ", 
+                    style = MaterialTheme.typography.bodySmall, 
+                    color = DonkerGroen.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedButton(
                 onClick = { viewModel.loginWithGoogle(onLoginSuccess) },
