@@ -36,15 +36,16 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
+    - name: List Gradle Tasks
+      run: ./gradlew :composeApp:tasks --all | grep embed || true
+
     - name: Build iOS App
       run: |
-        # We bouwen met xcodebuild. 
-        # We geven ARCHS mee zodat de Kotlin plugin weet welke simulator hij moet bouwen.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   ARCHS=arm64 \
+                   -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
                    build \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
