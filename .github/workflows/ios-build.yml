@@ -37,7 +37,7 @@ jobs:
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
     - name: Build KMP Shared Framework
-      run: ./gradlew :composeApp:assembleRelease
+      run: ./gradlew :composeApp:assemble
 
     - name: Build iOS App
       run: |
