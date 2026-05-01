@@ -36,15 +36,15 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: List All Gradle Tasks
-      run: ./gradlew :composeApp:tasks --all
-
     - name: Build iOS App
       run: |
+        # We bouwen met xcodebuild. 
+        # Door xcodebuild aan te roepen, worden de juiste variabelen naar Gradle gepusht.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
+                   -arch arm64 \
                    build \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
