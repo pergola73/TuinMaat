@@ -36,8 +36,8 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: List Gradle Tasks
-      run: ./gradlew :composeApp:tasks --all | grep embed || true
+    - name: Gradle Project Diagnosis
+      run: ./gradlew :composeApp:tasks -PskipAndroidApp=true --stacktrace
 
     - name: Build iOS App
       run: |
