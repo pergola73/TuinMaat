@@ -7,9 +7,10 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 
 actual fun platformModule(): Module = module {
-    single(named("PLANTNET_API_KEY")) { "" } // TODO: Implementeer veilige opslag voor iOS
+    single(named("PLANTNET_API_KEY")) { "" } 
     single(named("GEMINI_API_KEY")) { "" }
     single<PlantDatabase> { getRoomDatabase(getDatabaseBuilder()) }
     single<SharingService> { IosSharingService() }
     single<BiometricService> { IosBiometricService() }
+    single<MediaService> { IosMediaService() }
 }

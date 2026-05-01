@@ -21,7 +21,7 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) =
     }
 
 // called by iOS etc
-fun initKoin() = initKoin {}
+fun doInitKoin() = initKoin {}
 
 fun commonModule() = module {
     single { 

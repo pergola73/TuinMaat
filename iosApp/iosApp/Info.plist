@@ -44,5 +44,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>TuinMaat heeft toegang tot de camera nodig om foto's van planten te maken voor herkenning.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TuinMaat heeft toegang tot je foto's nodig om planten te kunnen selecteren uit je galerij.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TuinMaat gebruikt je locatie om te bepalen welke planten het beste groeien in jouw regio.</string>
 </dict>
 </plist>
