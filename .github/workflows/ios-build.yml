@@ -4,8 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main", "develop" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -38,17 +36,18 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
+    - name: Build Kotlin Framework
+      run: ./gradlew :composeApp:assembleDebugAppleFrameworkIosSimulatorArm64
+
     - name: Build iOS App
       run: |
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   -arch arm64 \
                    build \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGN_IDENTITY="" \
-                   ONLY_ACTIVE_ARCH=YES
+                   CODE_SIGN_IDENTITY=""
