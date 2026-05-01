@@ -152,7 +152,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignComposeAppAppleFrameworkForXcode -PskipAndroidApp=true || ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode -PskipAndroidApp=true\n";
+			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode -PskipAndroidApp=true\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

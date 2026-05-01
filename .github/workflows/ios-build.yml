@@ -51,4 +51,5 @@ jobs:
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGN_IDENTITY=""
+                   CODE_SIGN_IDENTITY="" \
+                   OTHER_KOTLIN_FLAGS="-PskipAndroidApp=true"
