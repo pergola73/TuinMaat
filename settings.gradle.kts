@@ -24,7 +24,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "TuinMaat"
 
-if (!settings.extra.has("skipAndroidApp")) {
+// Als we bouwen voor iOS op CI, slaan we de Android-app module over
+if (providers.gradleProperty("skipAndroidApp").orNull != "true") {
     include(":app")
 }
 include(":composeApp")
