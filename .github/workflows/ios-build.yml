@@ -40,9 +40,6 @@ jobs:
 
     - name: Build iOS App
       run: |
-        # We bouwen direct met xcodebuild. 
-        # De 'embedAndSign' taak wordt door de Kotlin plugin aangemaakt 
-        # mits xcodebuild de juiste variabelen doorgeeft.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
@@ -54,4 +51,4 @@ jobs:
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGN_IDENTITY="" \
-                   ONLY_ACTIVE_ARCH=NO
+                   ONLY_ACTIVE_ARCH=YES
