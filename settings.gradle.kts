@@ -23,5 +23,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "TuinMaat"
-include(":app")
+
+if (!settings.extra.has("skipAndroidApp")) {
+    include(":app")
+}
 include(":composeApp")
