@@ -36,13 +36,18 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
+    - name: Repair Konan Directory
+      run: |
+        # Download de missende bestanden voor KSP / Kotlin Native op CI
+        mkdir -p ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools
+        touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
+        echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
+
     - name: Diagnose and Build Framework
       run: |
         echo "Listing all framework tasks..."
         ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
-        cat framework_tasks.txt
         
-        # We halen de exacte naam uit de lijst die de compiler zelf geeft
         EXACT_TASK=$(cat framework_tasks.txt | grep "linkDebugFrameworkIosSimulatorArm64" | head -n 1 | awk '{print $1}')
         
         if [ -n "$EXACT_TASK" ]; then
