@@ -60,7 +60,8 @@ jobs:
           echo "!!! BUILD FAILED - KOTLIN COMPILER ERROR SUMMARY !!!"
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           # Filter alle regels die met 'e:' beginnen (Kotlin fouten)
-          grep "^e: " build_log.txt | sort -u
+          # En zoek specifiek naar linker details (Undefined symbols, duplicate, etc)
+          grep -E "^e: |Undefined symbols|duplicate symbol|ld: " build_log.txt | sort -u
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           # Laat ook de laatste 50 regels zien voor context
           tail -n 50 build_log.txt
