@@ -26,6 +26,11 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
 
+    - name: Fix Gradle Native Libraries
+      run: |
+        mkdir -p ~/.gradle/native
+        find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
+
     - name: Create local.properties
       run: |
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> local.properties
@@ -43,33 +48,22 @@ jobs:
         touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
         echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
 
-    - name: Build Framework and Summarize Errors
+    - name: Build Framework
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-        
-        # Zoek de juiste taak voor simulator
-        echo "Searching for framework tasks..."
-        ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
-        
-        EXACT_TASK=$(cat framework_tasks.txt | grep "linkDebugFrameworkIosSimulatorArm64" | head -n 1 | awk '{print $1}')
-        
-        # Voer de build uit en vang alle output op in een tijdelijk bestand
-        echo "Starting build with task: ${EXACT_TASK:-assemble}..."
-        ./gradlew :composeApp:${EXACT_TASK:-assemble} -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          echo "!!! BUILD FAILED - KOTLIN COMPILER ERROR SUMMARY !!!"
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          # Filter alle regels die met 'e:' beginnen (Kotlin fouten)
-          # En zoek specifiek naar linker details (Undefined symbols, duplicate, etc)
-          grep -E "^e: |Undefined symbols|duplicate symbol|ld: " build_log.txt | sort -u
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          # Laat ook de laatste 50 regels zien voor context
-          tail -n 50 build_log.txt
+        ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
+          echo "!!! KOTLIN BUILD FAILED !!!"
+          grep -E "^e: |Undefined symbols|ld: " build_log.txt | sort -u
           exit 1
         )
+        find composeApp/build/bin/iosSimulatorArm64 -name "*.framework"
 
     - name: Build iOS App
       run: |
+        FRAMEWORK_DIR=$(find composeApp/build/bin/iosSimulatorArm64 -name "debugFramework" -type d | head -n 1)
+        FULL_FRAMEWORK_PATH="$(pwd)/$FRAMEWORK_DIR"
+        echo "Using Framework Path: $FULL_FRAMEWORK_PATH"
+
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
@@ -81,4 +75,6 @@ jobs:
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGN_IDENTITY="" \
-                   OTHER_KOTLIN_FLAGS="-PskipAndroidApp=true"
+                   OTHER_KOTLIN_FLAGS="-PskipAndroidApp=true" \
+                   FRAMEWORK_SEARCH_PATHS="$FULL_FRAMEWORK_PATH" \
+                   OTHER_LDFLAGS="-framework ComposeApp"
