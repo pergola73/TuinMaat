@@ -36,9 +36,13 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
+    - name: Build Kotlin Framework
+      run: |
+        # Forceer Gradle om het iOS Simulator framework te bouwen voordat Xcode start
+        ./gradlew :composeApp:assembleIosSimulatorArm64DebugFramework -PskipAndroidApp=true --stacktrace
+
     - name: Build iOS App
       run: |
-        # We bouwen direct met xcodebuild en negeren de Android module om memory-issues met KSP te voorkomen
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
