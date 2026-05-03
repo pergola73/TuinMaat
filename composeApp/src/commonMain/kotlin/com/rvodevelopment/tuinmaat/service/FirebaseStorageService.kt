@@ -2,10 +2,10 @@ package com.rvodevelopment.tuinmaat.service
 
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.storage.storage
-import dev.gitlive.firebase.storage.Data
+import dev.gitlive.firebase.storage.StorageReference
 
-// Helper om ByteArray naar Firebase Data te converteren op verschillende platformen
-expect fun ByteArray.toFirebaseData(): Data
+// Helper om platform-specifieke upload uit te voeren
+expect suspend fun StorageReference.uploadBytes(bytes: ByteArray)
 
 class FirebaseStorageService : StorageService {
     private val storage = Firebase.storage
@@ -19,7 +19,7 @@ class FirebaseStorageService : StorageService {
     override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
         return try {
             val ref = storage.reference(path)
-            ref.putData(bytes.toFirebaseData())
+            ref.uploadBytes(bytes)
             Result.success(ref.getDownloadUrl())
         } catch (e: Exception) {
             Result.failure(e)

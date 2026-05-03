@@ -98,5 +98,3 @@ class FirebaseAuthService : AuthService {
         }
     }
 }
-
-expect suspend fun getGoogleIdToken(): String?

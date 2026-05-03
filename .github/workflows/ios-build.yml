@@ -16,9 +16,8 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin'
+        distribution: 'zulu' # Zulu has better ARM support for macOS
         cache: gradle
-        # Dwing ARM architectuur op de Mac server om mismatches te voorkomen
         architecture: aarch64
 
     - name: Setup Gradle
