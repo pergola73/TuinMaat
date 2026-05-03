@@ -28,7 +28,6 @@ jobs:
 
     - name: Fix Gradle Native Libraries
       run: |
-        # Soms zijn native libraries op macOS niet executable in de cache
         mkdir -p ~/.gradle/native
         find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
 
@@ -45,28 +44,27 @@ jobs:
 
     - name: Repair Konan Directory
       run: |
-        # Download de missende bestanden voor KSP / Kotlin Native op CI
-        # Dit is specifiek voor de Kotlin 2.1.0 compiler crash
         mkdir -p ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools
         touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
         echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
 
-    - name: Diagnose and Build Framework
+    - name: Build Framework
       run: |
-        # Dwing Gradle om native libraries niet te gebruiken voor console output
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-
-        echo "Listing all framework tasks..."
+        
+        # Zoek de juiste taak voor simulator
+        echo "Searching for framework tasks..."
         ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
+        cat framework_tasks.txt
         
         EXACT_TASK=$(cat framework_tasks.txt | grep "linkDebugFrameworkIosSimulatorArm64" | head -n 1 | awk '{print $1}')
         
         if [ -n "$EXACT_TASK" ]; then
           echo "Found exact framework task: $EXACT_TASK. Executing now..."
-          ./gradlew :composeApp:$EXACT_TASK -PskipAndroidApp=true
+          ./gradlew :composeApp:$EXACT_TASK -PskipAndroidApp=true --info --stacktrace
         else
-          echo "Specific link task not found! Trying universal linkIos..."
-          ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true || ./gradlew :composeApp:linkIosSimulatorArm64 -PskipAndroidApp=true
+          echo "Fallback to assemble..."
+          ./gradlew :composeApp:assemble -PskipAndroidApp=true --info --stacktrace
         fi
 
     - name: Build iOS App

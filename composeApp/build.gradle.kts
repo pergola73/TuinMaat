@@ -14,7 +14,7 @@ plugins {
 
 compose.resources {
     publicResClass = true
-    packageOfResClass = "tuinmaat.composeapp.generated.resources"
+    packageOfResClass = "com.rvodevelopment.tuinmaat.composeapp.generated.resources"
 }
 
 // room configuratie

@@ -32,8 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
-import tuinmaat.composeapp.generated.resources.Res
-import tuinmaat.composeapp.generated.resources.tuin_logo
+import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
 
 @Composable
 fun TuinMaatLogo(modifier: Modifier = Modifier) {
@@ -167,5 +166,23 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(12.dp))
             Text(tekst, color = DonkerGroen, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Composable
+fun TuinAchtergrond(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        AchtergrondGroenLicht,
+                        AchtergrondGroenMidden
+                    )
+                )
+            )
+    ) {
+        content()
     }
 }
