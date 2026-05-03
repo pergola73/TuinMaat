@@ -10,10 +10,10 @@ import platform.Foundation.NSData
 import platform.Foundation.create
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
-actual suspend fun StorageReference.uploadBytes(bytes: ByteArray) {
+actual suspend fun StorageReference.performByteArrayUpload(bytes: ByteArray) {
     val nsData = bytes.usePinned { pinned ->
         NSData.create(bytes = pinned.addressOf(0), length = bytes.size.toULong())
     }
-    // In gitlive-firebase iOS, Data constructor takes NSData
+    // We gebruiken de platform-specifieke NSData wrapper voor gitlive-firebase
     this.putData(Data(nsData))
 }

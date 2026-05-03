@@ -4,8 +4,8 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.storage.storage
 import dev.gitlive.firebase.storage.StorageReference
 
-// Platform-specifieke helper voor het uploaden van bytes naar Firebase Storage
-expect suspend fun StorageReference.uploadBytes(bytes: ByteArray)
+// Unieke naam om conflicten met platform-specifieke SDK's te voorkomen
+expect suspend fun StorageReference.performByteArrayUpload(bytes: ByteArray)
 
 class FirebaseStorageService : StorageService {
     private val storage = Firebase.storage
@@ -19,7 +19,7 @@ class FirebaseStorageService : StorageService {
     override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
         return try {
             val ref = storage.reference(path)
-            ref.uploadBytes(bytes)
+            ref.performByteArrayUpload(bytes)
             Result.success(ref.getDownloadUrl())
         } catch (e: Exception) {
             Result.failure(e)
