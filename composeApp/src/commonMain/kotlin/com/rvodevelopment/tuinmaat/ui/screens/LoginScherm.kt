@@ -28,7 +28,7 @@ import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.LoginViewModel
 import org.jetbrains.compose.resources.painterResource
-import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
+import tuinmaat.resources.*
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
