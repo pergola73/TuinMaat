@@ -32,7 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
-import tuinmaat.composeapp.generated.resources.*
+import tuinmaat.composeapp.generated.resources.Res
+import tuinmaat.composeapp.generated.resources.tuin_logo
 
 @Composable
 fun TuinMaatLogo(modifier: Modifier = Modifier) {
@@ -59,54 +60,6 @@ fun TuinMaatLogo(modifier: Modifier = Modifier) {
             fontSize = 12.sp,
             modifier = Modifier.padding(top = 2.dp)
         )
-    }
-}
-
-@Composable
-fun TuinAchtergrond(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        AchtergrondGroenLicht,
-                        AchtergrondGroenMidden
-                    )
-                )
-            )
-    ) {
-        content()
-    }
-}
-
-@Composable
-fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        color = ZachtBeige,
-        shadowElevation = 0.dp
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                color = ZachtBeige,
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp))
-            ) {
-                Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.padding(8.dp))
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(tekst, color = DonkerGroen, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        }
     }
 }
 
@@ -184,5 +137,35 @@ fun InvoerVeldMetIcoon(
                 unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
             )
         )
+    }
+}
+
+@Composable
+fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = ZachtBeige,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                color = ZachtBeige,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp))
+            ) {
+                Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.padding(8.dp))
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(tekst, color = DonkerGroen, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }

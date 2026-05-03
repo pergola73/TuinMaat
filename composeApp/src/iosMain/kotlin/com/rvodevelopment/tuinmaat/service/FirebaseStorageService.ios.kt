@@ -15,5 +15,6 @@ actual suspend fun StorageReference.performByteArrayUpload(bytes: ByteArray) {
         NSData.create(bytes = pinned.addressOf(0), length = bytes.size.toULong())
     }
     // We gebruiken de platform-specifieke NSData wrapper voor gitlive-firebase
+    // Op iOS verwacht de library een Data object dat intern een NSData bevat.
     this.putData(Data(nsData))
 }

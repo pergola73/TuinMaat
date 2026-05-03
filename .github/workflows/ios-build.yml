@@ -16,15 +16,21 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'zulu' # Zulu has better ARM support for macOS
-        cache: gradle
+        distribution: 'zulu'
         architecture: aarch64
+        cache: gradle
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
     - name: Make gradlew executable
       run: chmod +x gradlew
+
+    - name: Fix Gradle Native Libraries
+      run: |
+        # Soms zijn native libraries op macOS niet executable in de cache
+        mkdir -p ~/.gradle/native
+        find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
 
     - name: Create local.properties
       run: |
@@ -40,14 +46,15 @@ jobs:
     - name: Repair Konan Directory
       run: |
         # Download de missende bestanden voor KSP / Kotlin Native op CI
+        # Dit is specifiek voor de Kotlin 2.1.0 compiler crash
         mkdir -p ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools
         touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
         echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
 
     - name: Diagnose and Build Framework
       run: |
-        # Fix voor jansi library permissies op CI
-        export GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.native=false"
+        # Dwing Gradle om native libraries niet te gebruiken voor console output
+        export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
 
         echo "Listing all framework tasks..."
         ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
