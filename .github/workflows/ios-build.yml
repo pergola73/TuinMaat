@@ -54,10 +54,10 @@ jobs:
         
         if [ -n "$EXACT_TASK" ]; then
           echo "Found exact framework task: $EXACT_TASK. Executing now..."
-          ./gradlew :composeApp:$EXACT_TASK -PskipAndroidApp=true
+          ./gradlew :composeApp:$EXACT_TASK -PskipAndroidApp=true --no-daemon
         else
           echo "Specific link task not found! Trying universal linkIos..."
-          ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true || ./gradlew :composeApp:linkIosSimulatorArm64 -PskipAndroidApp=true
+          ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --no-daemon || ./gradlew :composeApp:linkIosSimulatorArm64 -PskipAndroidApp=true --no-daemon
         fi
 
     - name: Build iOS App
