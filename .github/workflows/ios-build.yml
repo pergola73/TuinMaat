@@ -51,19 +51,23 @@ jobs:
     - name: Build Framework
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
+        # Bouw het dynamische framework voor de simulator
         ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
           echo "!!! KOTLIN BUILD FAILED !!!"
           grep -E "^e: |Undefined symbols|ld: " build_log.txt | sort -u
           exit 1
         )
-        find composeApp/build/bin/iosSimulatorArm64 -name "*.framework"
+        
+        # Bevestig pad voor de volgende stap
+        find composeApp/build/bin/iosSimulatorArm64 -name "ComposeApp.framework"
 
     - name: Build iOS App
       run: |
-        FRAMEWORK_DIR=$(find composeApp/build/bin/iosSimulatorArm64 -name "debugFramework" -type d | head -n 1)
-        FULL_FRAMEWORK_PATH="$(pwd)/$FRAMEWORK_DIR"
-        echo "Using Framework Path: $FULL_FRAMEWORK_PATH"
-
+        FRAMEWORK_PARENT_DIR=$(find composeApp/build/bin/iosSimulatorArm64 -name "debugFramework" -type d | head -n 1)
+        FULL_PATH="$(pwd)/$FRAMEWORK_PARENT_DIR"
+        echo "Framework location: $FULL_PATH"
+        
+        # We bouwen met xcodebuild en dwingen de koppeling naar het dynamische framework
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
@@ -74,7 +78,6 @@ jobs:
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGN_IDENTITY="" \
-                   OTHER_KOTLIN_FLAGS="-PskipAndroidApp=true" \
-                   FRAMEWORK_SEARCH_PATHS="$FULL_FRAMEWORK_PATH" \
+                   FRAMEWORK_SEARCH_PATHS="$FULL_PATH" \
+                   LD_RUNPATH_SEARCH_PATHS="@executable_path/Frameworks" \
                    OTHER_LDFLAGS="-framework ComposeApp"
