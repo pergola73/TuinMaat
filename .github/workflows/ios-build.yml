@@ -36,11 +36,11 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Build All Frameworks
+    - name: Force Gradle Evaluation and Dump Tasks
       run: |
-        # As an absolute fallback, build EVERYTHING in the composeApp module 
-        # that doesn't belong to Android. 
-        ./gradlew :composeApp:assemble -PskipAndroidApp=true
+        # We negeren composeApp expliciet. We vragen Gradle gewoon om te initialiseren en ALLES te tonen
+        ./gradlew tasks --all --stacktrace > gradle_tasks.txt
+        cat gradle_tasks.txt
 
     - name: Build iOS App
       run: |
