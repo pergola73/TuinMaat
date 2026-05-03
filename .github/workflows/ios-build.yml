@@ -36,10 +36,22 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Build Kotlin Framework
+    - name: Diagnose and Build Framework
       run: |
-        # Forceer Gradle om het iOS Simulator framework te bouwen voordat Xcode start
-        ./gradlew :composeApp:assembleIosSimulatorArm64DebugFramework -PskipAndroidApp=true --stacktrace
+        echo "Listing all framework tasks..."
+        ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
+        cat framework_tasks.txt
+        
+        # We halen de exacte naam uit de lijst die de compiler zelf geeft
+        EXACT_TASK=$(cat framework_tasks.txt | grep "linkDebugFrameworkIosSimulatorArm64" | head -n 1 | awk '{print $1}')
+        
+        if [ -n "$EXACT_TASK" ]; then
+          echo "Found exact framework task: $EXACT_TASK. Executing now..."
+          ./gradlew :composeApp:$EXACT_TASK -PskipAndroidApp=true
+        else
+          echo "Specific link task not found! Trying universal linkIos..."
+          ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true || ./gradlew :composeApp:linkIosSimulatorArm64 -PskipAndroidApp=true
+        fi
 
     - name: Build iOS App
       run: |
