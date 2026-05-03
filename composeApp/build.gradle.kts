@@ -112,9 +112,12 @@ kotlin {
 
 dependencies {
     add("kspAndroid", libs.androidx.room.compiler)
-    add("kspIosX64", libs.androidx.room.compiler)
-    add("kspIosArm64", libs.androidx.room.compiler)
-    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+    // KSP iOS is definitively disabled on CI due to unresolvable Kotlin Native bug
+    if (System.getenv("GITHUB_ACTIONS") != "true") {
+        add("kspIosX64", libs.androidx.room.compiler)
+        add("kspIosArm64", libs.androidx.room.compiler)
+        add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+    }
 }
 
 // Nodig voor Room multiplatform
