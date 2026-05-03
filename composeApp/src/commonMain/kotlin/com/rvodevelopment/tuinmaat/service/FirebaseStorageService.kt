@@ -16,6 +16,7 @@ class FirebaseStorageService : StorageService {
     override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
         return try {
             val ref = storage.reference(path)
+            // Gebruik de Data wrapper specifiek voor KMP
             ref.putData(Data(bytes))
             Result.success(ref.getDownloadUrl())
         } catch (e: Exception) {
