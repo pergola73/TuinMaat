@@ -5,4 +5,8 @@ class IosAiService : AiService {
         // Placeholder for Firebase Vertex AI iOS implementation
         return Result.failure(Exception("iOS AI Service niet geïmplementeerd"))
     }
+    
+    override suspend fun generateGardenTip(plantNames: List<String>): Result<AiGardenTip> {
+        return Result.failure(Exception("Not implemented for iOS yet"))
+    }
 }
