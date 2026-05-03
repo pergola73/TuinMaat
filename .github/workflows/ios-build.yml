@@ -26,11 +26,6 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
 
-    - name: Fix Gradle Native Libraries
-      run: |
-        mkdir -p ~/.gradle/native
-        find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
-
     - name: Create local.properties
       run: |
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> local.properties
@@ -48,24 +43,29 @@ jobs:
         touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
         echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
 
-    - name: Build Framework
+    - name: Build Framework and Summarize Errors
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
         
         # Zoek de juiste taak voor simulator
         echo "Searching for framework tasks..."
         ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
-        cat framework_tasks.txt
         
         EXACT_TASK=$(cat framework_tasks.txt | grep "linkDebugFrameworkIosSimulatorArm64" | head -n 1 | awk '{print $1}')
         
-        if [ -n "$EXACT_TASK" ]; then
-          echo "Found exact framework task: $EXACT_TASK. Executing now..."
-          ./gradlew :composeApp:$EXACT_TASK -PskipAndroidApp=true --info --stacktrace
-        else
-          echo "Fallback to assemble..."
-          ./gradlew :composeApp:assemble -PskipAndroidApp=true --info --stacktrace
-        fi
+        # Voer de build uit en vang alle output op in een tijdelijk bestand
+        echo "Starting build with task: ${EXACT_TASK:-assemble}..."
+        ./gradlew :composeApp:${EXACT_TASK:-assemble} -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo "!!! BUILD FAILED - KOTLIN COMPILER ERROR SUMMARY !!!"
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          # Filter alle regels die met 'e:' beginnen (Kotlin fouten)
+          grep "^e: " build_log.txt | sort -u
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          # Laat ook de laatste 50 regels zien voor context
+          tail -n 50 build_log.txt
+          exit 1
+        )
 
     - name: Build iOS App
       run: |
