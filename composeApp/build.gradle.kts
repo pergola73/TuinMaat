@@ -39,6 +39,8 @@ kotlin {
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
+            // Workaround for KSP / Kotlin Native issue on CI
+            freeCompilerArgs += listOf("-Xdisable-phases=VerifyBitcode")
         }
     }
     
