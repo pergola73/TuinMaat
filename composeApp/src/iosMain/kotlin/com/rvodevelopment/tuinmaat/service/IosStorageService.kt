@@ -26,6 +26,6 @@ class IosStorageService : StorageService {
     }
     
     override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
-        return Result.failure(Exception("Not implemented for iOS yet"))
+        return Result.failure(Exception("iOS Local Storage upload niet geïmplementeerd"))
     }
 }

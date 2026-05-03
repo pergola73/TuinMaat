@@ -12,6 +12,11 @@ plugins {
     id("androidx.room")
 }
 
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "tuinmaat.composeapp.generated.resources"
+}
+
 // room configuratie
 configure<RoomExtension> {
     schemaDirectory("$projectDir/schemas")

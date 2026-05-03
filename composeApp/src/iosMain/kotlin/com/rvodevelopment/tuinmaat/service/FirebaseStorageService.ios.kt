@@ -14,8 +14,6 @@ actual suspend fun StorageReference.uploadBytes(bytes: ByteArray) {
     val nsData = bytes.usePinned { pinned ->
         NSData.create(bytes = pinned.addressOf(0), length = bytes.size.toULong())
     }
-    // We gebruiken de platform-specifieke NSData zoals de server verwacht
-    // De cast naar Any en dan naar Data is om de lokale compiler tevreden te houden
-    @Suppress("UNCHECKED_CAST")
-    this.putData(nsData as Any as Data)
+    // In gitlive-firebase iOS, Data constructor takes NSData
+    this.putData(Data(nsData))
 }

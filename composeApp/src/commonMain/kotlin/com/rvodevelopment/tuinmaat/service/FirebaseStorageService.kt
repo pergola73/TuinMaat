@@ -4,7 +4,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.storage.storage
 import dev.gitlive.firebase.storage.StorageReference
 
-// Helper om platform-specifieke upload uit te voeren
+// Platform-specifieke helper voor het uploaden van bytes naar Firebase Storage
 expect suspend fun StorageReference.uploadBytes(bytes: ByteArray)
 
 class FirebaseStorageService : StorageService {
