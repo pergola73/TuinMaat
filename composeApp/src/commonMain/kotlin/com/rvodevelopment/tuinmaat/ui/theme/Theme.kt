@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.random.Random
+import com.rvodevelopment.tuinmaat.ui.theme.AppTypography
 
 private val DarkColorScheme = darkColorScheme(
     primary = DonkerGroen,

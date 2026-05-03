@@ -47,6 +47,9 @@ jobs:
 
     - name: Diagnose and Build Framework
       run: |
+        # Fix voor jansi library permissies op CI
+        export GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.native=false"
+
         echo "Listing all framework tasks..."
         ./gradlew :composeApp:tasks --all | grep -i framework > framework_tasks.txt || true
         

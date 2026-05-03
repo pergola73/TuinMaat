@@ -4,6 +4,9 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.storage.storage
 import dev.gitlive.firebase.storage.Data
 
+// Helper om ByteArray naar Firebase Data te converteren op verschillende platformen
+expect fun ByteArray.toFirebaseData(): Data
+
 class FirebaseStorageService : StorageService {
     private val storage = Firebase.storage
 
@@ -16,8 +19,7 @@ class FirebaseStorageService : StorageService {
     override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
         return try {
             val ref = storage.reference(path)
-            // Gebruik de Data wrapper specifiek voor KMP
-            ref.putData(Data(bytes))
+            ref.putData(bytes.toFirebaseData())
             Result.success(ref.getDownloadUrl())
         } catch (e: Exception) {
             Result.failure(e)
