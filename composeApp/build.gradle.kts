@@ -1,20 +1,21 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import androidx.room.gradle.RoomExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.kotlin.serialization)
-    // KSP en Room tijdelijk uitgeschakeld voor diagnose
-    // alias(libs.plugins.google.devtools.ksp)
-    // id("androidx.room")
+    id("androidx.room")
 }
 
-// room {
-//    schemaDirectory("$projectDir/schemas")
-// }
+// room configuratie
+configure<RoomExtension> {
+    schemaDirectory("$projectDir/schemas")
+}
 
 val props = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -107,12 +108,17 @@ kotlin {
     }
 }
 
-// dependencies {
-//    add("kspAndroid", libs.androidx.room.compiler)
-//    add("kspIosX64", libs.androidx.room.compiler)
-//    add("kspIosArm64", libs.androidx.room.compiler)
-//    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
-// }
+dependencies {
+    add("kspAndroid", libs.androidx.room.compiler)
+    add("kspIosX64", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+}
+
+// Nodig voor Room multiplatform
+ksp {
+    arg("room.generateKotlin", "true")
+}
 
 android {
     namespace = "com.rvodevelopment.tuinmaat.composeapp"

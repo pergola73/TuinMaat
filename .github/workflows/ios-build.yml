@@ -36,14 +36,9 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Force Gradle Evaluation and Dump Tasks
-      run: |
-        # We negeren composeApp expliciet. We vragen Gradle gewoon om te initialiseren en ALLES te tonen
-        ./gradlew tasks --all --stacktrace > gradle_tasks.txt
-        cat gradle_tasks.txt
-
     - name: Build iOS App
       run: |
+        # We bouwen direct met xcodebuild en negeren de Android module om memory-issues met KSP te voorkomen
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
