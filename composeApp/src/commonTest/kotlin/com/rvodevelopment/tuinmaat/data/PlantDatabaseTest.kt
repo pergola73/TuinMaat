@@ -19,7 +19,10 @@ class PlantDatabaseTest {
 
     @BeforeTest
     fun createDb() {
-        val builder: RoomDatabase.Builder<PlantDatabase> = Room.inMemoryDatabaseBuilder<PlantDatabase>()
+        // Room Multiplatform in-memory builder in commonTest
+        val builder: RoomDatabase.Builder<PlantDatabase> = Room.inMemoryDatabaseBuilder<PlantDatabase>(
+            factory = { PlantDatabaseConstructor.initialize() }
+        )
         db = builder
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
