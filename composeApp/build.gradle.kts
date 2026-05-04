@@ -14,7 +14,7 @@ plugins {
 
 compose.resources {
     publicResClass = true
-    packageOfResClass = "tuinmaat.resources"
+    packageOfResClass = "com.rvodevelopment.tuinmaat.composeapp.generated.resources"
 }
 
 // room configuratie
@@ -45,9 +45,6 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
-            // Workaround for KSP / Kotlin Native issue on CI
-            freeCompilerArgs += listOf("-Xdisable-phases=VerifyBitcode")
-            linkerOpts("-framework", "Foundation", "-lsqlite3")
         }
     }
     
@@ -119,12 +116,9 @@ kotlin {
 
 dependencies {
     add("kspAndroid", libs.androidx.room.compiler)
-    // KSP iOS is definitively disabled on CI due to unresolvable Kotlin Native bug
-    if (System.getenv("GITHUB_ACTIONS") != "true") {
-        add("kspIosX64", libs.androidx.room.compiler)
-        add("kspIosArm64", libs.androidx.room.compiler)
-        add("kspIosSimulatorArm64", libs.androidx.room.compiler)
-    }
+    add("kspIosX64", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
 }
 
 // Nodig voor Room multiplatform

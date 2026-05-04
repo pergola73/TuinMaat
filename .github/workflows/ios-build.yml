@@ -26,11 +26,6 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
 
-    - name: Fix Gradle Native Libraries
-      run: |
-        mkdir -p ~/.gradle/native
-        find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
-
     - name: Create local.properties
       run: |
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> local.properties
@@ -42,49 +37,17 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Repair Konan Directory
-      run: |
-        mkdir -p ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools
-        touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
-        echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
-
     - name: Build Framework
       run: |
-        export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-        ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info
+        ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 --info
 
     - name: Build iOS App
       run: |
-        # Definieer het pad waar het framework zojuist is gebouwd
-        FRAMEWORK_PATH="$(pwd)/composeApp/build/bin/iosSimulatorArm64/debugFramework"
-        echo "Using Framework Path: $FRAMEWORK_PATH"
-
-        # Forceer de productnaam en extension expliciet om "duplicate output" fouten te voorkomen
+        # Eenvoudige build voor CI validatie
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
                    -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
                    build \
-                   PRODUCT_NAME="iosApp" \
-                   WRAPPER_EXTENSION="app" \
-                   PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
-                   CODE_SIGNING_ALLOWED=NO \
-                   CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGN_IDENTITY="" \
-                   FRAMEWORK_SEARCH_PATHS="$FRAMEWORK_PATH" \
-                   OTHER_LDFLAGS="-framework ComposeApp -Wl,-undefined,dynamic_lookup" \
-                   -derivedDataPath build-output
-
-    - name: Prepare Artifact
-      run: |
-        # Pak de .app map uit de DerivedData map
-        mkdir -p Payload
-        cp -R $(find build-output -name "iosApp.app") Payload/
-        zip -r ios-app.zip Payload
-
-    - name: Upload iOS App Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ios-app-debug
-        path: ios-app.zip
+                   CODE_SIGNING_ALLOWED=NO
