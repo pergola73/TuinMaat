@@ -26,6 +26,11 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
 
+    - name: Fix Gradle Native Libraries
+      run: |
+        mkdir -p ~/.gradle/native
+        find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
+
     - name: Create local.properties
       run: |
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> local.properties
@@ -43,6 +48,11 @@ jobs:
         touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
         echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
 
+    - name: Run Unit Tests (iOS Simulator)
+      run: |
+        export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
+        ./gradlew :composeApp:iosSimulatorArm64Test -PskipAndroidApp=true
+
     - name: Build Framework (Static)
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
@@ -58,8 +68,6 @@ jobs:
         FRAMEWORK_DIR=$(find composeApp/build/bin/iosSimulatorArm64 -name "debugFramework" -type d | head -n 1)
         FULL_PATH="$(pwd)/$FRAMEWORK_DIR"
         
-        # Omdat we op CI zitten en geen echte Firebase SDK kunnen linken zonder Xcode interactie,
-        # dwingen we Xcode om de ontbrekende symbolen te negeren voor deze verificatie-build.
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
@@ -80,12 +88,4 @@ jobs:
         name: ios-app-debug
         path: |
           build/Build/Products/Debug-iphonesimulator/*.app
-          build_log.txt
-
-    - name: Upload iOS App Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ios-app-debug
-        path: |
-          iosApp/build/Build/Products/Debug-iphonesimulator/*.app
           build_log.txt
