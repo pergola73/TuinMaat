@@ -49,6 +49,11 @@ kotlin {
             freeCompilerArgs += listOf("-Xdisable-phases=VerifyBitcode")
             linkerOpts("-framework", "Foundation", "-lsqlite3")
         }
+        
+        // Zorg dat ook unit tests op CI kunnen linken zonder de echte Firebase SDK
+        iosTarget.binaries.all {
+            linkerOpts("-Wl,-undefined,dynamic_lookup")
+        }
     }
     
     sourceSets {
