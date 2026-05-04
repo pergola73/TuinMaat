@@ -33,17 +33,14 @@ class CommonAiService(
             val plantNaam = plantNetResult?.first ?: return@withContext Result.failure(Exception("Pl@ntNet kon de plant niet identificeren"))
             val scientificName = plantNetResult.second
             
-            // Stap 2: Resize voor Gemini (max 768px)
-            val geminiImage = mediaService.resizeImage(imageBytes, 768)
-            
-            // Stap 3: Probeer Wikipedia met de gewone naam, dan met de wetenschappelijke naam
+            // Stap 2: Probeer Wikipedia met de gewone naam, dan met de wetenschappelijke naam
             var wikipediaInfo = haalWikipediaInfoOp(plantNaam)
             if (wikipediaInfo == null && scientificName.isNotEmpty() && scientificName != plantNaam) {
                 wikipediaInfo = haalWikipediaInfoOp(scientificName)
             }
             
-            // Stap 4: Verrijk met Gemini (met foto voor betere context)
-            val finaleInfo = verrijkMetGemini(plantNaam, scientificName, wikipediaInfo, geminiImage)
+            // Stap 3: Verrijk met Gemini (nu alleen tekst voor snelheid)
+            val finaleInfo = verrijkMetGemini(plantNaam, scientificName, wikipediaInfo)
             val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia • Gemini AI" else "Pl@ntNet • Gemini AI"
             
             Result.success(finaleInfo.copy(
@@ -132,13 +129,12 @@ class CommonAiService(
     private suspend fun verrijkMetGemini(
         plantNaam: String, 
         scientificName: String, 
-        wikipediaInfo: String?,
-        imageBytes: ByteArray
+        wikipediaInfo: String?
     ): AiPlantResult {
-        val wikiText = wikipediaInfo ?: "Geen extra Wikipedia informatie beschikbaar. Gebruik je eigen kennis en de bijgevoegde foto."
+        val wikiText = wikipediaInfo ?: "Geen extra Wikipedia informatie beschikbaar. Gebruik je eigen kennis."
         val prompt = """
             Je bent een expert hovenier met diepgaande kennis van botanie en plantenverzorging.
-            Geef gedetailleerde verzorgingsinformatie voor de plant op de foto: $plantNaam ($scientificName).
+            Geef gedetailleerde verzorgingsinformatie voor de plant: $plantNaam ($scientificName).
             Wikipedia context: $wikiText
             
             Vul alle onderstaande velden in het Nederlands in voor een tuinier-app. 
@@ -168,9 +164,6 @@ class CommonAiService(
         """.trimIndent()
 
         return try {
-            // We gebruiken de 768px foto om tokens te besparen
-            val base64Image = imageBytes.encodeBase64()
-            
             val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
@@ -179,12 +172,6 @@ class CommonAiService(
                             putJsonArray("parts") {
                                 addJsonObject {
                                     put("text", prompt)
-                                }
-                                addJsonObject {
-                                    putJsonObject("inline_data") {
-                                        put("mime_type", "image/jpeg")
-                                        put("data", base64Image)
-                                    }
                                 }
                             }
                         }

@@ -56,7 +56,6 @@ jobs:
     - name: Build Framework (Static)
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-        # We bouwen een STATIC framework. Dit negeert missende Firebase symbolen op dit moment.
         ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
           echo "!!! KOTLIN BUILD FAILED !!!"
           grep -E "^e: |Undefined symbols|ld: " build_log.txt | sort -u
