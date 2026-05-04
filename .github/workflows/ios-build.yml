@@ -48,41 +48,45 @@ jobs:
         touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
         echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
 
-    - name: Build Framework (Static)
+    - name: Build Framework
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-        # We bouwen een STATIC framework. Dit negeert missende Firebase symbolen op dit moment.
+        # Bouw het framework voor simulator
         ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
           echo "!!! KOTLIN BUILD FAILED !!!"
-          grep -E "^e: |Undefined symbols|ld: " build_log.txt | sort -u
+          cat build_log.txt
           exit 1
         )
 
-    - name: Build iOS App (Ignore Firebase for Test)
+    - name: Build and Archive iOS App
       run: |
         FRAMEWORK_DIR=$(find composeApp/build/bin/iosSimulatorArm64 -name "debugFramework" -type d | head -n 1)
         FULL_PATH="$(pwd)/$FRAMEWORK_DIR"
         
-        # Omdat we op CI zitten en geen echte Firebase SDK kunnen linken zonder Xcode interactie,
-        # dwingen we Xcode om de ontbrekende symbolen te negeren voor deze verificatie-build.
+        # Archiveer de app
         xcodebuild -project iosApp/iosApp.xcodeproj \
                    -scheme iosApp \
                    -sdk iphonesimulator \
                    -configuration Debug \
                    -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
-                   build \
+                   archive \
+                   -archivePath iosApp.xcarchive \
                    PRODUCT_NAME="iosApp" \
                    PRODUCT_BUNDLE_IDENTIFIER="com.rvodevelopment.tuinmaat" \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGN_IDENTITY="" \
                    FRAMEWORK_SEARCH_PATHS="$FULL_PATH" \
-                   OTHER_LDFLAGS="-framework ComposeApp -Wl,-undefined,dynamic_lookup" \
-                   -derivedDataPath build-output
+                   OTHER_LDFLAGS="-framework ComposeApp -Wl,-undefined,dynamic_lookup"
+
+        # Exporteer de app naar een .ipa (met een minimalistisch export options plist)
+        echo '{"method": "development", "signingStyle": "none", "compileBitcode": false}' > exportOptions.plist
+        xcodebuild -exportArchive -archivePath iosApp.xcarchive -exportPath . -exportOptionsPlist exportOptions.plist
 
     - name: Upload iOS App Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-debug
         path: |
-          build-output/Build/Products/Debug-iphonesimulator/*.app
+          iosApp.ipa
           build_log.txt
