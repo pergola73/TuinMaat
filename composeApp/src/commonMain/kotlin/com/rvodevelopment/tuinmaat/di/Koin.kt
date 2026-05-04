@@ -14,16 +14,16 @@ import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.koin.core.qualifier.named
 
-fun initKoin(appDeclaration: KoinAppDeclaration = {}) =
+fun initKoin(useMock: Boolean = false, appDeclaration: KoinAppDeclaration = {}) =
     startKoin {
         appDeclaration()
-        modules(commonModule(), platformModule())
+        modules(commonModule(useMock), platformModule())
     }
 
 // called by iOS etc
-fun doInitKoin() = initKoin {}
+fun doInitKoin(useMock: Boolean = false) = initKoin(useMock = useMock) {}
 
-fun commonModule() = module {
+fun commonModule(useMock: Boolean) = module {
     single { 
         HttpClient {
             install(ContentNegotiation) {
@@ -37,10 +37,17 @@ fun commonModule() = module {
     single { MessageService() }
     single { DeepLinkHandler(get(), get(), get()) }
     single<TuintipService> { DefaultTuintipService(get()) }
-    single<UserRepository> { FirebaseUserRepository() }
-    single<TuinRepository> { FirebaseTuinRepository() }
-    single<AuthService> { FirebaseAuthService() }
-    single<StorageService> { FirebaseStorageService() }
+    
+    if (useMock) {
+        single<AuthService> { MockAuthService() }
+        single<StorageService> { MockStorageService() }
+    } else {
+        single<UserRepository> { FirebaseUserRepository() }
+        single<TuinRepository> { FirebaseTuinRepository() }
+        single<AuthService> { FirebaseAuthService() }
+        single<StorageService> { FirebaseStorageService() }
+    }
+
     single<MediaService> { get() }
     single { get<PlantDatabase>().plantDao() }
 
