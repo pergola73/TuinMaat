@@ -28,10 +28,8 @@ playServicesAuth = "21.5.1"
 firebase-kmp = "2.1.0"
 ktor = "3.0.1"
 kotlinx-serialization = "1.7.3"
-mockative = "3.0.1"
 
 [libraries]
-ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
