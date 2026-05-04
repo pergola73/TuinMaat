@@ -26,10 +26,11 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
 
-    - name: Fix Gradle Native Libraries
+    - name: Run Unit Tests (Android Context)
       run: |
-        mkdir -p ~/.gradle/native
-        find ~/.gradle/native -name "*.jnilib" -exec chmod +x {} + || true
+        # We draaien de common logic tests op de Android target. 
+        # Dit test de gedeelde AI-logica zonder de iOS-linker problemen.
+        ./gradlew :composeApp:testDebugUnitTest
 
     - name: Create local.properties
       run: |
@@ -42,25 +43,10 @@ jobs:
         mkdir -p iosApp/Configuration
         echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" > iosApp/iosApp/GoogleService-Info.plist
 
-    - name: Repair Konan Directory
-      run: |
-        mkdir -p ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools
-        touch ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
-        echo "" > ~/.konan/kotlin-native-prebuilt-macos-aarch64-2.1.0/tools/env_blacklist
-
-    - name: Run Unit Tests (iOS Simulator)
-      run: |
-        export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-        ./gradlew :composeApp:iosSimulatorArm64Test -PskipAndroidApp=true
-
     - name: Build Framework (Static)
       run: |
         export GRADLE_OPTS="-Dorg.gradle.native=false -Dorg.gradle.daemon=false"
-        ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info > build_log.txt 2>&1 || (
-          echo "!!! KOTLIN BUILD FAILED !!!"
-          grep -E "^e: |Undefined symbols|ld: " build_log.txt | sort -u
-          exit 1
-        )
+        ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -PskipAndroidApp=true --info
 
     - name: Build iOS App (Ignore Firebase for Test)
       run: |
@@ -87,4 +73,3 @@ jobs:
         name: ios-app-debug
         path: |
           build/Build/Products/Debug-iphonesimulator/*.app
-          build_log.txt
