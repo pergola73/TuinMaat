@@ -5,11 +5,14 @@ import FirebaseCore
 @main
 struct iosApp: App {
     init() {
-        // Initialiseer Firebase voordat Koin of andere diensten starten
-        FirebaseApp.configure()
+        // Gebruik een controle om te voorkomen dat een ontbrekende plist de app direct laat crashen
+        if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+            FirebaseApp.configure()
+        } else {
+            print("WAARSCHUWING: GoogleService-Info.plist niet gevonden. Firebase is niet geconfigureerd.")
+        }
 
         do {
-            // Start Koin
             KoinKt.doInitKoin(useMock: false)
         } catch {
             print("FOUT BIJ KOIN INITIALISATIE: \(error)")
@@ -18,8 +21,11 @@ struct iosApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ComposeView()
-                .ignoresSafeArea(.all, edges: .bottom) // Zorg dat Compose het hele scherm vult
+            ZStack {
+                Color.red // Als je rood ziet, werkt SwiftUI maar wordt de Compose view niet getoond of is hij transparant
+                ComposeView()
+                    .ignoresSafeArea(.all, edges: .bottom)
+            }
         }
     }
 }

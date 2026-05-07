@@ -56,6 +56,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2AEF1A6C2FAD383C00ACA43E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		44BB949D672FABDEBF0ABACF /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -69,6 +76,7 @@
 			children = (
 				262BB509815C2FF0EC462D03 /* Configuration */,
 				5A872BC7F2FA5638247E8DC2 /* iosApp */,
+				2AEF1A6C2FAD383C00ACA43E /* Frameworks */,
 				44BB949D672FABDEBF0ABACF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -203,6 +211,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rvodevelopment.tuinmaat;
 				PRODUCT_NAME = iosApp;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -231,6 +243,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rvodevelopment.tuinmaat;
 				PRODUCT_NAME = iosApp;
