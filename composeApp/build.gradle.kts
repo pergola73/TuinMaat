@@ -143,3 +143,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+tasks.matching { it.name == "syncComposeResourcesForIos" }.configureEach {
+    val isXcode = System.getenv("SDK_NAME") != null
+    if (!isXcode) {
+        enabled = false
+    }
+}
