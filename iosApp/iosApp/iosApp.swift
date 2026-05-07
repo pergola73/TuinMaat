@@ -1,22 +1,25 @@
 import SwiftUI
 import ComposeApp
+import FirebaseCore
 
 @main
 struct iosApp: App {
     init() {
+        // Initialiseer Firebase voordat Koin of andere diensten starten
+        FirebaseApp.configure()
+
         do {
-            // We proberen Koin te starten
-            KoinKt.doInitKoin(useMock: true)
+            // Start Koin
+            KoinKt.doInitKoin(useMock: false)
         } catch {
-            // Als het crasht, printen we het in de console (Appetize kan dit soms opvangen)
             print("FOUT BIJ KOIN INITIALISATIE: \(error)")
         }
     }
 
     var body: some Scene {
         WindowGroup {
-            // Een hele simpele "Hello World" voor de zekerheid
-            Text("App gestart")
+            ComposeView()
+                .ignoresSafeArea(.all, edges: .bottom) // Zorg dat Compose het hele scherm vult
         }
     }
 }
