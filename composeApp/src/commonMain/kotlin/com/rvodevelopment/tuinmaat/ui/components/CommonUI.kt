@@ -110,12 +110,17 @@ fun InvoerVeldMetIcoon(
                                 autofillNode.boundingBox = it.boundsInWindow()
                             }
                             .onFocusChanged { focusState ->
-                                autofill?.let {
-                                    if (focusState.isFocused) {
-                                        it.requestAutofillForNode(autofillNode)
-                                    } else {
-                                        it.cancelAutofillForNode(autofillNode)
+                                // Autofill kan crashen op sommige platforms (zoals iOS in bepaalde Compose versies)
+                                try {
+                                    autofill?.let {
+                                        if (focusState.isFocused) {
+                                            it.requestAutofillForNode(autofillNode)
+                                        } else {
+                                            it.cancelAutofillForNode(autofillNode)
+                                        }
                                     }
+                                } catch (e: Exception) {
+                                    println("Autofill error: ${e.message}")
                                 }
                             }
                     } else Modifier
