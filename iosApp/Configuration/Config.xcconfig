@@ -1,3 +1,5 @@
+#include? "Secrets.xcconfig"
+
 TEAM_ID=
 BUNDLE_ID=com.rvodevelopment.tuinmaat
 APP_NAME=TuinMaat

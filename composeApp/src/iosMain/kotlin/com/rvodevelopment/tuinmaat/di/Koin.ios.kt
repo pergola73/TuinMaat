@@ -7,8 +7,7 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 
 actual fun platformModule(): Module = module {
-    single(named("PLANTNET_API_KEY")) { "" } 
-    single(named("GEMINI_API_KEY")) { "" }
+    // Keys worden nu via initKoin/commonModule aangeleverd op iOS
     single<PlantDatabase> { getRoomDatabase(getDatabaseBuilder()) }
     single<SharingService> { IosSharingService() }
     single<BiometricService> { IosBiometricService() }

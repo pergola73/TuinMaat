@@ -29,6 +29,8 @@ import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.LoginViewModel
 import org.jetbrains.compose.resources.painterResource
 import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
+import com.rvodevelopment.tuinmaat.getPlatform
+import com.rvodevelopment.tuinmaat.PlatformType
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -46,6 +48,7 @@ fun LoginScherm(
     val wachtwoordZichtbaar by viewModel.wachtwoordZichtbaar.collectAsState()
     val onthoudEmail by viewModel.onthoudEmail.collectAsState()
     val biometrieIngeschakeld by viewModel.biometrieIngeschakeld.collectAsState()
+    val platform = remember { getPlatform() }
 
     LaunchedEffect(Unit) {
         viewModel.tryAutoBiometric(onLoginSuccess)
@@ -111,8 +114,7 @@ fun LoginScherm(
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                     autoCorrectEnabled = false
-                ),
-                autofillTypes = listOf(androidx.compose.ui.autofill.AutofillType.EmailAddress)
+                )
             )
 
             InvoerVeldMetIcoon(
@@ -127,7 +129,6 @@ fun LoginScherm(
                     imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                     autoCorrectEnabled = false
                 ),
-                autofillTypes = listOf(androidx.compose.ui.autofill.AutofillType.Password),
                 trailingIcon = {
                     IconButton(onClick = { viewModel.toggleWachtwoordZichtbaarheid() }) {
                         Icon(
@@ -184,39 +185,44 @@ fun LoginScherm(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            if (platform == PlatformType.ANDROID) {
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
-                Text(
-                    " of ", 
-                    style = MaterialTheme.typography.bodySmall, 
-                    color = DonkerGroen.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
-            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
+                    Text(
+                        " of ", 
+                        style = MaterialTheme.typography.bodySmall, 
+                        color = DonkerGroen.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
+                }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-            OutlinedButton(
-                onClick = { viewModel.loginWithGoogle(onLoginSuccess) },
-                modifier = Modifier.fillMaxWidth().height(56.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, DonkerGroen),
-                enabled = !isLaden
-            ) {
-                Icon(Icons.Default.AccountCircle, contentDescription = null, tint = DonkerGroen)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Inloggen met Google", color = DonkerGroen, fontWeight = FontWeight.Bold)
+                OutlinedButton(
+                    onClick = { viewModel.loginWithGoogle(onLoginSuccess) },
+                    modifier = Modifier.fillMaxWidth().height(56.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, DonkerGroen),
+                    enabled = !isLaden
+                ) {
+                    Icon(Icons.Default.AccountCircle, contentDescription = null, tint = DonkerGroen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Inloggen met Google", color = DonkerGroen, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            TextButton(onClick = { viewModel.toggleRegistreren() }) {
+            TextButton(
+                onClick = { viewModel.toggleRegistreren() },
+                modifier = Modifier.padding(bottom = 32.dp)
+            ) {
                 Text(
                     if (isRegistreren) "Al een account? Log hier in" else "Nog geen account? Registreer hier",
                     color = DonkerGroen,

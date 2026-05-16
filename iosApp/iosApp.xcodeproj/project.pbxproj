@@ -13,7 +13,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A208DAE2D6A9C322B0B890D0 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuinMaat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -66,7 +66,7 @@
 		44BB949D672FABDEBF0ABACF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A208DAE2D6A9C322B0B890D0 /* iosApp.app */,
+				A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,7 +107,7 @@
 				2AAE93F72FACD05D007EE171 /* FirebaseStorage */,
 			);
 			productName = iosApp;
-			productReference = A208DAE2D6A9C322B0B890D0 /* iosApp.app */;
+			productReference = A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -175,7 +175,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$GITHUB_ACTIONS\" = \"true\" ]; then\n  echo \"Skipping Gradle build task on GitHub Actions because framework is pre-built\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "export JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\"\nexport PATH=\"$JAVA_HOME/bin:$PATH\"\n\nif [ -f \"$SRCROOT/.xcode.env\" ]; then\n    source \"$SRCROOT/.xcode.env\"\nfi\nif [ -f \"$SRCROOT/.xcode.env.local\" ]; then\n    source \"$SRCROOT/.xcode.env.local\"\nfi\n\nif [ \"$GITHUB_ACTIONS\" = \"true\" ]; then\n  echo \"Skipping Gradle build task on GitHub Actions because framework is pre-built\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -215,7 +215,7 @@
 					"-ObjC",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rvodevelopment.tuinmaat;
-				PRODUCT_NAME = iosApp;
+				PRODUCT_NAME = TuinMaat;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -247,7 +247,7 @@
 					"-ObjC",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rvodevelopment.tuinmaat;
-				PRODUCT_NAME = iosApp;
+				PRODUCT_NAME = TuinMaat;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -14,16 +14,36 @@ import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.koin.core.qualifier.named
 
-fun initKoin(useMock: Boolean = false, appDeclaration: KoinAppDeclaration = {}) =
-    startKoin {
-        appDeclaration()
-        modules(commonModule(useMock), platformModule())
-    }
+fun initKoin(
+    useMock: Boolean = false,
+    plantnetApiKey: String = "",
+    geminiApiKey: String = "",
+    appDeclaration: KoinAppDeclaration = {}
+) = startKoin {
+    appDeclaration()
+    modules(commonModule(useMock, plantnetApiKey, geminiApiKey), platformModule())
+}
 
 // called by iOS etc
-fun doInitKoin(useMock: Boolean = false) = initKoin(useMock = useMock) {}
+fun doInitKoin(
+    useMock: Boolean = false,
+    plantnetApiKey: String = "",
+    geminiApiKey: String = ""
+) = initKoin(
+    useMock = useMock,
+    plantnetApiKey = plantnetApiKey,
+    geminiApiKey = geminiApiKey
+) {}
 
-fun commonModule(useMock: Boolean) = module {
+fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String) = module {
+    // Gebruik de meegegeven keys of fallback naar wat in platformModule staat (voor Android)
+    if (plantnetApiKey.isNotEmpty()) {
+        single(named("PLANTNET_API_KEY")) { plantnetApiKey }
+    }
+    if (geminiApiKey.isNotEmpty()) {
+        single(named("GEMINI_API_KEY")) { geminiApiKey }
+    }
+
     single { 
         HttpClient {
             install(ContentNegotiation) {

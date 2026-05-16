@@ -3,7 +3,7 @@ import ComposeApp
 import FirebaseCore
 
 @main
-struct iosApp: App {
+struct TuinMaatApp: App {
     init() {
         // Gebruik een controle om te voorkomen dat een ontbrekende plist de app direct laat crashen
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
@@ -12,8 +12,11 @@ struct iosApp: App {
             print("WAARSCHUWING: GoogleService-Info.plist niet gevonden. Firebase is niet geconfigureerd.")
         }
 
+        let plantnetKey = Bundle.main.object(forInfoDictionaryKey: "PLANTNET_API_KEY") as? String ?? ""
+        let geminiKey = Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String ?? ""
+
         do {
-            KoinKt.doInitKoin(useMock: false)
+            KoinKt.doInitKoin(useMock: false, plantnetApiKey: plantnetKey, geminiApiKey: geminiKey)
         } catch {
             print("FOUT BIJ KOIN INITIALISATIE: \(error)")
         }
@@ -21,11 +24,8 @@ struct iosApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                Color.red // Als je rood ziet, werkt SwiftUI maar wordt de Compose view niet getoond of is hij transparant
-                ComposeView()
-                    .ignoresSafeArea(.all, edges: .bottom)
-            }
+            ComposeView()
+                .ignoresSafeArea(.all, edges: .bottom)
         }
     }
 }

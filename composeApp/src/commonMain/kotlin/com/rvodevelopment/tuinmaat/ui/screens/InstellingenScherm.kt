@@ -50,8 +50,11 @@ fun InstellingenScherm(
 
             Button(
                 onClick = {
+                    navController.navigate("login") { 
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
                     viewModel.signOut()
-                    navController.navigate("login") { popUpTo(0) }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f), contentColor = Color.Red)
