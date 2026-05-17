@@ -8,6 +8,7 @@ class MockAuthService : AuthService {
     override suspend fun signUp(email: String, wachtwoord: String, voornaam: String, achternaam: String) = Result.success(UserProfile("1", email, voornaam, achternaam))
     override suspend fun signInWithGoogle() = Result.success(UserProfile("1", "test@test.nl", "Test", "User"))
     override suspend fun signOut() {}
+    override suspend fun deleteAccount() = Result.success(Unit)
     override suspend fun sendPasswordResetEmail(email: String) = Result.success(Unit)
     override suspend fun sendEmailVerification() = Result.success(Unit)
 }

@@ -80,6 +80,15 @@ class FirebaseAuthService : AuthService {
         auth.signOut()
     }
 
+    override suspend fun deleteAccount(): Result<Unit> {
+        return try {
+            auth.currentUser?.delete()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun sendPasswordResetEmail(email: String): Result<Unit> {
         return try {
             auth.sendPasswordResetEmail(email)

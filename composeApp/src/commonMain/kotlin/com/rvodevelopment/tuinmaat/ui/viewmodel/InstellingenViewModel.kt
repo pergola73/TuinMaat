@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 class InstellingenViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
+    private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository,
     private val sharingService: com.rvodevelopment.tuinmaat.service.SharingService,
     private val biometricService: com.rvodevelopment.tuinmaat.service.BiometricService
 ) : ViewModel() {
@@ -102,6 +103,44 @@ class InstellingenViewModel(
     fun signOut() {
         viewModelScope.launch {
             authService.signOut()
+        }
+    }
+
+    fun deleteAccount(reason: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLaden.value = true
+            try {
+                val profile = authService.currentUser.first()
+                val userData = _userData.value
+                
+                if (profile != null && userData != null) {
+                    val uid = profile.uid
+                    val email = userData.email
+                    val voornaam = userData.voornaam
+                    
+                    // 1. Trigger e-mails (voordat data weg is)
+                    userRepository.triggerDeletionEmail(email, voornaam, reason)
+                    
+                    // 2. Verwijder tuindata
+                    tuinRepository.deleteGardenData(uid)
+                    
+                    // 3. Verwijder userdata
+                    userRepository.deleteUserData(uid)
+                    
+                    // 4. Verwijder Firebase Auth account
+                    authService.deleteAccount()
+                        .onSuccess {
+                            onSuccess()
+                        }
+                        .onFailure { 
+                            _foutMelding.value = "Het verwijderen van je account is mislukt. Mogelijk moet je opnieuw inloggen om deze actie te bevestigen."
+                        }
+                }
+            } catch (e: Exception) {
+                _foutMelding.value = "Er is een fout opgetreden: ${e.message}"
+            } finally {
+                _isLaden.value = false
+            }
         }
     }
 }

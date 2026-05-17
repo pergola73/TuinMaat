@@ -18,4 +18,7 @@ interface TuinRepository {
 
     // Migratie
     suspend fun migrateLegacyData(userId: String, gardenId: String): Result<Unit>
+    
+    // Verwijderen
+    suspend fun deleteGardenData(gardenId: String): Result<Unit>
 }

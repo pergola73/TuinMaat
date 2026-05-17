@@ -106,4 +106,41 @@ class FirebaseUserRepository : UserRepository {
             Result.failure(e)
         }
     }
+
+    override suspend fun deleteUserData(uid: String): Result<Unit> {
+        return try {
+            firestore.collection("users").document(uid).delete()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun triggerDeletionEmail(email: String, voornaam: String, reden: String): Result<Unit> {
+        return try {
+            // Mail naar de gebruiker
+            firestore.collection("mail").add(mapOf(
+                "to" to email,
+                "message" to mapOf(
+                    "subject" to "Bevestiging verwijdering TuinMaat account",
+                    "text" to "Beste $voornaam,\n\nVia dit bericht bevestigen we dat je account en alle bijbehorende gegevens zijn verwijderd uit TuinMaat. We vinden het jammer dat je gaat, maar hopen dat je veel plezier hebt gehad van de app.\n\nMet groene groet,\nTeam TuinMaat"
+                )
+            ))
+            
+            // Mail naar de administrator
+            firestore.collection("mail").add(mapOf(
+                "to" to "rvanoel@etik.com",
+                "message" to mapOf(
+                    "subject" to "Account verwijderd: $voornaam",
+                    "text" to "Gebruiker $voornaam ($email) heeft zijn account verwijderd.\nOpgegeven reden: $reden"
+                )
+            ))
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            // We laten de app niet crashen als de mail-trigger faalt, maar loggen het wel
+            println("Mail trigger error: ${e.message}")
+            Result.success(Unit)
+        }
+    }
 }

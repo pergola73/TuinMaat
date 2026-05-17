@@ -9,15 +9,25 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-/build
+
+# Build artifacts
+build/
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 /app/release/app-release.aab
+
 # Kotlin Native
 .kotlin/
 *.exe
+
+# Xcode specific
+DerivedData/
+*.xcuserdata
+xcuserdata/
+xcshareddata/
+*.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
 
 # Xcode secrets
 iosApp/Configuration/Secrets.xcconfig
