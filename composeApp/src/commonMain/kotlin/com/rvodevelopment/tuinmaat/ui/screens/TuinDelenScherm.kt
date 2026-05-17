@@ -33,6 +33,42 @@ fun TuinDelenScherm(
 ) {
     val userData by viewModel.userData.collectAsState()
     val isGekoppeld = userData?.sharedGardenId != null
+    var showJoinDialog by remember { mutableStateOf(false) }
+    var joinCode by remember { mutableStateOf("") }
+
+    if (showJoinDialog) {
+        AlertDialog(
+            onDismissRequest = { showJoinDialog = false },
+            title = { Text("Koppel een tuin") },
+            text = {
+                Column {
+                    Text("Plak hier de code die je van de andere tuinder hebt ontvangen.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = joinCode,
+                        onValueChange = { joinCode = it },
+                        label = { Text("Tuin Code") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val code = joinCode.substringAfter("gardenId=").trim()
+                    viewModel.joinGardenManually(code)
+                    showJoinDialog = false
+                    joinCode = ""
+                }) {
+                    Text("Koppelen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showJoinDialog = false }) {
+                    Text("Annuleren")
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
@@ -45,7 +81,7 @@ fun TuinDelenScherm(
         Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
             Text("Samen tuinieren", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
             Text(
-                "Stuur een uitnodiging naar iemand anders om samen in jouw tuin te werken. De ontvanger hoeft alleen op de link te klikken.",
+                "Stuur een uitnodiging naar iemand anders om samen in jouw tuin te werken.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DonkerGroen.copy(alpha = 0.7f),
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -54,16 +90,25 @@ fun TuinDelenScherm(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    viewModel.shareInvitation()
-                },
+                onClick = { viewModel.shareInvitation() },
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
             ) {
                 Icon(Icons.Default.Share, null, tint = Color.White)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Verstuur Uitnodiging", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Deel mijn Tuin Code", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = { showJoinDialog = true },
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(DonkerGroen))
+            ) {
+                Text("Ik heb een code ontvangen", color = DonkerGroen, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(48.dp))

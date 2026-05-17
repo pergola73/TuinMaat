@@ -7,6 +7,7 @@ import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.service.AuthService
 import com.rvodevelopment.tuinmaat.service.TuintipService
 import com.rvodevelopment.tuinmaat.service.WeerBericht
+import com.rvodevelopment.tuinmaat.service.DeepLinkHandler
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -35,7 +36,8 @@ class HoofdMenuViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
-    private val tuintipService: TuintipService
+    private val tuintipService: TuintipService,
+    private val deepLinkHandler: DeepLinkHandler
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HoofdMenuState())
@@ -44,6 +46,10 @@ class HoofdMenuViewModel(
     init {
         observeUserData()
         fetchTuintip()
+        
+        viewModelScope.launch {
+            deepLinkHandler.checkPendingDeepLink()
+        }
     }
 
     private fun observeUserData() {

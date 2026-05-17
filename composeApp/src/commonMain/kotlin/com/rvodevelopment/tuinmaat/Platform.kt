@@ -5,3 +5,5 @@ enum class PlatformType {
 }
 
 expect fun getPlatform(): PlatformType
+
+expect val appVersion: String
