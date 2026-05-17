@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>TuinMaat</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -12,16 +16,26 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
-	<key>CFBundleDisplayName</key>
-	<string>TuinMaat</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>3.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>6</string>
+	<string>7</string>
+	<key>GEMINI_API_KEY</key>
+	<string>$(GEMINI_API_KEY)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>TuinMaat heeft toegang tot de camera nodig om foto's van planten te maken voor herkenning.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TuinMaat gebruikt je locatie om te bepalen welke planten het beste groeien in jouw regio.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TuinMaat heeft toegang tot je foto's nodig om planten te kunnen selecteren uit je galerij.</string>
+	<key>PLANTNET_API_KEY</key>
+	<string>$(PLANTNET_API_KEY)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -46,17 +60,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>TuinMaat heeft toegang tot de camera nodig om foto's van planten te maken voor herkenning.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>TuinMaat heeft toegang tot je foto's nodig om planten te kunnen selecteren uit je galerij.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>TuinMaat gebruikt je locatie om te bepalen welke planten het beste groeien in jouw regio.</string>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>PLANTNET_API_KEY</key>
-	<string>$(PLANTNET_API_KEY)</string>
-	<key>GEMINI_API_KEY</key>
-	<string>$(GEMINI_API_KEY)</string>
 </dict>
 </plist>
