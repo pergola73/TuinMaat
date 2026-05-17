@@ -40,9 +40,11 @@ class InstellingenViewModel(
         
         viewModelScope.launch {
             _isBiometrieBeschikbaar.value = biometricService.isBiometricAvailable()
-            userFlow.collect {
-                _userData.value = it
-            }
+            userFlow
+                .catch { emit(null) } // Voorkom crash bij verwijderen account of verlies van permissies
+                .collect {
+                    _userData.value = it
+                }
         }
     }
 
@@ -111,12 +113,12 @@ class InstellingenViewModel(
             _isLaden.value = true
             try {
                 val profile = authService.currentUser.first()
-                val userData = _userData.value
+                val currentUserData = _userData.value
                 
-                if (profile != null && userData != null) {
+                if (profile != null && currentUserData != null) {
                     val uid = profile.uid
-                    val email = userData.email
-                    val voornaam = userData.voornaam
+                    val email = currentUserData.email
+                    val voornaam = currentUserData.voornaam
                     
                     // 1. Trigger e-mails (voordat data weg is)
                     userRepository.triggerDeletionEmail(email, voornaam, reason)
@@ -127,7 +129,11 @@ class InstellingenViewModel(
                     // 3. Verwijder userdata
                     userRepository.deleteUserData(uid)
                     
+                    // Stop de loader even voor de laatste stap
+                    _isLaden.value = false
+
                     // 4. Verwijder Firebase Auth account
+                    // Belangrijk: hierna is de sessie direct ongeldig
                     authService.deleteAccount()
                         .onSuccess {
                             onSuccess()

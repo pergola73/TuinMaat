@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>3.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>8</string>
+	<string>9</string>
 	<key>GEMINI_API_KEY</key>
 	<string>$(GEMINI_API_KEY)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -29,11 +29,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>TuinMaat heeft toegang tot de camera nodig om foto's van planten te maken voor herkenning.</string>
+	<string>TuinMaat heeft toegang tot de camera nodig om foto&apos;s van planten te maken voor herkenning.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>TuinMaat gebruikt je locatie om te bepalen welke planten het beste groeien in jouw regio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>TuinMaat heeft toegang tot je foto's nodig om planten te kunnen selecteren uit je galerij.</string>
+	<string>TuinMaat heeft toegang tot je foto&apos;s nodig om planten te kunnen selecteren uit je galerij.</string>
 	<key>PLANTNET_API_KEY</key>
 	<string>$(PLANTNET_API_KEY)</string>
 	<key>UIApplicationSceneManifest</key>
