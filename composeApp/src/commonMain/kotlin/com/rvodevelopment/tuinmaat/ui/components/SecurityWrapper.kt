@@ -23,6 +23,7 @@ import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -47,10 +48,15 @@ fun SecurityWrapper(
     LaunchedEffect(currentUser) {
         val uid = currentUser?.uid
         if (uid != null) {
-            userRepository.getUserData(uid).collect { userData ->
-                securityType = userData?.securityType ?: "NONE"
-                savedPin = userData?.securityPin ?: ""
-            }
+            userRepository.getUserData(uid)
+                .catch { 
+                    println("SecurityWrapper: Error fetching user data: ${it.message}")
+                    emit(null) 
+                }
+                .collect { userData ->
+                    securityType = userData?.securityType ?: "NONE"
+                    savedPin = userData?.securityPin ?: ""
+                }
         } else {
             securityType = "NONE"
             savedPin = ""

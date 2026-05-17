@@ -20,6 +20,7 @@ import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
+import com.rvodevelopment.tuinmaat.appVersion
 import org.koin.compose.koinInject
 
 @Composable
@@ -197,7 +198,7 @@ fun InfoScherm(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("TuinMaat", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Versie 2.0.0 (KMP)", style = MaterialTheme.typography.bodyMedium)
+                Text("Versie $appVersion", style = MaterialTheme.typography.bodyMedium)
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))

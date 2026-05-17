@@ -3,37 +3,43 @@ package com.rvodevelopment.tuinmaat.repository
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 class FirebaseUserRepository : UserRepository {
     private val firestore = Firebase.firestore
 
     override fun getUserData(uid: String): Flow<UserData?> {
-        return firestore.collection("users").document(uid).snapshots().map { snapshot ->
-            if (snapshot.exists) {
-                try {
-                    snapshot.data<UserData>().copy(id = snapshot.id)
-                } catch (e: Exception) {
-                    val data = snapshot.data<Map<String, Any?>>()
-                    UserData(
-                        id = snapshot.id,
-                        voornaam = data["voornaam"] as? String ?: (data["name"] as? String)?.split(" ")?.firstOrNull() ?: "",
-                        achternaam = data["achternaam"] as? String ?: (data["name"] as? String)?.split(" ")?.drop(1)?.joinToString(" ") ?: "",
-                        email = data["email"] as? String ?: "",
-                        tuinnaam = data["tuinNaam"] as? String ?: "Mijn Tuin",
-                        sharedGardenId = data["sharedGardenId"] as? String,
-                        biometrieIngeschakeld = data["biometrieIngeschakeld"] as? Boolean ?: false,
-                        securityType = data["securityType"] as? String ?: "NONE",
-                        securityPin = data["securityPin"] as? String ?: "",
-                        activeGardenId = data["activeGardenId"] as? String,
-                        locaties = data["locaties"] as? List<String> ?: listOf("Tuin", "Balkon", "Kas"),
-                        standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin"
-                    )
+        return firestore.collection("users").document(uid).snapshots()
+            .map { snapshot ->
+                if (snapshot.exists) {
+                    try {
+                        snapshot.data<UserData>().copy(id = snapshot.id)
+                    } catch (e: Exception) {
+                        val data = snapshot.data<Map<String, Any?>>()
+                        UserData(
+                            id = snapshot.id,
+                            voornaam = data["voornaam"] as? String ?: (data["name"] as? String)?.split(" ")?.firstOrNull() ?: "",
+                            achternaam = data["achternaam"] as? String ?: (data["name"] as? String)?.split(" ")?.drop(1)?.joinToString(" ") ?: "",
+                            email = data["email"] as? String ?: "",
+                            tuinnaam = data["tuinNaam"] as? String ?: "Mijn Tuin",
+                            sharedGardenId = data["sharedGardenId"] as? String,
+                            biometrieIngeschakeld = data["biometrieIngeschakeld"] as? Boolean ?: false,
+                            securityType = data["securityType"] as? String ?: "NONE",
+                            securityPin = data["securityPin"] as? String ?: "",
+                            activeGardenId = data["activeGardenId"] as? String,
+                            locaties = data["locaties"] as? List<String> ?: listOf("Tuin", "Balkon", "Kas"),
+                            standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin"
+                        )
+                    }
+                } else {
+                    null
                 }
-            } else {
-                null
             }
-        }
+            .catch { 
+                println("FirebaseUserRepository: Error fetching snapshots: ${it.message}")
+                emit(null) 
+            }
     }
 
     override suspend fun updateSharedGardenId(uid: String, sharedGardenId: String?): Result<Unit> {

@@ -4,6 +4,7 @@ import com.rvodevelopment.tuinmaat.model.Plant
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 class FirebaseTuinRepository : TuinRepository {
@@ -42,6 +43,7 @@ class FirebaseTuinRepository : TuinRepository {
                     }
                 }
             }
+            .catch { emit(emptyList()) }
     }
 
     override suspend fun getPlant(gardenId: String, plantId: String): Flow<Plant?> {
@@ -65,6 +67,7 @@ class FirebaseTuinRepository : TuinRepository {
                     null
                 }
             }
+            .catch { emit(null) }
     }
 
     override suspend fun deletePlant(gardenId: String, plantId: String): Result<Unit> {
@@ -94,6 +97,7 @@ class FirebaseTuinRepository : TuinRepository {
         return firestore.collection("tuinen").document(gardenId).snapshots().map { snapshot ->
             snapshot.get<String?>("naam") ?: "Mijn Tuin"
         }
+        .catch { emit("Mijn Tuin") }
     }
 
     override fun getLocaties(gardenId: String): Flow<List<String>> {
@@ -101,6 +105,7 @@ class FirebaseTuinRepository : TuinRepository {
             .snapshots().map { snapshot ->
                 snapshot.documents.map { it.get<String>("naam") ?: "" }.filter { it.isNotEmpty() }
             }
+            .catch { emit(emptyList()) }
     }
 
     override suspend fun voegLocatieToe(gardenId: String, naam: String): Result<Unit> {
