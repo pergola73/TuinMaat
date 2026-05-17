@@ -100,15 +100,18 @@ class LoginViewModel(
     private fun maakFoutmeldingGebruiksvriendelijk(throwable: Throwable): String {
         val message = throwable.message ?: ""
         return when {
-            message.contains("user-not-found", ignoreCase = true) -> "Geen account gevonden met dit e-mailadres."
+            message.contains("user-not-found", ignoreCase = true) || 
+            message.contains("no user", ignoreCase = true) -> "Er is geen account gevonden met dit e-mailadres. Controleer of je het juiste adres hebt getypt of registreer een nieuw account."
             message.contains("wrong-password", ignoreCase = true) -> "Het ingevoerde wachtwoord is onjuist."
             message.contains("invalid-email", ignoreCase = true) -> "Het ingevoerde e-mailadres is niet geldig."
             message.contains("email-already-in-use", ignoreCase = true) -> "Er bestaat al een account met dit e-mailadres."
             message.contains("weak-password", ignoreCase = true) -> "Het wachtwoord is te zwak. Gebruik minimaal 6 tekens."
             message.contains("network-request-failed", ignoreCase = true) -> "Geen internetverbinding. Controleer je netwerk."
             message.contains("too-many-requests", ignoreCase = true) -> "Te veel mislukte pogingen. Probeer het later opnieuw."
-            message.contains("invalid-credential", ignoreCase = true) -> "E-mailadres of wachtwoord is onjuist."
-            else -> "Er is een onbekende fout opgetreden. Probeer het later opnieuw."
+            message.contains("invalid-credential", ignoreCase = true) || 
+            message.contains("invalid-login-credentials", ignoreCase = true) -> "De combinatie van e-mailadres en wachtwoord is niet bekend. Controleer je gegevens of registreer een account."
+            message.contains("user-disabled", ignoreCase = true) -> "Dit account is uitgeschakeld. Neem contact op met support."
+            else -> "Er is een onbekende fout opgetreden bij het inloggen. Probeer het later nog eens."
         }
     }
 

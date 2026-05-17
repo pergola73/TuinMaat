@@ -9,9 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +28,16 @@ fun InstellingenScherm(
     viewModel: InstellingenViewModel = koinInject()
 ) {
     val userData by viewModel.userData.collectAsState()
+    var toonVerwijderDialoog by remember { mutableStateOf(false) }
+    var toonBevestigDialoog by remember { mutableStateOf(false) }
+    var geselecteerdeReden by remember { mutableStateOf("") }
+    val redenen = listOf(
+        "Ik gebruik de app niet meer",
+        "De app mist functies die ik nodig heb",
+        "Ik heb een nieuw account aangemaakt",
+        "Ik maak me zorgen over mijn privacy",
+        "Andere reden"
+    )
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
@@ -57,15 +65,91 @@ fun InstellingenScherm(
                     viewModel.signOut()
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f), contentColor = Color.Red)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.5f), contentColor = DonkerGroen)
             ) {
-                if (userData == null) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.Red, strokeWidth = 2.dp)
-                } else {
-                    Text("Uitloggen")
-                }
+                Text("Uitloggen")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(
+                onClick = { toonVerwijderDialoog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.Red.copy(alpha = 0.7f))
+            ) {
+                Text("Account verwijderen")
             }
         }
+    }
+
+    if (toonVerwijderDialoog) {
+        AlertDialog(
+            onDismissRequest = { toonVerwijderDialoog = false },
+            title = { Text("Account verwijderen?", color = Color.Red, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("We vinden het jammer dat je gaat. Je account en alle geregistreerde gegevens (planten, foto's, locaties) zullen definitief worden verwijderd. Dit kan niet ongedaan worden gemaakt.", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Waarom wil je je account verwijderen?", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    
+                    redenen.forEach { reden ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
+                                selected = geselecteerdeReden == reden,
+                                onClick = { geselecteerdeReden = reden }
+                            )
+                            Text(reden, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        toonVerwijderDialoog = false
+                        toonBevestigDialoog = true
+                    },
+                    enabled = geselecteerdeReden.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Verwijderen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { toonVerwijderDialoog = false }) {
+                    Text("Annuleren", color = Color.Gray)
+                }
+            }
+        )
+    }
+
+    if (toonBevestigDialoog) {
+        AlertDialog(
+            onDismissRequest = { toonBevestigDialoog = false },
+            title = { Text("Weet je het écht zeker?", fontWeight = FontWeight.Bold) },
+            text = { Text("Deze actie kan niet ongedaan worden gemaakt. Al je planten en tuinhistorie worden definitief gewist.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteAccount(geselecteerdeReden) {
+                            navController.navigate("login") { popUpTo(0) }
+                        }
+                        toonBevestigDialoog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Ja, verwijder alles")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { toonBevestigDialoog = false }) {
+                    Text("Annuleren")
+                }
+            }
+        )
     }
 }
 

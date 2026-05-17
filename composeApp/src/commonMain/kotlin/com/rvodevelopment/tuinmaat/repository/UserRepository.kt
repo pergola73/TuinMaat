@@ -29,4 +29,6 @@ interface UserRepository {
     suspend fun updateLocaties(uid: String, locaties: List<String>, standaardLocatie: String): Result<Unit>
     suspend fun unlinkGarden(uid: String): Result<Unit>
     suspend fun setActiveGarden(uid: String, gardenId: String): Result<Unit>
+    suspend fun deleteUserData(uid: String): Result<Unit>
+    suspend fun triggerDeletionEmail(email: String, voornaam: String, reden: String): Result<Unit>
 }

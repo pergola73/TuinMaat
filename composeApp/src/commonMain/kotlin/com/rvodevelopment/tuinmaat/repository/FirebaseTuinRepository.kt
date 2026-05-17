@@ -153,4 +153,25 @@ class FirebaseTuinRepository : TuinRepository {
             Result.failure(e)
         }
     }
+
+    override suspend fun deleteGardenData(gardenId: String): Result<Unit> {
+        return try {
+            val gardenRef = firestore.collection("tuinen").document(gardenId)
+            
+            // Verwijder planten
+            val plantenDocs = gardenRef.collection("planten").get()
+            plantenDocs.documents.forEach { it.reference.delete() }
+            
+            // Verwijder locaties
+            val locatiesDocs = gardenRef.collection("locaties").get()
+            locatiesDocs.documents.forEach { it.reference.delete() }
+            
+            // Verwijder de tuin zelf
+            gardenRef.delete()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

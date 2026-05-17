@@ -16,6 +16,7 @@ interface AuthService {
     suspend fun signUp(email: String, wachtwoord: String, voornaam: String, achternaam: String): Result<UserProfile>
     suspend fun signInWithGoogle(): Result<UserProfile>
     suspend fun signOut()
+    suspend fun deleteAccount(): Result<Unit>
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>
     suspend fun sendEmailVerification(): Result<Unit>
 }
