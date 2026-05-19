@@ -26,6 +26,21 @@ struct TuinMaatApp: App {
         WindowGroup {
             ComposeView()
                 .ignoresSafeArea(.all, edges: .bottom)
+                .onOpenURL { url in
+                    handleDeepLink(url)
+                }
+        }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        if let components = URLComponents(url: url, resolvingAgainstBaseURL: true) {
+            let gardenId = components.queryItems?.first(where: { $0.name == "gardenId" })?.value
+
+            if let gid = gardenId {
+                KoinHelper().getDeepLinkHandler().handleJoinGarden(gardenId: gid) { _, _ in
+                    // Afhandeling gebeurt in de handler zelf via MessageService
+                }
+            }
         }
     }
 }

@@ -13,7 +13,8 @@ class InstellingenViewModel(
     private val userRepository: UserRepository,
     private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository,
     private val sharingService: com.rvodevelopment.tuinmaat.service.SharingService,
-    private val biometricService: com.rvodevelopment.tuinmaat.service.BiometricService
+    private val biometricService: com.rvodevelopment.tuinmaat.service.BiometricService,
+    private val deepLinkHandler: com.rvodevelopment.tuinmaat.service.DeepLinkHandler
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow<UserData?>(null)
@@ -101,9 +102,24 @@ class InstellingenViewModel(
         viewModelScope.launch {
             val profile = authService.currentUser.first()
             if (profile != null) {
-                val shareText = "Kom je meehelpen in mijn tuin op TuinMaat? Klik op de link om te koppelen: https://tuinmaat.rvodevelopment.com/join?gardenId=${profile.uid}"
+                val shareText = """
+                    Kom je meehelpen in mijn tuin op TuinMaat? 
+                    
+                    Mijn Tuin Code: ${profile.uid}
+                    
+                    Als je de app al hebt, kun je deze code plakken bij 'Tuin Delen'.
+                    Of probeer de link: https://tuinmaat.rvodevelopment.nl/join?gardenId=${profile.uid}
+                """.trimIndent()
                 sharingService.shareText("Uitnodiging TuinMaat", shareText)
             }
+        }
+    }
+
+    fun joinGardenManually(gardenId: String) {
+        viewModelScope.launch {
+            _isLaden.value = true
+            deepLinkHandler.handleJoinGarden(gardenId)
+            _isLaden.value = false
         }
     }
 
