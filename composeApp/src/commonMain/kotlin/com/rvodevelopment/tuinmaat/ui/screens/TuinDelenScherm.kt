@@ -7,6 +7,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +34,7 @@ fun TuinDelenScherm(
     viewModel: InstellingenViewModel = koinInject()
 ) {
     val userData by viewModel.userData.collectAsState()
+    val viewersData by viewModel.viewersData.collectAsState()
     val isGekoppeld = userData?.sharedGardenId != null
     var showJoinDialog by remember { mutableStateOf(false) }
     var joinCode by remember { mutableStateOf("") }
@@ -109,6 +112,25 @@ fun TuinDelenScherm(
                 border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(DonkerGroen))
             ) {
                 Text("Ik heb een code ontvangen", color = DonkerGroen, fontWeight = FontWeight.Bold)
+            }
+
+            if (viewersData.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("Personen met toegang tot jouw tuin:", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                viewersData.forEach { viewer ->
+                    ListItem(
+                        headlineContent = { Text("${viewer.voornaam} ${viewer.achternaam}") },
+                        supportingContent = { Text(viewer.email) },
+                        leadingContent = { Icon(Icons.Default.Person, null, tint = DonkerGroen) },
+                        trailingContent = {
+                            IconButton(onClick = { viewModel.removeViewer(viewer.id) }) {
+                                Icon(Icons.Default.Delete, "Verwijder toegang", tint = Color.Red)
+                            }
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(48.dp))

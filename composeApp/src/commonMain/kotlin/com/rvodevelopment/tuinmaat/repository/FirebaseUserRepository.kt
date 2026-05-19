@@ -5,6 +5,7 @@ import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import dev.gitlive.firebase.firestore.FieldValue
 
 class FirebaseUserRepository : UserRepository {
     private val firestore = Firebase.firestore
@@ -29,7 +30,8 @@ class FirebaseUserRepository : UserRepository {
                             securityPin = data["securityPin"] as? String ?: "",
                             activeGardenId = data["activeGardenId"] as? String,
                             locaties = data["locaties"] as? List<String> ?: listOf("Tuin", "Balkon", "Kas"),
-                            standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin"
+                            standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin",
+                            sharedByUsers = (data["sharedByUsers"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                         )
                     }
                 } else {
@@ -44,11 +46,28 @@ class FirebaseUserRepository : UserRepository {
 
     override suspend fun updateSharedGardenId(uid: String, sharedGardenId: String?): Result<Unit> {
         return try {
-            firestore.collection("users").document(uid)
-                .set(mapOf(
-                    "sharedGardenId" to sharedGardenId,
-                    "activeGardenId" to sharedGardenId
-                ), merge = true)
+            val userRef = firestore.collection("users").document(uid)
+            
+            // 1. Als er al een oude koppeling was, die eerst opruimen bij de vorige eigenaar
+            val currentData = userRef.get()
+            val oldGardenId = currentData.get<String?>("sharedGardenId")
+            if (oldGardenId != null && oldGardenId != uid) {
+                firestore.collection("users").document(oldGardenId)
+                    .set(mapOf("sharedByUsers" to FieldValue.arrayRemove(uid)), merge = true)
+            }
+
+            // 2. Nieuwe koppeling leggen
+            userRef.set(mapOf(
+                "sharedGardenId" to sharedGardenId,
+                "activeGardenId" to (sharedGardenId ?: uid)
+            ), merge = true)
+
+            // 3. Toevoegen aan de lijst van de nieuwe eigenaar
+            if (sharedGardenId != null && sharedGardenId != uid) {
+                firestore.collection("users").document(sharedGardenId)
+                    .set(mapOf("sharedByUsers" to FieldValue.arrayUnion(uid)), merge = true)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -94,9 +113,22 @@ class FirebaseUserRepository : UserRepository {
     }
 
     override suspend fun unlinkGarden(uid: String): Result<Unit> {
+        return updateSharedGardenId(uid, null)
+    }
+
+    override suspend fun removeViewerFromGarden(ownerUid: String, viewerUid: String): Result<Unit> {
         return try {
-            firestore.collection("users").document(uid)
-                .set(mapOf("sharedGardenId" to null), merge = true)
+            // 1. Verwijder de koppeling bij de viewer
+            firestore.collection("users").document(viewerUid)
+                .set(mapOf(
+                    "sharedGardenId" to null,
+                    "activeGardenId" to viewerUid
+                ), merge = true)
+            
+            // 2. Verwijder de viewer uit de lijst van de eigenaar
+            firestore.collection("users").document(ownerUid)
+                .set(mapOf("sharedByUsers" to FieldValue.arrayRemove(viewerUid)), merge = true)
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

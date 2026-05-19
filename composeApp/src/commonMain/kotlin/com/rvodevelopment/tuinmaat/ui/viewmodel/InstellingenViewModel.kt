@@ -21,6 +21,9 @@ class InstellingenViewModel(
     private val _userData = MutableStateFlow<UserData?>(null)
     val userData: StateFlow<UserData?> = _userData
 
+    private val _viewersData = MutableStateFlow<List<UserData>>(emptyList())
+    val viewersData: StateFlow<List<UserData>> = _viewersData
+
     private val _isBiometrieBeschikbaar = MutableStateFlow(false)
     val isBiometrieBeschikbaar: StateFlow<Boolean> = _isBiometrieBeschikbaar
 
@@ -51,7 +54,30 @@ class InstellingenViewModel(
                 }
                 .collect {
                     _userData.value = it
+                    if (it != null && it.sharedByUsers.isNotEmpty()) {
+                        fetchViewers(it.sharedByUsers)
+                    } else {
+                        _viewersData.value = emptyList()
+                    }
                 }
+        }
+    }
+
+    private fun fetchViewers(uids: List<String>) {
+        viewModelScope.launch {
+            val viewers = uids.mapNotNull { uid ->
+                userRepository.getUserData(uid).first()
+            }
+            _viewersData.value = viewers
+        }
+    }
+
+    fun removeViewer(viewerUid: String) {
+        viewModelScope.launch {
+            val profile = authService.currentUser.first()
+            if (profile != null) {
+                userRepository.removeViewerFromGarden(profile.uid, viewerUid)
+            }
         }
     }
 

@@ -58,7 +58,9 @@ class HoofdMenuViewModel(
                 if (user != null) {
                     userRepository.getUserData(user.uid).collectLatest { userData ->
                         if (userData != null) {
-                            val activeGid = userData.sharedGardenId ?: user.uid
+                            // Belangrijk: gebruik activeGardenId voor de weergave, maar sharedGardenId voor de switcher check
+                            val activeGid = userData.activeGardenId ?: user.uid
+                            
                             _state.update { it.copy(
                                 voornaam = userData.voornaam,
                                 tuinnaam = userData.tuinnaam,
@@ -87,7 +89,6 @@ class HoofdMenuViewModel(
                     planten = namen
                 ) }
 
-                // Als we nog geen tips hebben en de planten zijn geladen, haal dan een relevante tip op
                 if (wasLeeg && namen.isNotEmpty()) {
                     fetchTuintip()
                 }
@@ -101,8 +102,6 @@ class HoofdMenuViewModel(
 
         viewModelScope.launch {
             _state.update { it.copy(isTuintipLaden = true) }
-            
-            // Haal actuele AI tip op, rekening houdend met de planten
             tuintipService.getActueelTuintip(_state.value.planten).onSuccess { weer ->
                 _state.update { it.copy(
                     weerBericht = weer,
@@ -110,12 +109,10 @@ class HoofdMenuViewModel(
                     huidigeTipIndex = 0
                 ) }
             }.onFailure {
-                // Fallback naar statische tips
                 tuintipService.getTuintips().onSuccess { tips ->
                     _state.update { it.copy(tuintips = tips, huidigeTipIndex = 0) }
                 }
             }
-
             _state.update { it.copy(isTuintipLaden = false) }
         }
     }
@@ -155,7 +152,8 @@ class HoofdMenuViewModel(
     fun switchGarden(gardenId: String) {
         viewModelScope.launch {
             val uid = _state.value.eigenGid ?: return@launch
-            userRepository.updateSharedGardenId(uid, gardenId)
+            // Gebruik setActiveGarden in plaats van updateSharedGardenId om de koppeling te behouden
+            userRepository.setActiveGarden(uid, gardenId)
         }
     }
 }

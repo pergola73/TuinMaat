@@ -18,7 +18,8 @@ data class UserData(
     val securityPin: String = "",
     val activeGardenId: String? = null,
     val locaties: List<String> = listOf("Tuin", "Balkon", "Kas"),
-    val standaardLocatie: String = "Tuin"
+    val standaardLocatie: String = "Tuin",
+    val sharedByUsers: List<String> = emptyList() // UIDs van mensen die toegang hebben tot JOUW tuin
 )
 
 interface UserRepository {
@@ -31,4 +32,5 @@ interface UserRepository {
     suspend fun setActiveGarden(uid: String, gardenId: String): Result<Unit>
     suspend fun deleteUserData(uid: String): Result<Unit>
     suspend fun triggerDeletionEmail(email: String, voornaam: String, reden: String): Result<Unit>
+    suspend fun removeViewerFromGarden(ownerUid: String, viewerUid: String): Result<Unit>
 }
