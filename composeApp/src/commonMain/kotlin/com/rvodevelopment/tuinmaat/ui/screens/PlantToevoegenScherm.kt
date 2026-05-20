@@ -60,7 +60,14 @@ fun PlantToevoegenScherm(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (state.plant.firestoreId.isNotEmpty()) "Plant Bewerken" else "Plant Toevoegen", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                title = { 
+                    Column {
+                        Text(if (state.plant.firestoreId.isNotEmpty()) "Plant Bewerken" else "Plant Toevoegen", color = DonkerGroen, fontWeight = FontWeight.Bold)
+                        state.eigenaarNaam?.let { naam ->
+                            Text("In tuin van $naam", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.6f))
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
                 },

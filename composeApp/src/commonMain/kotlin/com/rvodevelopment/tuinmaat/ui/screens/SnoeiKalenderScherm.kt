@@ -34,7 +34,8 @@ fun SnoeiKalenderScherm(
     navController: NavController,
     viewModel: SnoeiKalenderViewModel = koinViewModel()
 ) {
-    val planten by viewModel.planten.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val planten = state.planten
 
     val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
     val currentMoment = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -57,7 +58,21 @@ fun SnoeiKalenderScherm(
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
             }
-            Text("Snoei Kalender", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.ExtraBold)
+            Column {
+                Text(
+                    text = if (state.tuinnaam == "Laden...") "Snoei Kalender" else state.tuinnaam,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = DonkerGroen,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                state.eigenaarNaam?.let { naam ->
+                    Text(
+                        text = "Tuin van $naam",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DonkerGroen.copy(alpha = 0.7f)
+                    )
+                }
+            }
         }
 
         LazyColumn(

@@ -5,12 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.Park
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,35 +32,23 @@ import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.rvodevelopment.tuinmaat.ui.theme.*
+import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import org.jetbrains.compose.resources.painterResource
 import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
 
 @Composable
 fun TuinMaatLogo(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = modifier.size(64.dp).neumorphicShadow(shape = CircleShape),
+        shape = CircleShape,
+        color = Color.White
     ) {
-        Surface(
-            modifier = Modifier.size(60.dp).neumorphicShadow(shape = CircleShape),
-            shape = CircleShape,
-            color = Color.White
-        ) {
-            Image(
-                painter = painterResource(Res.drawable.tuin_logo),
-                contentDescription = "TuinMaat Logo",
-                modifier = Modifier.fillMaxSize().padding(8.dp).clip(CircleShape),
-                contentScale = ContentScale.Fit
-            )
-        }
-        Text(
-            "TuinMaat",
-            color = DonkerGroen,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(top = 2.dp)
+        Image(
+            painter = painterResource(Res.drawable.tuin_logo),
+            contentDescription = "TuinMaat Logo",
+            modifier = Modifier.fillMaxSize().padding(8.dp).clip(CircleShape),
+            contentScale = ContentScale.Fit
         )
     }
 }
@@ -72,13 +63,15 @@ fun InvoerVeldMetIcoon(
     modifier: Modifier = Modifier,
     isMultiLine: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable (() -> Unit)? = null,
     autofillTypes: List<AutofillType>? = null
 ) {
     val autofill = LocalAutofill.current
+    val autofillTree = LocalAutofillTree.current
     val autofillNode = if (autofillTypes != null) {
-        remember {
+        remember(autofillTypes) {
             AutofillNode(
                 onFill = onWaardeChange,
                 autofillTypes = autofillTypes
@@ -87,7 +80,12 @@ fun InvoerVeldMetIcoon(
     } else null
 
     if (autofillNode != null) {
-        LocalAutofillTree.current += autofillNode
+        DisposableEffect(autofillNode) {
+            autofillTree.children[autofillNode.id] = autofillNode
+            onDispose {
+                autofillTree.children.remove(autofillNode.id)
+            }
+        }
     }
 
     Column(modifier = modifier.padding(vertical = 8.dp)) {
@@ -110,7 +108,6 @@ fun InvoerVeldMetIcoon(
                                 autofillNode.boundingBox = it.boundsInWindow()
                             }
                             .onFocusChanged { focusState ->
-                                // Autofill kan crashen op sommige platforms (zoals iOS in bepaalde Compose versies)
                                 try {
                                     autofill?.let {
                                         if (focusState.isFocused) {
@@ -132,6 +129,7 @@ fun InvoerVeldMetIcoon(
             keyboardOptions = keyboardOptions.copy(
                 autoCorrectEnabled = false
             ),
+            keyboardActions = keyboardActions,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.Black,
                 unfocusedTextColor = Color.Black,
@@ -150,44 +148,34 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+            .padding(vertical = 8.dp)
+            .height(64.dp),
         shape = RoundedCornerShape(16.dp),
-        color = ZachtBeige,
-        shadowElevation = 0.dp
+        color = Color.White.copy(alpha = 0.7f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DonkerGroen.copy(alpha = 0.1f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                color = ZachtBeige,
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp))
+                shape = CircleShape,
+                color = DonkerGroen.copy(alpha = 0.1f),
+                modifier = Modifier.size(40.dp)
             ) {
-                Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.padding(8.dp))
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icoon, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(20.dp))
+                }
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(tekst, color = DonkerGroen, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-fun TuinAchtergrond(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        AchtergrondGroenLicht,
-                        AchtergrondGroenMidden
-                    )
-                )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                tekst,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = DonkerGroen
             )
-    ) {
-        content()
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = DonkerGroen.copy(alpha = 0.3f))
+        }
     }
 }

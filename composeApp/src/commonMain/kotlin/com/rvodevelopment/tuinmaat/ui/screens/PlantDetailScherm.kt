@@ -73,6 +73,25 @@ fun PlantDetailScherm(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                         }
 
+                        state.eigenaarNaam?.let { naam ->
+                            Surface(
+                                modifier = Modifier
+                                    .statusBarsPadding()
+                                    .align(Alignment.TopEnd)
+                                    .padding(16.dp),
+                                color = Color.White.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "Tuin van $naam",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = DonkerGroen,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
                         if (p.locatie.isNotBlank()) {
                             Surface(
                                 modifier = Modifier

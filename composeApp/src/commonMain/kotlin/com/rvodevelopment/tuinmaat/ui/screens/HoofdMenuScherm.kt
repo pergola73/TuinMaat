@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.service.WeerBericht
 import com.rvodevelopment.tuinmaat.ui.components.MenuKnop
-import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.viewmodel.HoofdMenuViewModel
 

@@ -17,13 +17,14 @@ class DeepLinkHandler(
             if (result.isSuccess) {
                 messageService.showMessage("Tuin succesvol gekoppeld!")
             } else {
-                messageService.showMessage("Fout bij koppelen: ${result.exceptionOrNull()?.message}")
+                messageService.showMessage("Koppelen mislukt: ${result.exceptionOrNull()?.message}")
             }
             result
         } else {
             pendingGardenId = gardenId
-            messageService.showMessage("Log in om de tuin te koppelen")
-            Result.failure(Exception("Gebruiker niet ingelogd"))
+            // Geen foutmelding tonen op inlogscherm, maar een vriendelijke hint
+            messageService.showMessage("Welkom! Log in om de gedeelde tuin te openen.")
+            Result.success(Unit) // We retourneren succes omdat we het hebben opgevangen
         }
     }
 
@@ -33,7 +34,7 @@ class DeepLinkHandler(
         
         val result = userRepository.updateSharedGardenId(user.uid, gardenId)
         if (result.isSuccess) {
-            messageService.showMessage("Tuin succesvol gekoppeld!")
+            messageService.showMessage("De gedeelde tuin is nu gekoppeld!")
             pendingGardenId = null
         }
     }

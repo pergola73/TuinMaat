@@ -22,9 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantenLijstViewModel
 
@@ -52,13 +52,21 @@ fun PlantenLijstScherm(
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                 }
-                Text(
-                    text = state.tuinnaam,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = DonkerGroen,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = state.tuinnaam,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = DonkerGroen,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    state.eigenaarNaam?.let { naam ->
+                        Text(
+                            text = "Tuin van $naam",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DonkerGroen.copy(alpha = 0.7f)
+                        )
+                    }
+                }
                 IconButton(onClick = { viewModel.toggleZoekveld() }) {
                     Icon(
                         if (state.isZoekenZichtbaar) Icons.Default.Close else Icons.Default.Search,
