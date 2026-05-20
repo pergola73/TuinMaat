@@ -58,16 +58,35 @@ class HoofdMenuViewModel(
                 if (user != null) {
                     userRepository.getUserData(user.uid).collectLatest { userData ->
                         if (userData != null) {
-                            // Belangrijk: gebruik activeGardenId voor de weergave, maar sharedGardenId voor de switcher check
                             val activeGid = userData.activeGardenId ?: user.uid
+                            val isEigenTuin = activeGid == user.uid
                             
                             _state.update { it.copy(
                                 voornaam = userData.voornaam,
-                                tuinnaam = userData.tuinnaam,
                                 gekoppeldeGid = userData.sharedGardenId,
                                 eigenGid = user.uid,
                                 actieveGid = activeGid
                             ) }
+
+                            if (isEigenTuin) {
+                                _state.update { it.copy(
+                                    tuinnaam = userData.tuinnaam,
+                                    eigenaarNaam = null
+                                ) }
+                            } else {
+                                // Fetch details van de gedeelde tuin
+                                launch {
+                                    tuinRepository.getTuinnaam(activeGid).collect { naam ->
+                                        _state.update { it.copy(tuinnaam = naam) }
+                                    }
+                                }
+                                launch {
+                                    userRepository.getUserData(activeGid).collect { ownerData ->
+                                        _state.update { it.copy(eigenaarNaam = ownerData?.voornaam) }
+                                    }
+                                }
+                            }
+
                             observeGardenData(activeGid)
                         }
                     }

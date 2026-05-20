@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.AutofillType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -24,7 +27,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.ui.components.InvoerVeldMetIcoon
-import com.rvodevelopment.tuinmaat.ui.components.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.LoginViewModel
 import org.jetbrains.compose.resources.painterResource
@@ -94,13 +96,15 @@ fun LoginScherm(
                     label = "Voornaam",
                     waarde = voornaam,
                     onWaardeChange = { viewModel.onVoornaamChanged(it) },
-                    icoon = Icons.Default.Person
+                    icoon = Icons.Default.Person,
+                    autofillTypes = listOf(AutofillType.PersonFirstName)
                 )
                 InvoerVeldMetIcoon(
                     label = "Achternaam",
                     waarde = achternaam,
                     onWaardeChange = { viewModel.onAchternaamChanged(it) },
-                    icoon = Icons.Default.Person
+                    icoon = Icons.Default.Person,
+                    autofillTypes = listOf(AutofillType.PersonLastName)
                 )
             }
 
@@ -110,11 +114,12 @@ fun LoginScherm(
                 onWaardeChange = { viewModel.onEmailChanged(it) },
                 icoon = Icons.Default.Email,
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardOptions = KeyboardOptions(
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Email,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Next,
                     autoCorrectEnabled = false
-                )
+                ),
+                autofillTypes = listOf(AutofillType.EmailAddress, AutofillType.Username)
             )
 
             InvoerVeldMetIcoon(
@@ -124,10 +129,13 @@ fun LoginScherm(
                 icoon = Icons.Default.Lock,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (wachtwoordZichtbaar) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardOptions = KeyboardOptions(
                     keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
                     imeAction = androidx.compose.ui.text.input.ImeAction.Done,
                     autoCorrectEnabled = false
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { viewModel.voerActieUit(onLoginSuccess) }
                 ),
                 trailingIcon = {
                     IconButton(onClick = { viewModel.toggleWachtwoordZichtbaarheid() }) {
@@ -137,7 +145,8 @@ fun LoginScherm(
                             tint = DonkerGroen
                         )
                     }
-                }
+                },
+                autofillTypes = if (isRegistreren) listOf(AutofillType.NewPassword) else listOf(AutofillType.Password)
             )
 
             if (!isRegistreren) {

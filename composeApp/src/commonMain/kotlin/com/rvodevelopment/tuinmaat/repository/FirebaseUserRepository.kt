@@ -49,14 +49,19 @@ class FirebaseUserRepository : UserRepository {
             val userRef = firestore.collection("users").document(uid)
             
             // 1. Als er al een oude koppeling was, die eerst opruimen bij de vorige eigenaar
-            val currentData = userRef.get()
-            val oldGardenId = currentData.get<String?>("sharedGardenId")
-            if (oldGardenId != null && oldGardenId != uid) {
-                firestore.collection("users").document(oldGardenId)
-                    .set(mapOf("sharedByUsers" to FieldValue.arrayRemove(uid)), merge = true)
+            try {
+                val currentData = userRef.get()
+                val oldGardenId = currentData.get<String?>("sharedGardenId")
+                if (oldGardenId != null && oldGardenId != uid) {
+                    firestore.collection("users").document(oldGardenId)
+                        .set(mapOf("sharedByUsers" to FieldValue.arrayRemove(uid)), merge = true)
+                }
+            } catch (e: Exception) {
+                // Stille fout bij opruimen (bijv. geen rechten bij de vorige eigenaar)
+                println("FirebaseUserRepository: Kon oude eigenaar niet informeren: ${e.message}")
             }
 
-            // 2. Nieuwe koppeling leggen
+            // 2. Nieuwe koppeling leggen (DIT MOET LUKKEN)
             userRef.set(mapOf(
                 "sharedGardenId" to sharedGardenId,
                 "activeGardenId" to (sharedGardenId ?: uid)
@@ -64,8 +69,13 @@ class FirebaseUserRepository : UserRepository {
 
             // 3. Toevoegen aan de lijst van de nieuwe eigenaar
             if (sharedGardenId != null && sharedGardenId != uid) {
-                firestore.collection("users").document(sharedGardenId)
-                    .set(mapOf("sharedByUsers" to FieldValue.arrayUnion(uid)), merge = true)
+                try {
+                    firestore.collection("users").document(sharedGardenId)
+                        .set(mapOf("sharedByUsers" to FieldValue.arrayUnion(uid)), merge = true)
+                } catch (e: Exception) {
+                    // Stille fout: We hebben geen rechten bij de eigenaar, maar de koppeling bij onszelf staat!
+                    println("FirebaseUserRepository: Geen rechten om nieuwe eigenaar te informeren, maar koppeling is geslaagd.")
+                }
             }
 
             Result.success(Unit)
@@ -119,11 +129,15 @@ class FirebaseUserRepository : UserRepository {
     override suspend fun removeViewerFromGarden(ownerUid: String, viewerUid: String): Result<Unit> {
         return try {
             // 1. Verwijder de koppeling bij de viewer
-            firestore.collection("users").document(viewerUid)
-                .set(mapOf(
-                    "sharedGardenId" to null,
-                    "activeGardenId" to viewerUid
-                ), merge = true)
+            try {
+                firestore.collection("users").document(viewerUid)
+                    .set(mapOf(
+                        "sharedGardenId" to null,
+                        "activeGardenId" to viewerUid
+                    ), merge = true)
+            } catch (e: Exception) {
+                println("FirebaseUserRepository: Kon viewer niet ontkoppelen (geen rechten?), we gaan door met eigenaar-lijst.")
+            }
             
             // 2. Verwijder de viewer uit de lijst van de eigenaar
             firestore.collection("users").document(ownerUid)

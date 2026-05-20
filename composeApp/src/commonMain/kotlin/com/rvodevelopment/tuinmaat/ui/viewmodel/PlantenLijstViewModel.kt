@@ -11,12 +11,13 @@ import kotlinx.coroutines.launch
 
 data class PlantenLijstState(
     val tuinnaam: String = "Laden...",
+    val eigenaarNaam: String? = null,
     val planten: List<Plant> = emptyList(),
     val gefilterdePlanten: List<Plant> = emptyList(),
     val locaties: List<String> = emptyList(),
     val geselecteerdeLocatie: String = "Alle",
     val zoekTerm: String = "",
-    val isZoekenZichtbaar: Boolean = false
+    val isZoekenZichtbaar: Boolean = false,
 )
 
 class PlantenLijstViewModel(
@@ -42,19 +43,32 @@ class PlantenLijstViewModel(
                 }
                 .filterNotNull()
                 .flatMapLatest { userData ->
-                    val gardenId = userData.sharedGardenId ?: userData.id
-                    combine(
-                        tuinRepository.getTuinnaam(gardenId),
-                        tuinRepository.getPlanten(gardenId)
-                    ) { tuinnaam, planten ->
-                        tuinnaam to planten
+                    val gardenId = userData.activeGardenId ?: userData.sharedGardenId ?: userData.id
+                    val isEigenTuin = gardenId == userData.id
+                    
+                    if (isEigenTuin) {
+                        combine(
+                            tuinRepository.getTuinnaam(gardenId),
+                            tuinRepository.getPlanten(gardenId)
+                        ) { tuinnaam, planten ->
+                            Triple(tuinnaam, null, planten)
+                        }
+                    } else {
+                        combine(
+                            tuinRepository.getTuinnaam(gardenId),
+                            userRepository.getUserData(gardenId),
+                            tuinRepository.getPlanten(gardenId)
+                        ) { tuinnaam, ownerData, planten ->
+                            Triple(tuinnaam, ownerData?.voornaam, planten)
+                        }
                     }
                 }
-                .collect { (tuinnaam, planten) ->
+                .collect { (tuinnaam, eigenaar, planten) ->
                     _state.update { it.copy(
                         tuinnaam = tuinnaam,
+                        eigenaarNaam = eigenaar,
                         planten = planten.sortedBy { p -> p.naam },
-                        locaties = planten.map { p -> p.locatie }.distinct().filter { l -> l.isNotBlank() }
+                        locaties = planten.asSequence().map { p -> p.locatie }.distinct().filter { l -> l.isNotBlank() }.toList()
                     ) }
                     updateFilteredList()
                 }
@@ -86,7 +100,7 @@ class PlantenLijstViewModel(
         val gefilterd = s.planten.filter { plant ->
             val matchesSearch = plant.naam.contains(s.zoekTerm, ignoreCase = true) ||
                     plant.locatie.contains(s.zoekTerm, ignoreCase = true)
-            val matchesLocation = s.geselecteerdeLocatie == "Alle" || plant.locatie == s.geselecteerdeLocatie
+            val matchesLocation = (s.geselecteerdeLocatie == "Alle") || (plant.locatie == s.geselecteerdeLocatie)
             matchesSearch && matchesLocation
         }
         _state.update { it.copy(gefilterdePlanten = gefilterd) }

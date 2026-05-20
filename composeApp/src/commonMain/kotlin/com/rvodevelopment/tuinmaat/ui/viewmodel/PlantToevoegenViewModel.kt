@@ -32,7 +32,8 @@ data class PlantToevoegenState(
     val geselecteerdeMaanden: List<String> = emptyList(),
     val error: String? = null,
     val infoBericht: String? = null,
-    val selectedImageBytes: ByteArray? = null
+    val selectedImageBytes: ByteArray? = null,
+    val eigenaarNaam: String? = null
 )
 
 class PlantToevoegenViewModel(
@@ -61,7 +62,14 @@ class PlantToevoegenViewModel(
             // Haal gebruikersgegevens op voor locaties en gardenId
             val userData = userRepository.getUserData(profile.uid).first()
             if (userData != null) {
-                val gardenId = userData.sharedGardenId ?: profile.uid
+                val gardenId = userData.activeGardenId ?: userData.sharedGardenId ?: profile.uid
+                val isEigenTuin = gardenId == profile.uid
+
+                if (!isEigenTuin) {
+                    val ownerData = userRepository.getUserData(gardenId).first()
+                    _state.update { it.copy(eigenaarNaam = ownerData?.voornaam) }
+                }
+
                 _state.update { 
                     it.copy(
                         beschikbareLocaties = userData.locaties,
@@ -161,7 +169,7 @@ class PlantToevoegenViewModel(
             val profile = authService.currentUser.first() ?: return@launch
             
             val userData = userRepository.getUserData(profile.uid).first()
-            val gardenId = userData?.sharedGardenId ?: profile.uid
+            val gardenId = userData?.activeGardenId ?: userData?.sharedGardenId ?: profile.uid
 
             var plantToSave = _state.value.plant
             val imageBytes = _state.value.selectedImageBytes
@@ -187,7 +195,7 @@ class PlantToevoegenViewModel(
             _state.update { it.copy(isLaden = true) }
             val profile = authService.currentUser.first() ?: return@launch
             val userData = userRepository.getUserData(profile.uid).first()
-            val gardenId = userData?.sharedGardenId ?: profile.uid
+            val gardenId = userData?.activeGardenId ?: userData?.sharedGardenId ?: profile.uid
             val plantId = _state.value.plant.firestoreId
             
             if (plantId.isNotEmpty()) {
