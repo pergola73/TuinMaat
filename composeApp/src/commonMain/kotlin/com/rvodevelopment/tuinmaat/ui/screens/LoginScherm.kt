@@ -238,11 +238,16 @@ fun LoginScherm(
                     onClick = { viewModel.loginWithGoogle(onLoginSuccess) },
                     modifier = Modifier.fillMaxWidth().height(56.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, DonkerGroen),
+                    border = BorderStroke(1.dp, DonkerGroen.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White.copy(alpha = 0.7f)),
                     enabled = !isLaden
                 ) {
-                    Icon(Icons.Default.AccountCircle, contentDescription = null, tint = DonkerGroen)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Image(
+                        painter = painterResource(Res.drawable.ic_google_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text("Inloggen met Google", color = DonkerGroen, fontWeight = FontWeight.Bold)
                 }
             }

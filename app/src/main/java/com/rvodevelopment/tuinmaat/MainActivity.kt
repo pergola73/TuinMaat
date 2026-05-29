@@ -2,7 +2,6 @@ package com.rvodevelopment.tuinmaat
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
@@ -22,11 +21,7 @@ class MainActivity : FragmentActivity() {
     private val deepLinkHandler: DeepLinkHandler by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(
-                ZachtBeige.toArgb(), ZachtBeige.toArgb()
-            )
-        )
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         ActivityProvider.setCurrentActivity(this)
 

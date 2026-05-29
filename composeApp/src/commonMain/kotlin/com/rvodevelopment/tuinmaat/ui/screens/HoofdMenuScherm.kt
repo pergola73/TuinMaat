@@ -41,6 +41,7 @@ fun HoofdMenuScherm(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
         ) {
             // Garden Switcher

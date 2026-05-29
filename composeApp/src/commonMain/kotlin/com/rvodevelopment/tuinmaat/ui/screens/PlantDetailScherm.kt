@@ -50,7 +50,7 @@ fun PlantDetailScherm(
         ) { page ->
             val p = state.planten[page]
 
-            Box(modifier = Modifier.fillMaxSize().background(ZachtBeige)) {
+            Box(modifier = Modifier.fillMaxSize().background(ZachtBeige).navigationBarsPadding()) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
 
                     // 1. Foto Header

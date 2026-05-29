@@ -1,7 +1,6 @@
 package com.rvodevelopment.tuinmaat
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -31,7 +30,8 @@ fun App() {
 
     TuinMaatTheme {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            contentWindowInsets = WindowInsets(0, 0, 0, 0) // Laat NavHost zelf insets afhandelen
         ) { padding ->
             SecurityWrapper {
                 val navController = rememberNavController()
@@ -44,7 +44,7 @@ fun App() {
                 NavHost(
                     navController = navController,
                     startDestination = startDestination,
-                    modifier = Modifier.padding(padding)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     composable("login") {
                         val viewModel: LoginViewModel = koinInject()

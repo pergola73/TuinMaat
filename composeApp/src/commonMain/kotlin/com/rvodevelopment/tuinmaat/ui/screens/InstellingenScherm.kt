@@ -40,7 +40,7 @@ fun InstellingenScherm(
         "Andere reden"
     )
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
             IconButton(onClick = { navController.popBackStack() }) { 
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
@@ -180,7 +180,7 @@ fun InfoScherm(
 ) {
     val userData by viewModel.userData.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
             IconButton(onClick = { navController.popBackStack() }) { 
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
