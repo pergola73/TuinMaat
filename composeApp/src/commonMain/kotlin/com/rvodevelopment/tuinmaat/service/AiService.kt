@@ -25,5 +25,6 @@ data class AiGardenTip(
 
 interface AiService {
     suspend fun identifyPlant(imageBytes: ByteArray): Result<AiPlantResult>
+    suspend fun identifyPlantByName(name: String): Result<AiPlantResult>
     suspend fun generateGardenTip(plantNames: List<String> = emptyList()): Result<AiGardenTip>
 }

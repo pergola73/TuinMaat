@@ -7,6 +7,13 @@ import platform.Foundation.NSHomeDirectory
 fun getDatabaseBuilder(): RoomDatabase.Builder<PlantDatabase> {
     val dbFile = NSHomeDirectory() + "/planten_database.db"
     return Room.databaseBuilder<PlantDatabase>(
-        name = dbFile
+        name = dbFile,
+        factory = { PlantDatabaseConstructor.initialize() }
+    )
+}
+
+actual fun getInMemoryDatabaseBuilder(): RoomDatabase.Builder<PlantDatabase> {
+    return Room.inMemoryDatabaseBuilder<PlantDatabase>(
+        factory = { PlantDatabaseConstructor.initialize() }
     )
 }

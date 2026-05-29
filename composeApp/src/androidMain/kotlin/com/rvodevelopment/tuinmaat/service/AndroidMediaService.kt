@@ -14,6 +14,29 @@ import java.io.File
 import kotlin.coroutines.resume
 
 class AndroidMediaService : MediaService {
+    override suspend fun requestCameraPermission(): Boolean = suspendCancellableCoroutine { continuation ->
+        val activity = ActivityProvider.getCurrentActivity()
+        if (activity == null) {
+            continuation.resume(false)
+            return@suspendCancellableCoroutine
+        }
+
+        if (androidx.core.content.ContextCompat.checkSelfPermission(activity, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            continuation.resume(true)
+            return@suspendCancellableCoroutine
+        }
+
+        ActivityProvider.setPermissionResultCallback { requestCode, permissions, grantResults ->
+            if (requestCode == 2001) {
+                val granted = grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+                continuation.resume(granted)
+            }
+            ActivityProvider.setPermissionResultCallback(null)
+        }
+
+        androidx.core.app.ActivityCompat.requestPermissions(activity, arrayOf(android.Manifest.permission.CAMERA), 2001)
+    }
+
     override suspend fun pickImage(): ByteArray? = suspendCancellableCoroutine { continuation ->
         val activity = ActivityProvider.getCurrentActivity()
         if (activity == null) {

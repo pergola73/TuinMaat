@@ -19,6 +19,8 @@ abstract class PlantDatabase : RoomDatabase() {
 @Suppress("NO_ACTUAL_FOR_EXPECT")
 expect object PlantDatabaseConstructor : RoomDatabaseConstructor<PlantDatabase>
 
+expect fun getInMemoryDatabaseBuilder(): RoomDatabase.Builder<PlantDatabase>
+
 fun getRoomDatabase(
     builder: RoomDatabase.Builder<PlantDatabase>
 ): PlantDatabase {

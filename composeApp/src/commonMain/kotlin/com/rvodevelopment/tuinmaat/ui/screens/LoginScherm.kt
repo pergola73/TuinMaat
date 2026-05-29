@@ -48,10 +48,31 @@ fun LoginScherm(
     val wachtwoordZichtbaar by viewModel.wachtwoordZichtbaar.collectAsState()
     val onthoudEmail by viewModel.onthoudEmail.collectAsState()
     val biometrieIngeschakeld by viewModel.biometrieIngeschakeld.collectAsState()
+    val toonBiometrieVraag by viewModel.toonBiometrieVraag.collectAsState()
     val platform = remember { getPlatform() }
 
     LaunchedEffect(Unit) {
         viewModel.tryAutoBiometric(onLoginSuccess)
+    }
+
+    if (toonBiometrieVraag) {
+        AlertDialog(
+            onDismissRequest = { viewModel.slaBiometrieOver(onLoginSuccess) },
+            title = { Text("Biometrisch inloggen") },
+            text = { Text("Wilt u voortaan sneller inloggen met uw vingerafdruk of gezichtsherkenning?") },
+            confirmButton = {
+                Button(onClick = { viewModel.activeerBiometrie(onLoginSuccess) }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
+                    Text("Ja, inschakelen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.slaBiometrieOver(onLoginSuccess) }) {
+                    Text("Nee, bedankt", color = DonkerGroen)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 
     TuinAchtergrond {

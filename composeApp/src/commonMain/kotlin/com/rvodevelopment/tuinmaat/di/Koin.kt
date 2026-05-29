@@ -72,7 +72,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String)
     single { get<PlantDatabase>().plantDao() }
 
     // Centrale plek voor het Gemini model
-    single(named("GEMINI_MODEL")) { "gemini-flash-lite-latest" }
+    single(named("GEMINI_MODEL")) { "gemini-3.1-flash-lite" }
 
     single<AiService> { CommonAiService(
         client = get(),
@@ -85,7 +85,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String)
     factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HoofdMenuViewModel(get(), get(), get(), get(), get()) }
     factory { PlantenLijstViewModel(get(), get(), get()) }
-    factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), get(), plantId) }
     factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get()) }
     factory { InstellingenViewModel(get(), get(), get(), get(), get(), get()) }

@@ -30,7 +30,9 @@ import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantDetailViewModel
 fun PlantDetailScherm(
     viewModel: PlantDetailViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToEdit: (String) -> Unit
+    onNavigateToEdit: (String) -> Unit,
+    onNavigateToLocaties: () -> Unit = {},
+    onNavigateToSnoeiKalender: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -159,6 +161,52 @@ fun PlantDetailScherm(
                     }
                 }
             }
+        }
+
+        if (state.toonBeheerLocatiesTip) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissBeheerLocatiesTip() },
+                title = { Text("Locaties beheren 🏠") },
+                text = { Text("Wist je dat je via 'Instellingen' zelf locaties kunt toevoegen of wijzigen? Zo kun je bijvoorbeeld ook makkelijk je kamerplanten bijhouden!") },
+                confirmButton = {
+                    Button(onClick = { 
+                        viewModel.dismissBeheerLocatiesTip()
+                        onNavigateToLocaties()
+                    }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
+                        Text("Naar Locaties")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissBeheerLocatiesTip() }) {
+                        Text("Handig, bedankt!", color = DonkerGroen)
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
+
+        if (state.toonSnoeiKalenderTip) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissSnoeiKalenderTip() },
+                title = { Text("Snoeikalender ✂️") },
+                text = { Text("Via de snoeikalender zie je snel en makkelijk welke planten in welke maand gesnoeid moeten worden. Zo vergeet je nooit meer een snoeibeurt!") },
+                confirmButton = {
+                    Button(onClick = { 
+                        viewModel.dismissSnoeiKalenderTip()
+                        onNavigateToSnoeiKalender()
+                    }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
+                        Text("Naar Snoeikalender")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissSnoeiKalenderTip() }) {
+                        Text("Goed om te weten!", color = DonkerGroen)
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(24.dp)
+            )
         }
     }
 }

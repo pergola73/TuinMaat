@@ -137,7 +137,7 @@ android {
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "PLANTNET_API_KEY", "\"$plantnetApiKey\"")
-        buildConfigField("String", "APP_VERSION", "\"3.0.1-beta1\"")
+        buildConfigField("String", "APP_VERSION", "\"1.1.0\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

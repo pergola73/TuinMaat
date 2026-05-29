@@ -5,6 +5,10 @@ class IosAiService : AiService {
         return Result.failure(Exception("iOS AI Service niet geïmplementeerd"))
     }
 
+    override suspend fun identifyPlantByName(name: String): Result<AiPlantResult> {
+        return Result.failure(Exception("iOS AI Service niet geïmplementeerd"))
+    }
+
     override suspend fun generateGardenTip(plantNames: List<String>): Result<AiGardenTip> {
         return Result.failure(Exception("iOS Garden Tip niet geïmplementeerd"))
     }

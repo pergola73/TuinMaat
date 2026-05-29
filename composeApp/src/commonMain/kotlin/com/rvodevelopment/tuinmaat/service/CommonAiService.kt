@@ -9,9 +9,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
 import kotlinx.serialization.json.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -25,27 +23,54 @@ class CommonAiService(
 ) : AiService {
 
     override suspend fun identifyPlant(imageBytes: ByteArray): Result<AiPlantResult> = withContext(Dispatchers.IO) {
+        val start = Clock.System.now()
         try {
-            // Stap 1: Resize voor Pl@ntNet (max 1280px)
+            // Stap 1: Resize & PlantNet (Sequential want PlantNet geeft de naam)
             val plantnetImage = mediaService.resizeImage(imageBytes, 1280)
             val plantNetResult = identificeerMetPlantNet(plantnetImage)
+            val plantNetDone = Clock.System.now()
             
             val plantNaam = plantNetResult?.first ?: return@withContext Result.failure(Exception("Pl@ntNet kon de plant niet identificeren"))
             val scientificName = plantNetResult.second
+            println("TIMING: PlantNet identificeerde '$plantNaam' in ${plantNetDone.toEpochMilliseconds() - start.toEpochMilliseconds()}ms")
             
-            // Stap 2: Probeer Wikipedia met de gewone naam, dan met de wetenschappelijke naam
-            var wikipediaInfo = haalWikipediaInfoOp(plantNaam)
-            if (wikipediaInfo == null && scientificName.isNotEmpty() && scientificName != plantNaam) {
-                wikipediaInfo = haalWikipediaInfoOp(scientificName)
+            // Stap 2 & 3: Wikipedia en Gemini PARALLEL starten
+            val (wikipediaInfo, finaleInfo) = coroutineScope {
+                val wiki = async { haalWikipediaInfoOp(plantNaam) }
+                val gem = async { verrijkMetGemini(plantNaam, scientificName) }
+                Pair(wiki.await(), gem.await())
             }
+            val totalDone = Clock.System.now()
+            println("TIMING: Parallelle taken klaar na ${totalDone.toEpochMilliseconds() - plantNetDone.toEpochMilliseconds()}ms")
             
-            // Stap 3: Verrijk met Gemini (nu alleen tekst voor snelheid)
-            val finaleInfo = verrijkMetGemini(plantNaam, scientificName, wikipediaInfo)
             val bron = if (wikipediaInfo != null) "Pl@ntNet • Wikipedia • Gemini AI" else "Pl@ntNet • Gemini AI"
             
             Result.success(finaleInfo.copy(
                 naam = plantNaam,
-                wetenschappelijkeNaam = scientificName,
+                bron = bron
+            ))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun identifyPlantByName(name: String): Result<AiPlantResult> = withContext(Dispatchers.IO) {
+        val start = Clock.System.now()
+        try {
+            // Wikipedia en Gemini PARALLEL
+            val (wikipediaInfo, finaleInfo) = coroutineScope {
+                val wiki = async { haalWikipediaInfoOp(name) }
+                val gem = async { verrijkMetGemini(name, "") }
+                Pair(wiki.await(), gem.await())
+            }
+            
+            val geminiDone = Clock.System.now()
+            println("TIMING: Totaal (by name parallel) duurde ${geminiDone.toEpochMilliseconds() - start.toEpochMilliseconds()}ms")
+
+            val bron = if (wikipediaInfo != null) "Wikipedia • Gemini AI" else "Gemini AI"
+            
+            Result.success(finaleInfo.copy(
+                naam = name,
                 bron = bron
             ))
         } catch (e: Exception) {
@@ -128,39 +153,25 @@ class CommonAiService(
 
     private suspend fun verrijkMetGemini(
         plantNaam: String, 
-        scientificName: String, 
-        wikipediaInfo: String?
+        scientificName: String
     ): AiPlantResult {
-        val wikiText = wikipediaInfo ?: "Geen extra Wikipedia informatie beschikbaar. Gebruik je eigen kennis."
         val prompt = """
-            Je bent een expert hovenier met diepgaande kennis van botanie en plantenverzorging.
-            Geef gedetailleerde verzorgingsinformatie voor de plant: $plantNaam ($scientificName).
-            Wikipedia context: $wikiText
+            Plant: $plantNaam
+            Wetenschappelijke naam: $scientificName
             
-            Vul alle onderstaande velden in het Nederlands in voor een tuinier-app. 
-            Zorg dat ELK veld zinvol en volledig is ingevuld.
-            
-            Velden uitleg:
-            1. omschrijving: Een boeiende tekst over de plant, uiterlijk, herkomst en waarom hij leuk is (max 60 woorden).
-            2. waterBehoefte: Hoe vaak en hoeveel water? Specifiek advies.
-            3. lichtBehoefte: De ideale standplaats (bijv. volle zon, halfschaduw, schaduw).
-            4. voedingAdvies: Wanneer en hoe vaak heeft de plant extra plantenvoeding nodig?
-            5. bemesting: Welke specifieke soort meststof of bodemverbeteraar is het best?
-            6. snoeiMaand: De BESTE maand om te snoeien. Geef slechts ÉÉN maand. Gebruik uitsluitend een van deze namen: Januari, Februari, Maart, April, Mei, Juni, Juli, Augustus, September, Oktober, November, December. Laat leeg als snoeien niet nodig is.
-            7. snoeiAdvies: Korte, praktische instructies over de techniek van het snoeien (max 30 woorden).
-            8. ehboSignaal: Hoe zie je dat de plant ongezond is? (bijv. bruine randen, slap hangen, gele bladeren).
-
-            ANTWOORD UITSLUITEND IN DIT JSON FORMAAT:
+            Geef verzorgingsinformatie in JSON:
             {
-              "omschrijving": "...",
-              "waterBehoefte": "...",
-              "lichtBehoefte": "...",
-              "voedingAdvies": "...",
-              "bemesting": "...",
-              "snoeiMaand": "...",
-              "snoeiAdvies": "...",
-              "ehboSignaal": "..."
+              "wetenschappelijkeNaam": "Latijnse naam",
+              "omschrijving": "Korte tekst (max 40 woorden)",
+              "waterBehoefte": "Wateradvies",
+              "lichtBehoefte": "Standplaats",
+              "voedingAdvies": "Voedingsbehoefte",
+              "bemesting": "Grond/Mestadvies",
+              "snoeiMaand": "Snoeimaand (Januari...December of leeg)",
+              "snoeiAdvies": "Snoei-instructie (max 20 woorden)",
+              "ehboSignaal": "Symptomen ongezond"
             }
+            Taal: Nederlands.
         """.trimIndent()
 
         return try {
@@ -170,14 +181,19 @@ class CommonAiService(
                     putJsonArray("contents") {
                         addJsonObject {
                             putJsonArray("parts") {
-                                addJsonObject {
-                                    put("text", prompt)
-                                }
+                                addJsonObject { put("text", prompt) }
                             }
+                        }
+                    }
+                    putJsonObject("system_instruction") {
+                        putJsonArray("parts") {
+                            addJsonObject { put("text", "Je bent een expert hovenier. Antwoord uitsluitend in valide JSON.") }
                         }
                     }
                     putJsonObject("generationConfig") {
                         put("response_mime_type", "application/json")
+                        put("temperature", 0.1)
+                        put("max_output_tokens", 600)
                     }
                 })
             }.body()
@@ -191,6 +207,7 @@ class CommonAiService(
 
             AiPlantResult(
                 naam = plantNaam,
+                wetenschappelijkeNaam = json["wetenschappelijkeNaam"]?.jsonPrimitive?.content ?: scientificName,
                 omschrijving = json["omschrijving"]?.jsonPrimitive?.content ?: "",
                 waterBehoefte = json["waterBehoefte"]?.jsonPrimitive?.content ?: "",
                 lichtBehoefte = json["lichtBehoefte"]?.jsonPrimitive?.content ?: "",
@@ -204,7 +221,7 @@ class CommonAiService(
             println("Gemini Error: ${e.message}")
             AiPlantResult(
                 naam = plantNaam, 
-                omschrijving = wikipediaInfo ?: "Helaas kon er geen extra informatie worden opgehaald voor deze plant."
+                omschrijving = "Informatie kon niet worden opgehaald."
             )
         }
     }
@@ -212,7 +229,6 @@ class CommonAiService(
     override suspend fun generateGardenTip(plantNames: List<String>): Result<AiGardenTip> = withContext(Dispatchers.IO) {
         try {
             // Stap 1: Haal actueel weer op (Open-Meteo, geen API key nodig)
-            // We gebruiken een centrale locatie in Nederland als default
             val weatherResponse: JsonObject = client.get("https://api.open-meteo.com/v1/forecast?latitude=52.1326&longitude=5.2913&current_weather=true").body()
             val current = weatherResponse["current_weather"]?.jsonObject
             val temp = current?.get("temperature")?.jsonPrimitive?.content?.toDoubleOrNull()?.toInt() ?: 15
@@ -258,17 +274,10 @@ class CommonAiService(
             } else ""
 
             val prompt = """
-                Je bent een expert hovenier. Het is nu $maandNaam en het weer is: $conditie met $temp graden.
-                $plantContext
-                Geef een concrete, inspirerende en unieke tuintip voor deze dag. 
-                Focus op onderhoud, zaaien, snoeien of genieten van de tuin passend bij dit specifieke weer en de maand.
-                Als er planten genoemd zijn, probeer de tip relevant te maken voor (een van) die planten.
-                De tip moet kort en krachtig zijn, maximaal 2 zinnen.
-                
-                ANTWOORD UITSLUITEND IN DIT JSON FORMAAT:
-                {
-                  "tip": "De tekst van jouw tip (max 2 zinnen)"
-                }
+                Maand: $maandNaam
+                Weer: $conditie, $temp graden.
+                Planten in tuin: ${plantNames.joinToString(", ")}
+                Geef een korte tuintip (max 2 zinnen).
             """.trimIndent()
 
             val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
@@ -277,10 +286,13 @@ class CommonAiService(
                     putJsonArray("contents") {
                         addJsonObject {
                             putJsonArray("parts") {
-                                addJsonObject {
-                                    put("text", prompt)
-                                }
+                                addJsonObject { put("text", prompt) }
                             }
+                        }
+                    }
+                    putJsonObject("system_instruction") {
+                        putJsonArray("parts") {
+                            addJsonObject { put("text", "Je bent een expert hovenier. Antwoord uitsluitend in JSON: {\"tip\": \"...\"}") }
                         }
                     }
                     putJsonObject("generationConfig") {

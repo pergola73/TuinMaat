@@ -15,4 +15,5 @@ actual fun platformModule(): Module = module {
     single<SharingService> { AndroidSharingService(get()) }
     single<BiometricService> { AndroidBiometricService { ActivityProvider.getCurrentActivity() } }
     single<MediaService> { AndroidMediaService() }
+    single<StorageService> { AndroidStorageService(get()) }
 }

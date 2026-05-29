@@ -6,6 +6,7 @@ import kotlinx.cinterop.usePinned
 import platform.UIKit.*
 import platform.Foundation.*
 import platform.PhotosUI.*
+import platform.AVFoundation.*
 import platform.darwin.NSObject
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -13,6 +14,19 @@ import platform.posix.memcpy
 
 class IosMediaService : MediaService {
     private var currentDelegate: ImagePickerDelegate? = null
+
+    override suspend fun requestCameraPermission(): Boolean = suspendCancellableCoroutine { continuation ->
+        val status = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
+        when (status) {
+            AVAuthorizationStatusAuthorized -> continuation.resume(true)
+            AVAuthorizationStatusNotDetermined -> {
+                AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo) { granted ->
+                    continuation.resume(granted)
+                }
+            }
+            else -> continuation.resume(false)
+        }
+    }
 
     override suspend fun pickImage(): ByteArray? = suspendCancellableCoroutine { continuation ->
         val picker = UIImagePickerController()
