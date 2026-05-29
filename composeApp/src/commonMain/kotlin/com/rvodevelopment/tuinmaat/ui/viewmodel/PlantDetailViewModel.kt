@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
+import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.service.AuthService
 import com.rvodevelopment.tuinmaat.service.StorageService
 import kotlinx.coroutines.flow.*
@@ -14,7 +15,8 @@ data class PlantDetailState(
     val isLoading: Boolean = true,
     val initialIndex: Int = 0,
     val toonBeheerLocatiesTip: Boolean = false,
-    val toonSnoeiKalenderTip: Boolean = false
+    val toonSnoeiKalenderTip: Boolean = false,
+    val eigenaarNaam: String? = null
 )
 
 class PlantDetailViewModel(
