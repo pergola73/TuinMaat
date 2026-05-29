@@ -34,7 +34,8 @@ data class PlantToevoegenState(
     val infoBericht: String? = null,
     val selectedImageBytes: ByteArray? = null,
     val toonEersteTip: Boolean = false,
-    val toonLocatieTip: Boolean = false
+    val toonLocatieTip: Boolean = false,
+    val eigenaarNaam: String? = null
 )
 
 class PlantToevoegenViewModel(
@@ -92,6 +93,7 @@ class PlantToevoegenViewModel(
                 _state.update { 
                     it.copy(
                         beschikbareLocaties = userData.locaties,
+                        eigenaarNaam = if (gardenId != profile.uid) userData.voornaam else null,
                         // Als het een nieuwe plant is, gebruik de standaardlocatie
                         plant = if (plantId == null && it.plant.locatie.isBlank()) 
                             it.plant.copy(locatie = userData.standaardLocatie) 
@@ -238,6 +240,8 @@ class PlantToevoegenViewModel(
             tuinRepository.savePlant(gardenId, plantToSave).onSuccess {
                 // Toon alleen een simpel succesbericht in dit scherm
                 _state.update { it.copy(toonLocatieTip = true, isLaden = false) }
+                // Soms willen we direct navigeren, maar hier tonen we eerst de popup
+                // De popup knop roept handleLocatieTipDone aan die dan onSuccess() doet
             }.onFailure { e ->
                 _state.update { it.copy(isLaden = false, error = e.message) }
             }
