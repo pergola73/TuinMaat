@@ -33,7 +33,8 @@ data class PlantToevoegenState(
     val error: String? = null,
     val infoBericht: String? = null,
     val selectedImageBytes: ByteArray? = null,
-    val eigenaarNaam: String? = null
+    val toonEersteTip: Boolean = false,
+    val toonLocatieTip: Boolean = false
 )
 
 class PlantToevoegenViewModel(
@@ -54,6 +55,26 @@ class PlantToevoegenViewModel(
         loadData()
     }
 
+    private fun checkFirstTime(plantCount: Int) {
+        if (plantId == null && !storageService.getBoolean("tip_toevoegen_gezien", false)) {
+            if (plantCount > 2) {
+                // Als er al meer dan 2 planten zijn, hoeven we de tip niet meer te tonen
+                storageService.setBoolean("tip_toevoegen_gezien", true)
+            } else {
+                _state.update { it.copy(toonEersteTip = true) }
+            }
+        }
+    }
+
+    fun dismissEersteTip() {
+        _state.update { it.copy(toonEersteTip = false) }
+        storageService.setBoolean("tip_toevoegen_gezien", true)
+    }
+
+    fun dismissLocatieTip() {
+        _state.update { it.copy(toonLocatieTip = false) }
+    }
+
     private fun loadData() {
         viewModelScope.launch {
             val profile = authService.currentUser.first() ?: return@launch
@@ -62,13 +83,11 @@ class PlantToevoegenViewModel(
             // Haal gebruikersgegevens op voor locaties en gardenId
             val userData = userRepository.getUserData(profile.uid).first()
             if (userData != null) {
-                val gardenId = userData.activeGardenId ?: userData.sharedGardenId ?: profile.uid
-                val isEigenTuin = gardenId == profile.uid
-
-                if (!isEigenTuin) {
-                    val ownerData = userRepository.getUserData(gardenId).first()
-                    _state.update { it.copy(eigenaarNaam = ownerData?.voornaam) }
-                }
+                val gardenId = userData.sharedGardenId ?: profile.uid
+                
+                // Controleer aantal planten voor de tip
+                val planten = tuinRepository.getPlanten(gardenId).first()
+                checkFirstTime(planten.size)
 
                 _state.update { 
                     it.copy(
@@ -142,6 +161,40 @@ class PlantToevoegenViewModel(
         }
     }
 
+    fun identifyByName() {
+        val name = _state.value.plant.naam
+        if (name.isBlank()) {
+            _state.update { it.copy(error = "Vul eerst een plantnaam in.") }
+            return
+        }
+        
+        viewModelScope.launch {
+            _state.update { it.copy(isAIBezig = true, error = null, infoBericht = null) }
+            aiService.identifyPlantByName(name).onSuccess { result ->
+                _state.update { it.copy(
+                    plant = it.plant.copy(
+                        naam = result.naam,
+                        wetenschappelijkeNaam = result.wetenschappelijkeNaam,
+                        omschrijving = result.omschrijving,
+                        snoeiAdvies = result.snoeiAdvies,
+                        snoeiMaand = result.snoeiMaand,
+                        waterBehoefte = result.waterBehoefte,
+                        lichtBehoefte = result.lichtBehoefte,
+                        voedingAdvies = result.voedingAdvies,
+                        bemesting = result.bemesting,
+                        ehboSignaal = result.ehboSignaal,
+                        bron = result.bron
+                    ),
+                    geselecteerdeMaanden = if (result.snoeiMaand.isNotBlank()) listOf(result.snoeiMaand) else emptyList(),
+                    isAIBezig = false,
+                    infoBericht = "Gegevens opgehaald voor $name!"
+                ) }
+            }.onFailure { e ->
+                _state.update { it.copy(isAIBezig = false, error = "Ophalen mislukt: ${e.message}") }
+            }
+        }
+    }
+
     fun reIdentify() {
         viewModelScope.launch {
             val bytes = _state.value.selectedImageBytes
@@ -183,11 +236,17 @@ class PlantToevoegenViewModel(
             }
             
             tuinRepository.savePlant(gardenId, plantToSave).onSuccess {
-                onSuccess()
+                // Toon alleen een simpel succesbericht in dit scherm
+                _state.update { it.copy(toonLocatieTip = true, isLaden = false) }
             }.onFailure { e ->
                 _state.update { it.copy(isLaden = false, error = e.message) }
             }
         }
+    }
+
+    fun handleLocatieTipDone(onSuccess: () -> Unit) {
+        _state.update { it.copy(toonLocatieTip = false) }
+        onSuccess()
     }
 
     fun deletePlant(onSuccess: () -> Unit) {
@@ -219,9 +278,13 @@ class PlantToevoegenViewModel(
 
     fun takePhoto() {
         viewModelScope.launch {
-            mediaService.takePhoto()?.let { bytes ->
-                _state.update { it.copy(selectedImageBytes = bytes) }
-                identifyPlant(bytes)
+            if (mediaService.requestCameraPermission()) {
+                mediaService.takePhoto()?.let { bytes ->
+                    _state.update { it.copy(selectedImageBytes = bytes) }
+                    identifyPlant(bytes)
+                }
+            } else {
+                _state.update { it.copy(error = "Camera toestemming is nodig om een foto te maken.") }
             }
         }
     }

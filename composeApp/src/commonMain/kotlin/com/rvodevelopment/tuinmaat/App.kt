@@ -19,6 +19,7 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun App() {
+    val authService: com.rvodevelopment.tuinmaat.service.AuthService = koinInject()
     val messageService: MessageService = koinInject()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -34,10 +35,15 @@ fun App() {
         ) { padding ->
             SecurityWrapper {
                 val navController = rememberNavController()
+                
+                // Bepaal de startbestemming op basis van inlogstatus
+                val startDestination = remember { 
+                    if (authService.isUserLoggedIn()) "hoofdmenu" else "login"
+                }
 
                 NavHost(
                     navController = navController,
-                    startDestination = "login",
+                    startDestination = startDestination,
                     modifier = Modifier.padding(padding)
                 ) {
                     composable("login") {
@@ -75,7 +81,9 @@ fun App() {
                         PlantDetailScherm(
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
-                            onNavigateToEdit = { id -> navController.navigate("toevoegen?plantId=$id") }
+                            onNavigateToEdit = { id -> navController.navigate("toevoegen?plantId=$id") },
+                            onNavigateToLocaties = { navController.navigate("locatiebeheer") },
+                            onNavigateToSnoeiKalender = { navController.navigate("snoeikalender") }
                         )
                     }
                     composable("toevoegen?plantId={plantId}") { backStackEntry ->
@@ -83,7 +91,12 @@ fun App() {
                         val viewModel: PlantToevoegenViewModel = koinInject { parametersOf(plantId) }
                         PlantToevoegenScherm(
                             viewModel = viewModel,
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateBack = { navController.popBackStack() },
+                            onSaveSuccess = {
+                                navController.navigate("lijst") {
+                                    popUpTo("hoofdmenu") { inclusive = false }
+                                }
+                            }
                         )
                     }
                     composable("snoeikalender") {

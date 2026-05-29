@@ -37,7 +37,7 @@ class HoofdMenuViewModel(
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
     private val tuintipService: TuintipService,
-    private val deepLinkHandler: DeepLinkHandler
+    private val deepLinkHandler: com.rvodevelopment.tuinmaat.service.DeepLinkHandler
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HoofdMenuState())

@@ -114,25 +114,6 @@ fun TuinDelenScherm(
                 Text("Ik heb een code ontvangen", color = DonkerGroen, fontWeight = FontWeight.Bold)
             }
 
-            if (viewersData.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(32.dp))
-                Text("Personen met toegang tot jouw tuin:", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                viewersData.forEach { viewer ->
-                    ListItem(
-                        headlineContent = { Text("${viewer.voornaam} ${viewer.achternaam}") },
-                        supportingContent = { Text(viewer.email) },
-                        leadingContent = { Icon(Icons.Default.Person, null, tint = DonkerGroen) },
-                        trailingContent = {
-                            IconButton(onClick = { viewModel.removeViewer(viewer.id) }) {
-                                Icon(Icons.Default.Delete, "Verwijder toegang", tint = Color.Red)
-                            }
-                        },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(48.dp))
             HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(32.dp))

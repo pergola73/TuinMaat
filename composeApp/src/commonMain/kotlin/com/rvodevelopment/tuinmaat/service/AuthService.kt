@@ -11,6 +11,7 @@ data class UserProfile(
 
 interface AuthService {
     val currentUser: Flow<UserProfile?>
+    fun isUserLoggedIn(): Boolean
     
     suspend fun signIn(email: String, wachtwoord: String): Result<UserProfile>
     suspend fun signUp(email: String, wachtwoord: String, voornaam: String, achternaam: String): Result<UserProfile>

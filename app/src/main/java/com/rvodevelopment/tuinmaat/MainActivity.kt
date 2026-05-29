@@ -56,6 +56,11 @@ class MainActivity : FragmentActivity() {
         ActivityProvider.onActivityResult(requestCode, resultCode, data)
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        ActivityProvider.onPermissionResult(requestCode, permissions, grantResults)
+    }
+
     private fun handleIntent(intent: Intent?) {
         val appLinkData = intent?.data
         if (appLinkData != null) {

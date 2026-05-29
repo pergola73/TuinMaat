@@ -32,7 +32,8 @@ import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantToevoegenViewModel
 @Composable
 fun PlantToevoegenScherm(
     viewModel: PlantToevoegenViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onSaveSuccess: () -> Unit = onNavigateBack
 ) {
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
@@ -85,7 +86,7 @@ fun PlantToevoegenScherm(
             ) {
                 // Opslaan knop (links)
                 FilledIconButton(
-                    onClick = { viewModel.savePlant { onNavigateBack() } },
+                    onClick = { viewModel.savePlant { onSaveSuccess() } },
                     modifier = Modifier.size(56.dp),
                     enabled = state.plant.naam.isNotBlank() && !state.isLaden,
                     colors = IconButtonDefaults.filledIconButtonColors(
@@ -251,7 +252,16 @@ fun PlantToevoegenScherm(
                     label = "Naam",
                     waarde = state.plant.naam,
                     onWaardeChange = { viewModel.updatePlant { p -> p.copy(naam = it) } },
-                    icoon = Icons.Default.LocalFlorist
+                    icoon = Icons.Default.LocalFlorist,
+                    trailingIcon = {
+                        IconButton(onClick = { viewModel.identifyByName() }) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = "Vul aan met AI",
+                                tint = DonkerGroen
+                            )
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -366,7 +376,7 @@ fun PlantToevoegenScherm(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            viewModel.deletePlant { onNavigateBack() }
+                            viewModel.deletePlant { onSaveSuccess() }
                             showDeleteConfirm = false
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
@@ -377,6 +387,36 @@ fun PlantToevoegenScherm(
                 dismissButton = {
                     TextButton(onClick = { showDeleteConfirm = false }) {
                         Text("Annuleren", color = DonkerGroen)
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
+
+        if (state.toonEersteTip) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissEersteTip() },
+                title = { Text("Welkom bij TuinMaat! 🌱") },
+                text = { Text("Wist je dat je alleen maar een foto hoeft te maken van je plant? De AI vult daarna automatisch alle gegevens voor je in. Super handig toch?") },
+                confirmButton = {
+                    Button(onClick = { viewModel.dismissEersteTip() }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
+                        Text("Top, ga ik doen!")
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
+
+        if (state.toonLocatieTip) {
+            AlertDialog(
+                onDismissRequest = { viewModel.handleLocatieTipDone(onSaveSuccess) },
+                title = { Text("Plant opgeslagen! 🎉") },
+                text = { Text("Goed bezig! Je plant is succesvol toegevoegd aan je lijst.") },
+                confirmButton = {
+                    Button(onClick = { viewModel.handleLocatieTipDone(onSaveSuccess) }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
+                        Text("Top!")
                     }
                 },
                 containerColor = Color.White,

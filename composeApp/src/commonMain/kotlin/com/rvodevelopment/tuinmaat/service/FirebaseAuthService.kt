@@ -16,6 +16,10 @@ class FirebaseAuthService : AuthService {
         }
     }
 
+    override fun isUserLoggedIn(): Boolean {
+        return auth.currentUser != null
+    }
+
     override suspend fun signIn(email: String, wachtwoord: String): Result<UserProfile> {
         return try {
             val result = auth.signInWithEmailAndPassword(email, wachtwoord)

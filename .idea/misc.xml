@@ -10,11 +10,11 @@
   <component name="SwiftPackageManagerSettings">
     <option name="linkedExternalProjectsSettings">
       <SwiftPackageManagerProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/iosApp" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
       </SwiftPackageManagerProjectSettings>
     </option>
   </component>
-  <component name="SwiftPackageManagerWorkspace" PROJECT_DIR="$PROJECT_DIR$/iosApp">
-    <contentRoot DIR="$PROJECT_DIR$" />
+  <component name="SwiftPackageManagerWorkspace">
+    <contentRoot DIR="$PROJECT_DIR$/iosApp" />
   </component>
 </project>

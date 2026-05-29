@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.service.AuthService
-import com.rvodevelopment.tuinmaat.repository.UserRepository
+import com.rvodevelopment.tuinmaat.service.StorageService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -13,13 +13,15 @@ data class PlantDetailState(
     val planten: List<Plant> = emptyList(),
     val isLoading: Boolean = true,
     val initialIndex: Int = 0,
-    val eigenaarNaam: String? = null
+    val toonBeheerLocatiesTip: Boolean = false,
+    val toonSnoeiKalenderTip: Boolean = false
 )
 
 class PlantDetailViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
+    private val storageService: StorageService,
     private val initialPlantId: String?
 ) : ViewModel() {
 
@@ -28,6 +30,29 @@ class PlantDetailViewModel(
 
     init {
         loadPlanten()
+        checkTips()
+    }
+
+    private fun checkTips() {
+        // Gebruik dezelfde sleutel voor persistentie als de andere ViewModels
+        val locatiesGezien = storageService.getBoolean("tip_beheer_locaties_gezien", false)
+        val snoeiGezien = storageService.getBoolean("tip_snoeikalender_gezien", false)
+
+        if (!locatiesGezien) {
+            _state.update { it.copy(toonBeheerLocatiesTip = true) }
+        } else if (!snoeiGezien) {
+            _state.update { it.copy(toonSnoeiKalenderTip = true) }
+        }
+    }
+
+    fun dismissBeheerLocatiesTip() {
+        _state.update { it.copy(toonBeheerLocatiesTip = false) }
+        storageService.setBoolean("tip_beheer_locaties_gezien", true)
+    }
+
+    fun dismissSnoeiKalenderTip() {
+        _state.update { it.copy(toonSnoeiKalenderTip = false) }
+        storageService.setBoolean("tip_snoeikalender_gezien", true)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

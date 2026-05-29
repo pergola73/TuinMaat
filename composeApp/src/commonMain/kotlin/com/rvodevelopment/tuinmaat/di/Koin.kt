@@ -72,7 +72,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String)
     single { get<PlantDatabase>().plantDao() }
 
     // Centrale plek voor het Gemini model
-    single(named("GEMINI_MODEL")) { "gemini-flash-lite-latest" }
+    single(named("GEMINI_MODEL")) { "gemini-3.1-flash-lite" }
 
     single<AiService> { CommonAiService(
         client = get(),

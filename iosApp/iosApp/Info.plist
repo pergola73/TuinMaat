@@ -19,7 +19,20 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>1.1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.rvodevelopment.tuinmaat</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>tuinmaat</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>13</string>
 	<key>GEMINI_API_KEY</key>
@@ -30,6 +43,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>TuinMaat heeft toegang tot de camera nodig om foto&apos;s van planten te maken voor herkenning.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>TuinMaat gebruikt Face ID om je account en tuingegevens veilig te houden.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>TuinMaat gebruikt je locatie om te bepalen welke planten het beste groeien in jouw regio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -22,9 +22,8 @@ class DeepLinkHandler(
             result
         } else {
             pendingGardenId = gardenId
-            // Geen foutmelding tonen op inlogscherm, maar een vriendelijke hint
-            messageService.showMessage("Welkom! Log in om de gedeelde tuin te openen.")
-            Result.success(Unit) // We retourneren succes omdat we het hebben opgevangen
+            messageService.showMessage("Log in om de tuin te koppelen")
+            Result.failure(Exception("Gebruiker niet ingelogd"))
         }
     }
 
@@ -34,7 +33,7 @@ class DeepLinkHandler(
         
         val result = userRepository.updateSharedGardenId(user.uid, gardenId)
         if (result.isSuccess) {
-            messageService.showMessage("De gedeelde tuin is nu gekoppeld!")
+            messageService.showMessage("Tuin succesvol gekoppeld!")
             pendingGardenId = null
         }
     }

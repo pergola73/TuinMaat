@@ -1,0 +1,16 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.rvodevelopment.tuinmaat",
+      "sha256_cert_fingerprints": [
+        "9C:BA:24:28:BA:EC:FE:A9:51:04:73:BD:DD:90:60:72:DE:A5:EA:F2:AA:82:68:4A:48:8A:12:6F:2E:81:DB:EA",
+        "83:C5:0B:D2:84:FC:99:AF:D1:69:32:BB:F4:03:E5:C9:1B:3E:1C:EE:90:41:5A:E1:79:A0:B8:17:C0:AC:B8:45"
+      ]
+    }
+  }
+]

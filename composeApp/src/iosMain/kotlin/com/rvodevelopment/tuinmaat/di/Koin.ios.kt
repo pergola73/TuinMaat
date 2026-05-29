@@ -12,4 +12,5 @@ actual fun platformModule(): Module = module {
     single<SharingService> { IosSharingService() }
     single<BiometricService> { IosBiometricService() }
     single<MediaService> { IosMediaService() }
+    single<StorageService> { IosStorageService() }
 }

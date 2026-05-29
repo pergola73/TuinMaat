@@ -46,6 +46,9 @@ class LoginViewModel(
     private val _foutMelding = MutableStateFlow<String?>(null)
     val foutMelding: StateFlow<String?> = _foutMelding
 
+    private val _toonBiometrieVraag = MutableStateFlow(false)
+    val toonBiometrieVraag: StateFlow<Boolean> = _toonBiometrieVraag
+
     fun onEmailChanged(value: String) { _email.value = value; _foutMelding.value = null }
     fun onWachtwoordChanged(value: String) { _wachtwoord.value = value; _foutMelding.value = null }
     fun onVoornaamChanged(value: String) { _voornaam.value = value }
@@ -89,12 +92,28 @@ class LoginViewModel(
                         savePrefs()
                         // Migreer data na inloggen
                         tuinRepository.migrateLegacyData(profile.uid, profile.uid)
-                        onSuccess()
+                        
+                        if (!_biometrieIngeschakeld.value && biometricService.isBiometricAvailable()) {
+                            _toonBiometrieVraag.value = true
+                        } else {
+                            onSuccess()
+                        }
                     }
                     .onFailure { _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) }
             }
             _isLaden.value = false
         }
+    }
+
+    fun activeerBiometrie(onSuccess: () -> Unit) {
+        _toonBiometrieVraag.value = false
+        toggleBiometrie(true)
+        onSuccess()
+    }
+
+    fun slaBiometrieOver(onSuccess: () -> Unit) {
+        _toonBiometrieVraag.value = false
+        onSuccess()
     }
 
     private fun maakFoutmeldingGebruiksvriendelijk(throwable: Throwable): String {

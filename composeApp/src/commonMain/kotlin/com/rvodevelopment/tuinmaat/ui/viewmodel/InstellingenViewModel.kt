@@ -15,7 +15,7 @@ class InstellingenViewModel(
     private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository,
     private val sharingService: com.rvodevelopment.tuinmaat.service.SharingService,
     private val biometricService: com.rvodevelopment.tuinmaat.service.BiometricService,
-    private val deepLinkHandler: DeepLinkHandler
+    private val deepLinkHandler: com.rvodevelopment.tuinmaat.service.DeepLinkHandler
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow<UserData?>(null)
