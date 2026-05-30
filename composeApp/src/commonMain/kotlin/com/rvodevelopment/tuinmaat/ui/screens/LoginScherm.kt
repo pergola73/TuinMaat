@@ -85,13 +85,13 @@ fun LoginScherm(
                 .navigationBarsPadding()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Surface(
-                modifier = Modifier.size(100.dp).neumorphicShadow(shape = CircleShape),
+                modifier = Modifier.size(90.dp).neumorphicShadow(shape = CircleShape),
                 shape = CircleShape,
                 color = Color.White
             ) {
@@ -110,7 +110,7 @@ fun LoginScherm(
                 fontWeight = FontWeight.ExtraBold
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (isRegistreren) {
                 InvoerVeldMetIcoon(
@@ -216,7 +216,7 @@ fun LoginScherm(
             }
 
             if (platform == PlatformType.ANDROID) {
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -232,7 +232,7 @@ fun LoginScherm(
                     HorizontalDivider(modifier = Modifier.weight(1f), color = DonkerGroen.copy(alpha = 0.2f))
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedButton(
                     onClick = { viewModel.loginWithGoogle(onLoginSuccess) },
@@ -252,11 +252,11 @@ fun LoginScherm(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             TextButton(
                 onClick = { viewModel.toggleRegistreren() },
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Text(
                     if (isRegistreren) "Al een account? Log hier in" else "Nog geen account? Registreer hier",
