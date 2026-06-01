@@ -81,7 +81,14 @@ class FirebaseTuinRepository : TuinRepository {
 
     override suspend fun savePlant(gardenId: String, plant: Plant): Result<Unit> {
         return try {
-            val collection = firestore.collection("tuinen").document(gardenId).collection("planten")
+            val gardenRef = firestore.collection("tuinen").document(gardenId)
+            
+            // Controleer of het tuin-document zelf bestaat (om 'italics' in console te voorkomen)
+            // We gebruiken set met merge=true om het document aan te maken als het er niet is,
+            // zonder bestaande gegevens te overschrijven.
+            gardenRef.set(mapOf("eigenaar" to gardenId), merge = true)
+
+            val collection = gardenRef.collection("planten")
             if (plant.firestoreId.isEmpty()) {
                 collection.add(plant)
             } else {

@@ -179,6 +179,7 @@ fun InfoScherm(
     viewModel: InstellingenViewModel = koinInject()
 ) {
     val userData by viewModel.userData.collectAsState()
+    val userEmail by viewModel.userEmail.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
@@ -207,7 +208,7 @@ fun InfoScherm(
                 Text("${userData?.voornaam ?: ""} ${userData?.achternaam ?: ""}", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                InfoRow("E-mail", userData?.email ?: "Laden...")
+                InfoRow("E-mail", userData?.email?.ifBlank { userEmail } ?: userEmail ?: "Laden...")
                 InfoRow("User ID", userData?.id ?: "Laden...")
                 InfoRow("Tuin ID", userData?.sharedGardenId ?: userData?.id ?: "Laden...")
                 

@@ -21,6 +21,9 @@ class InstellingenViewModel(
     private val _userData = MutableStateFlow<UserData?>(null)
     val userData: StateFlow<UserData?> = _userData
 
+    private val _userEmail = MutableStateFlow<String?> (null)
+    val userEmail: StateFlow<String?> = _userEmail
+
     private val _viewersData = MutableStateFlow<List<UserData>>(emptyList())
     val viewersData: StateFlow<List<UserData>> = _viewersData
 
@@ -38,6 +41,7 @@ class InstellingenViewModel(
     init {
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         val userFlow = authService.currentUser.flatMapLatest { profile ->
+            _userEmail.value = profile?.email
             if (profile != null) {
                 userRepository.getUserData(profile.uid)
             } else {
