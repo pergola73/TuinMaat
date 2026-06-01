@@ -18,6 +18,23 @@
             </InsightsFilterSettings>
           </value>
         </entry>
+        <entry key="Firebase Crashlytics">
+          <value>
+            <InsightsFilterSettings>
+              <option name="connection">
+                <ConnectionSetting>
+                  <option name="appId" value="com.rvodevelopment.tuinmaat" />
+                  <option name="mobileSdkAppId" value="1:408553659599:android:3665fd2e9e7a326a1b6bba" />
+                  <option name="projectId" value="tuinmaat-22cf8" />
+                  <option name="projectNumber" value="408553659599" />
+                </ConnectionSetting>
+              </option>
+              <option name="signal" value="SIGNAL_UNSPECIFIED" />
+              <option name="timeIntervalDays" value="THIRTY_DAYS" />
+              <option name="visibilityType" value="ALL" />
+            </InsightsFilterSettings>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

@@ -93,6 +93,10 @@ class FirebaseUserRepository : UserRepository {
                 "tuinNaam" to tuinnaam
             )
             firestore.collection("users").document(uid).set(data, merge = true)
+            
+            // Synchroniseer de tuinnaam ook naar het tuin-document voor de plantenlijst
+            firestore.collection("tuinen").document(uid).set(mapOf("naam" to tuinnaam), merge = true)
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
