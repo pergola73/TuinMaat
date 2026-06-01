@@ -142,6 +142,20 @@ fun InstellingenScherm(
                     } else if (isPremium) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Bedankt voor je steun!", fontWeight = FontWeight.Bold, color = DonkerGroen)
+                    } else {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Surface(
+                            color = DonkerGroen.copy(alpha = 0.05f),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bij de betaalmethoden van Google.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = DonkerGroen,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                     }
                 }
             },
@@ -268,6 +282,7 @@ fun InfoScherm(
     viewModel: InstellingenViewModel = koinInject()
 ) {
     val userData by viewModel.userData.collectAsState()
+    var tapCount by remember { mutableStateOf(0) }
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
@@ -283,7 +298,18 @@ fun InfoScherm(
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.Park, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(64.dp))
+                Surface(
+                    onClick = {
+                        tapCount++
+                        if (tapCount >= 5) {
+                            viewModel.devResetPremium()
+                            tapCount = 0
+                        }
+                    },
+                    color = Color.Transparent
+                ) {
+                    Icon(Icons.Default.Park, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(64.dp))
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("TuinMaat", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))

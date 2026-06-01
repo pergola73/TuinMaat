@@ -147,6 +147,12 @@ class InstellingenViewModel(
         }
     }
 
+    fun devResetPremium() {
+        viewModelScope.launch {
+            premiumService.setPremium(false)
+        }
+    }
+
     fun unlinkGarden() {
         viewModelScope.launch {
             _isLaden.value = true

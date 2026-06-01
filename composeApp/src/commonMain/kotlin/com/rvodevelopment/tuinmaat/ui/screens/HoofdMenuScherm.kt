@@ -168,7 +168,7 @@ fun HoofdMenuScherm(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    if (!toonTuintip) {
+                    if (state.isPremium && !toonTuintip) {
                         IconButton(
                             onClick = { toonTuintip = true },
                             modifier = Modifier
@@ -186,7 +186,7 @@ fun HoofdMenuScherm(
                     }
                 }
 
-                if (toonTuintip) {
+                if (state.isPremium && toonTuintip) {
                     Spacer(modifier = Modifier.height(16.dp))
                     TuintipCard(
                         tip = state.huidigeTip,
@@ -199,9 +199,43 @@ fun HoofdMenuScherm(
                         onDismiss = { toonTuintip = false }
                     )
                 }
+
+                if (!state.isPremium) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Surface(
+                        onClick = { onNavigate("instellingen") },
+                        color = GrasGroen.copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().neumorphicShadow(shape = RoundedCornerShape(16.dp))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color.White, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Star, null, tint = Color(0xFFFFD600), modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text("Ontgrendel TuinMaat Premium", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                                Text("Verwijder advertenties en krijg meer tips", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.7f))
+                            }
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (!state.isPremium) {
+                NativeAd(
+                    adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                )
+            }
 
             // Menu Items
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -209,13 +243,6 @@ fun HoofdMenuScherm(
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
-            }
-
-            if (!state.isPremium) {
-                NativeAd(
-                    adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
-                )
             }
 
             Spacer(modifier = Modifier.height(64.dp))
@@ -234,86 +261,121 @@ fun TuintipCard(
     onVorige: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val seizoenKleur = when (maand) {
-        in 3..5 -> Color(0xFFF1F8E9) // Lente
-        in 6..8 -> Color(0xFFFFFDE7) // Zomer
-        in 9..11 -> Color(0xFFFBE9E7) // Herfst
-        else -> Color(0xFFE3F2FD) // Winter
-    }
-
     Surface(
-        color = seizoenKleur.copy(alpha = 0.8f),
-        shape = CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
-        border = BorderStroke(1.dp, DonkerGroen.copy(alpha = 0.2f)),
+        color = Color.White.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(24.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .neumorphicShadow(shape = CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp))
+            .neumorphicShadow(shape = RoundedCornerShape(24.dp))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(GrasGroen.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        tint = GrasGroen,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Premium Tuintip", 
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = DonkerGroen
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFD600),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Text(
+                        "Exclusief advies voor jouw tuin",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = DonkerGroen.copy(alpha = 0.5f)
+                    )
+                }
+
+                IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp).align(Alignment.Top)) {
+                    Icon(Icons.Default.Close, contentDescription = "Sluiten", tint = DonkerGroen.copy(alpha = 0.3f))
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Box(modifier = Modifier.heightIn(min = 60.dp), contentAlignment = Alignment.CenterStart) {
+                if (isLoading && tip.isEmpty()) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DonkerGroen, strokeWidth = 2.dp)
+                } else {
+                    Text(
+                        tip, 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        color = Color.Black.copy(alpha = 0.8f),
+                        lineHeight = 22.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Lightbulb,
-                        contentDescription = null,
-                        tint = Color(0xFFFFD600),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Team TuinMaat tip:", 
-                        fontWeight = FontWeight.Bold, 
-                        style = MaterialTheme.typography.labelMedium,
-                        color = DonkerGroen
-                    )
-                }
-                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Sluiten", tint = DonkerGroen.copy(alpha = 0.5f))
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            if (isLoading && tip.isEmpty()) {
-                // Toon niets of een subtiele placeholder ipv zandloper bij de eerste keer laden
-            } else {
-                Text(
-                    tip, 
-                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic), 
-                    color = Color.Black.copy(alpha = 0.8f)
-                )
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    color = DonkerGroen.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = DonkerGroen, strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(12.dp))
-                    }
-
                     Text(
-                        "${huidigeIndex + 1} / $totaalAantal",
+                        "${huidigeIndex + 1} van $totaalAantal tips",
                         style = MaterialTheme.typography.labelSmall,
-                        color = DonkerGroen.copy(alpha = 0.6f)
+                        color = DonkerGroen,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = onVorige, 
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color.White.copy(alpha = 0.3f), CircleShape),
                         enabled = huidigeIndex > 0
                     ) {
                         Icon(
                             Icons.Default.ChevronLeft, 
                             null, 
-                            tint = if (huidigeIndex > 0) DonkerGroen else DonkerGroen.copy(alpha = 0.3f)
+                            tint = if (huidigeIndex > 0) DonkerGroen else DonkerGroen.copy(alpha = 0.2f)
                         )
                     }
-                    IconButton(onClick = onVolgende, modifier = Modifier.size(32.dp)) {
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    IconButton(
+                        onClick = onVolgende, 
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(DonkerGroen.copy(alpha = 0.1f), CircleShape)
+                    ) {
                         Icon(Icons.Default.ChevronRight, null, tint = DonkerGroen)
                     }
                 }
