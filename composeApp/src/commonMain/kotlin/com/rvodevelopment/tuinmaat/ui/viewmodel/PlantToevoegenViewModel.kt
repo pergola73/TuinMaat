@@ -76,6 +76,10 @@ class PlantToevoegenViewModel(
         _state.update { it.copy(toonLocatieTip = false) }
     }
 
+    fun clearError() {
+        _state.update { it.copy(error = null) }
+    }
+
     private fun loadData() {
         viewModelScope.launch {
             val profile = authService.currentUser.first() ?: return@launch
@@ -220,34 +224,60 @@ class PlantToevoegenViewModel(
 
     fun savePlant(onSuccess: () -> Unit) {
         viewModelScope.launch {
+            println("DEBUG: Start savePlant")
             _state.update { it.copy(isLaden = true) }
             val profile = authService.currentUser.first() ?: return@launch
             
             val userData = userRepository.getUserData(profile.uid).first()
             val gardenId = userData?.activeGardenId ?: userData?.sharedGardenId ?: profile.uid
+            println("DEBUG: gardenId = $gardenId")
 
             var plantToSave = _state.value.plant
             val imageBytes = _state.value.selectedImageBytes
             
             if (imageBytes != null) {
+                println("DEBUG: Image bytes found, resizing and starting upload...")
+                // Resize de foto voor upload om data te besparen en stabiliteit te verhogen
+                val resizedBytes = try {
+                    mediaService.resizeImage(imageBytes, 1280)
+                } catch (e: Exception) {
+                    println("DEBUG: Resize FAILED, using original: ${e.message}")
+                    imageBytes
+                }
+
                 val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
                 val path = "planten/${profile.uid}_$timestamp.jpg"
-                val uploadResult = storageService.uploadFile(path, imageBytes)
+                val uploadResult = storageService.uploadFile(path, resizedBytes)
                 uploadResult.onSuccess { url ->
+                    println("DEBUG: Upload success, url = $url")
                     plantToSave = plantToSave.copy(fotoUri = url)
                 }.onFailure { e ->
-                    _state.update { it.copy(isLaden = false, error = "Foto uploaden mislukt: ${e.message}") }
+                    println("DEBUG: Upload FAILED: ${e.message}")
+                    _state.update { it.copy(isLaden = false, error = "Foto uploaden mislukt: ${e.message ?: "Onbekende fout"}") }
                     return@launch
                 }
+            } else {
+                println("DEBUG: No new image bytes to upload")
             }
             
-            tuinRepository.savePlant(gardenId, plantToSave).onSuccess {
-                // Toon alleen een simpel succesbericht in dit scherm
-                _state.update { it.copy(toonLocatieTip = true, isLaden = false) }
-                // Soms willen we direct navigeren, maar hier tonen we eerst de popup
-                // De popup knop roept handleLocatieTipDone aan die dan onSuccess() doet
-            }.onFailure { e ->
-                _state.update { it.copy(isLaden = false, error = e.message) }
+            println("DEBUG: Saving plant to repository...")
+            try {
+                tuinRepository.savePlant(gardenId, plantToSave).onSuccess {
+                    println("DEBUG: Save SUCCESS, showing confirmation tip")
+                    // Toon alleen een simpel succesbericht in dit scherm
+                    _state.update { it.copy(toonLocatieTip = true, isLaden = false) }
+                }.onFailure { e ->
+                    println("DEBUG: Save FAILED: ${e.message}")
+                    val errorMsg = when {
+                        e.message?.contains("permission-denied") == true -> "Geen rechten om op te slaan. Controleer of je correct bent ingelogd."
+                        e.message?.contains("not permitted") == true -> "Systeemfout (wakelock/permissie). Herstart de app en probeer het opnieuw."
+                        else -> "Fout bij opslaan: ${e.message ?: "Controleer je internetverbinding"}"
+                    }
+                    _state.update { it.copy(isLaden = false, error = errorMsg) }
+                }
+            } catch (t: Throwable) {
+                println("DEBUG: Save CRASHED: ${t.message}")
+                _state.update { it.copy(isLaden = false, error = "Onverwachte systeemfout: ${t.message}") }
             }
         }
     }

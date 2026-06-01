@@ -423,5 +423,20 @@ fun PlantToevoegenScherm(
                 shape = RoundedCornerShape(24.dp)
             )
         }
+
+        if (state.error != null) {
+            AlertDialog(
+                onDismissRequest = { viewModel.clearError() },
+                title = { Text("Oeps, er ging iets mis") },
+                text = { Text(state.error!!) },
+                confirmButton = {
+                    Button(onClick = { viewModel.clearError() }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
+                        Text("Begrepen")
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
     }
 }

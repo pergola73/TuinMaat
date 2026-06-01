@@ -14,6 +14,6 @@ actual fun platformModule(): Module = module {
     single<PlantDatabase> { getRoomDatabase(getDatabaseBuilder(get())) }
     single<SharingService> { AndroidSharingService(get()) }
     single<BiometricService> { AndroidBiometricService { ActivityProvider.getCurrentActivity() } }
+    single { AndroidStorageService(get()) }
     single<MediaService> { AndroidMediaService() }
-    single<StorageService> { AndroidStorageService(get()) }
 }
