@@ -232,8 +232,12 @@ class PlantToevoegenViewModel(
             if (imageBytes != null) {
                 val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
                 val path = "planten/${profile.uid}_$timestamp.jpg"
-                storageService.uploadFile(path, imageBytes).onSuccess { url ->
+                val uploadResult = storageService.uploadFile(path, imageBytes)
+                uploadResult.onSuccess { url ->
                     plantToSave = plantToSave.copy(fotoUri = url)
+                }.onFailure { e ->
+                    _state.update { it.copy(isLaden = false, error = "Foto uploaden mislukt: ${e.message}") }
+                    return@launch
                 }
             }
             
