@@ -2,79 +2,99 @@
 <html lang="nl">
 <head>
     <meta charset="utf-8">
-    <title>Welkom bij TuinMaat</title>
+    <title>TuinMaat - Jouw Slimme Tuinhulp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            text-align: center;
-            padding: 40px 20px;
-            background-color: #F5F5DC; /* ZachtBeige uit je app */
-            color: #2E7D32; /* DonkerGroen uit je app */
+            margin: 0;
+            padding: 0;
+            background-color: #F5F5F0; /* ZachtBeige uit de app */
+            color: #2E7D32; /* DonkerGroen uit de app */
             line-height: 1.6;
         }
-        .container { max-width: 500px; margin: 0 auto; }
+        .hero {
+            padding: 80px 20px;
+            background: linear-gradient(180deg, #E8F5E9 0%, #C8E6C9 100%);
+        }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
         .logo { margin-bottom: 20px; }
-        .logo img { width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { font-size: 24px; font-weight: bold; margin-top: 0; }
-        p { font-size: 16px; color: #555; }
+        .logo img { width: 120px; height: 120px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { font-size: 42px; font-weight: 800; margin-top: 0; color: #2E7D32; }
+        p.tagline { font-size: 20px; color: #558B2F; margin-bottom: 40px; }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            padding: 60px 20px;
+            background: white;
+        }
+        .feature-card {
+            padding: 30px;
+            border-radius: 20px;
+            background: #F9FBE7;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .feature-card h3 { margin-top: 0; }
+        .download-buttons { margin: 40px 0; }
         .button {
-            display: inline-block;
-            padding: 16px 32px;
+            display: inline-flex;
+            align-items: center;
+            padding: 14px 28px;
             background-color: #2E7D32;
             color: white;
             text-decoration: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-weight: bold;
-            margin-top: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 10px;
+            transition: transform 0.2s;
         }
-        .footer { margin-top: 50px; font-size: 12px; color: #888; }
+        .button:hover { transform: scale(1.05); }
+        .button.apple { background-color: #000; }
+        .footer { padding: 40px; font-size: 14px; color: #888; background: #F5F5F0; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">
-            <img src="logo.png" alt="TuinMaat Logo">
-        </div>
-        <h1>TuinMaat</h1>
-        <p>Je bent uitgenodigd om samen te werken in een tuin!</p>
+    <section class="hero">
+        <div class="container">
+            <div class="logo">
+                <img src="logo.png" alt="TuinMaat Logo">
+            </div>
+            <h1>TuinMaat</h1>
+            <p class="tagline">Ontdek, verzorg en deel jouw tuin met de kracht van AI.</p>
 
-        <div id="status">
-            <p>De app wordt nu geopend op je telefoon...</p>
+            <div class="download-buttons">
+                <a href="https://apps.apple.com/app/id6770014783" class="button apple">
+                    Download in App Store
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.rvodevelopment.tuinmaat" class="button">
+                    Ontdek op Google Play
+                </a>
+            </div>
         </div>
+    </section>
 
-        <div id="manual-links" style="display:none;">
-            <p>Heb je de app nog niet? Download hem hieronder:</p>
-            <a href="https://play.google.com/store/apps/details?id=com.rvodevelopment.tuinmaat" class="button">Google Play Store</a>
+    <section class="features">
+        <div class="feature-card">
+            <h3>🌱 AI Herkenning</h3>
+            <p>Maak een foto en onze geavanceerde AI vertelt je direct welke plant het is en hoe je deze moet verzorgen.</p>
+        </div>
+        <div class="feature-card">
+            <h3>✂️ Snoeikalender</h3>
+            <p>Mis nooit meer een snoeimoment met jouw persoonlijke kalender die precies weet wat jouw tuin nodig heeft.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🤝 Samen Tuinieren</h3>
+            <p>Deel je tuin met familie of vrienden. Werk samen aan de perfecte buitenruimte of help elkaar met kamerplanten.</p>
+        </div>
+    </section>
+
+    <div class="footer text-center">
+        <div class="container">
+            &copy; 2026 TuinMaat - Een product van rvodevelopment.nl
             <br>
-            <a href="https://apps.apple.com/app/id6770014783" id="apple-link" class="button" style="background-color: #000;">Apple App Store</a>
-        </div>
-
-        <div class="footer">
-            &copy; 2024 TuinMaat - rvodevelopment.nl
+            Support: <a href="mailto:tuinmaat@rvodevelopment.nl" style="color: #888; text-decoration: none;">tuinmaat@rvodevelopment.nl</a>
         </div>
     </div>
-
-    <script>
-        // Detectie van apparaat
-        var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        var isAndroid = /android/i.test(userAgent);
-        var isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-
-        // Als de app niet binnen 3 seconden opent, tonen we de download knoppen
-        setTimeout(function() {
-            document.getElementById('status').style.display = 'none';
-            document.getElementById('manual-links').style.display = 'block';
-
-            // Optioneel: Automatisch doorsturen naar de juiste store
-            if (isAndroid) {
-                // window.location.href = "https://play.google.com/store/apps/details?id=com.rvodevelopment.tuinmaat";
-            }
-        }, 3000);
-
-        // Pas de Apple link aan
-        document.getElementById('apple-link').href = "https://apps.apple.com/app/id6770014783";
-    </script>
 </body>
 </html>
