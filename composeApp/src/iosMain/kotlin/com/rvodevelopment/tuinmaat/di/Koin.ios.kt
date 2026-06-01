@@ -11,6 +11,7 @@ actual fun platformModule(): Module = module {
     single<PlantDatabase> { getRoomDatabase(getDatabaseBuilder()) }
     single<SharingService> { IosSharingService() }
     single<BiometricService> { IosBiometricService() }
+    single<BillingService> { IosBillingService() }
     single<MediaService> { IosMediaService() }
     single<StorageService> { IosStorageService() }
 }

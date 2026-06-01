@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.rvodevelopment.tuinmaat.ui.components.AdBanner
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
@@ -165,6 +166,10 @@ fun PlantenLijstScherm(
                         }
                     }
                 }
+            }
+
+            if (!state.isPremium) {
+                AdBanner(modifier = Modifier.padding(vertical = 8.dp))
             }
         }
     }

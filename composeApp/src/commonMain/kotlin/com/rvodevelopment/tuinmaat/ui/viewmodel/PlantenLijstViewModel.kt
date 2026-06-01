@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.repository.UserRepository
-import com.rvodevelopment.tuinmaat.service.AuthService
+import com.rvodevelopment.tuinmaat.service.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -18,12 +18,14 @@ data class PlantenLijstState(
     val geselecteerdeLocatie: String = "Alle",
     val zoekTerm: String = "",
     val isZoekenZichtbaar: Boolean = false,
+    val isPremium: Boolean = false
 )
 
 class PlantenLijstViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val tuinRepository: TuinRepository
+    private val tuinRepository: TuinRepository,
+    private val premiumService: PremiumService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlantenLijstState())
@@ -31,6 +33,15 @@ class PlantenLijstViewModel(
 
     init {
         observeData()
+        observePremium()
+    }
+
+    private fun observePremium() {
+        viewModelScope.launch {
+            premiumService.isPremium.collect { isPremium ->
+                _state.update { it.copy(isPremium = isPremium) }
+            }
+        }
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

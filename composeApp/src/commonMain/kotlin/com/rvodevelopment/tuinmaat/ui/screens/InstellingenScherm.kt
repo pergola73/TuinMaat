@@ -28,9 +28,12 @@ fun InstellingenScherm(
     navController: NavController,
     viewModel: InstellingenViewModel = koinInject()
 ) {
-    val userData by viewModel.userData.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
+    val foutMelding by viewModel.foutMelding.collectAsState()
+    val isLaden by viewModel.isLaden.collectAsState()
     var toonVerwijderDialoog by remember { mutableStateOf(false) }
     var toonBevestigDialoog by remember { mutableStateOf(false) }
+    var toonPremiumDialoog by remember { mutableStateOf(false) }
     var geselecteerdeReden by remember { mutableStateOf("") }
     val redenen = listOf(
         "Ik gebruik de app niet meer",
@@ -48,9 +51,49 @@ fun InstellingenScherm(
             Text("Instellingen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
         }
 
+        if (foutMelding != null) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = foutMelding!!,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
         Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
             InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
             InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
+            
+            if (!isPremium) {
+                Surface(
+                    onClick = { toonPremiumDialoog = true },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = DonkerGroen,
+                    contentColor = Color.White
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Star, null, tint = Color.Yellow)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text("Word Premium", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                            Text("Geen advertenties & meer functies", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            } else {
+                InstellingItem("Premium Status: Actief", Icons.Default.Verified, onClick = { toonPremiumDialoog = true })
+            }
+
             InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
             InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
             InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
@@ -81,6 +124,53 @@ fun InstellingenScherm(
                 Text("Account verwijderen")
             }
         }
+    }
+
+    if (toonPremiumDialoog) {
+        AlertDialog(
+            onDismissRequest = { toonPremiumDialoog = false },
+            title = { Text(if (isPremium) "Je bent Premium!" else "Upgrade naar Premium") },
+            text = {
+                Column {
+                    Text("Met TuinMaat Premium geniet je van:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    BulletPoint("Geen advertenties")
+                    BulletPoint("Onbeperkt aantal planten")
+                    BulletPoint("Exclusieve tuintips")
+                    
+                    if (isLaden) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DonkerGroen)
+                    } else if (isPremium) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Bedankt voor je steun!", fontWeight = FontWeight.Bold, color = DonkerGroen)
+                    }
+                }
+            },
+            confirmButton = {
+                if (!isPremium) {
+                    Button(
+                        onClick = {
+                            viewModel.upgradeToPremium()
+                            toonPremiumDialoog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
+                    ) {
+                        Text("Nu upgraden (€4,99)")
+                    }
+                } else {
+                    Button(onClick = { toonPremiumDialoog = false }) {
+                        Text("Sluiten")
+                    }
+                }
+            },
+            dismissButton = {
+                if (!isPremium) {
+                    TextButton(onClick = { viewModel.restorePurchases() }) {
+                        Text("Aankopen herstellen")
+                    }
+                }
+            }
+        )
     }
 
     if (toonVerwijderDialoog) {
@@ -221,6 +311,15 @@ fun InfoScherm(
                 InfoRow("Support", "rvanoel@etik.com")
             }
         }
+    }
+}
+
+@Composable
+fun BulletPoint(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Icon(Icons.Default.Check, null, tint = DonkerGroen, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

@@ -55,6 +55,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String)
         }
     }
     single { MessageService() }
+    single<PremiumService> { DefaultPremiumService() }
     single { DeepLinkHandler(get(), get(), get()) }
     single<TuintipService> { DefaultTuintipService(get()) }
     
@@ -83,12 +84,12 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String)
     ) }
 
     factory { LoginViewModel(get(), get(), get(), get()) }
-    factory { HoofdMenuViewModel(get(), get(), get(), get(), get()) }
-    factory { PlantenLijstViewModel(get(), get(), get()) }
+    factory { HoofdMenuViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { PlantenLijstViewModel(get(), get(), get(), get()) }
     factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), get(), get(), plantId) }
     factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get()) }
-    factory { InstellingenViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { InstellingenViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
 expect fun platformModule(): Module

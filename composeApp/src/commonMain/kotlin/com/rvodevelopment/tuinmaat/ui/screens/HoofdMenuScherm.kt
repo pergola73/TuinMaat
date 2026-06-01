@@ -20,12 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.service.WeerBericht
-import com.rvodevelopment.tuinmaat.ui.components.MenuKnop
-import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
-import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
-import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
-import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
-import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
+import com.rvodevelopment.tuinmaat.ui.components.*
+import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.HoofdMenuViewModel
 
 @Composable
@@ -213,6 +209,10 @@ fun HoofdMenuScherm(
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
+            }
+
+            if (!state.isPremium) {
+                AdBanner(modifier = Modifier.padding(top = 24.dp))
             }
 
             Spacer(modifier = Modifier.height(64.dp))

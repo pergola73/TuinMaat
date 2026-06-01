@@ -71,6 +71,7 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.multiplatform.settings)
             
             // Koin
             implementation(libs.koin.core)
@@ -105,6 +106,8 @@ kotlin {
             implementation(libs.firebase.storage)
             implementation(libs.firebase.vertexai)
             implementation(libs.kotlinx.coroutines.play.services)
+            implementation(libs.play.services.ads)
+            implementation(libs.billing.ktx)
             implementation(libs.androidx.biometric)
             implementation(libs.play.services.auth)
         }
@@ -137,7 +140,8 @@ android {
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "PLANTNET_API_KEY", "\"$plantnetApiKey\"")
-        buildConfigField("String", "APP_VERSION", "\"1.1.0\"")
+        buildConfigField("String", "APP_VERSION", "\"2.0.0\"")
+        buildConfigField("int", "BUILD_NUMBER", "19")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

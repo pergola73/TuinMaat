@@ -17,8 +17,8 @@ android {
         applicationId = "com.rvodevelopment.tuinmaat"
         minSdk = 24
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.1.0"
+        versionCode = 19
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -78,6 +78,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.play.services.base)
     implementation(libs.play.services.auth)
+    implementation(libs.play.services.ads)
+    implementation(libs.billing.ktx)
 
 
     // Firebase

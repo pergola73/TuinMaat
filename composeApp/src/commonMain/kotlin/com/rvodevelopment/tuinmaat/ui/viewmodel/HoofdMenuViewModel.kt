@@ -4,10 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.repository.UserRepository
-import com.rvodevelopment.tuinmaat.service.AuthService
-import com.rvodevelopment.tuinmaat.service.TuintipService
-import com.rvodevelopment.tuinmaat.service.WeerBericht
-import com.rvodevelopment.tuinmaat.service.DeepLinkHandler
+import com.rvodevelopment.tuinmaat.service.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -27,7 +24,8 @@ data class HoofdMenuState(
     val eigenGid: String? = null,
     val actieveGid: String? = null,
     val huidigeMaand: Int = 1,
-    val planten: List<String> = emptyList()
+    val planten: List<String> = emptyList(),
+    val isPremium: Boolean = false
 ) {
     val huidigeTip: String get() = if (tuintips.isNotEmpty()) tuintips[huidigeTipIndex] else ""
 }
@@ -37,7 +35,8 @@ class HoofdMenuViewModel(
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
     private val tuintipService: TuintipService,
-    private val deepLinkHandler: com.rvodevelopment.tuinmaat.service.DeepLinkHandler
+    private val deepLinkHandler: DeepLinkHandler,
+    private val premiumService: PremiumService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HoofdMenuState())
@@ -46,9 +45,18 @@ class HoofdMenuViewModel(
     init {
         observeUserData()
         fetchTuintip()
+        observePremium()
         
         viewModelScope.launch {
             deepLinkHandler.checkPendingDeepLink()
+        }
+    }
+
+    private fun observePremium() {
+        viewModelScope.launch {
+            premiumService.isPremium.collect { isPremium ->
+                _state.update { it.copy(isPremium = isPremium) }
+            }
         }
     }
 

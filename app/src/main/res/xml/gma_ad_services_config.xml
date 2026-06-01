@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ad-services-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <attestation-config>
+        <attestation-provider android:name="google" />
+    </attestation-config>
+</ad-services-config>

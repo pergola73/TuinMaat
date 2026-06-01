@@ -4,18 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.repository.UserData
 import com.rvodevelopment.tuinmaat.repository.UserRepository
-import com.rvodevelopment.tuinmaat.service.AuthService
-import com.rvodevelopment.tuinmaat.service.DeepLinkHandler
+import com.rvodevelopment.tuinmaat.repository.TuinRepository
+import com.rvodevelopment.tuinmaat.service.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class InstellingenViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository,
-    private val sharingService: com.rvodevelopment.tuinmaat.service.SharingService,
-    private val biometricService: com.rvodevelopment.tuinmaat.service.BiometricService,
-    private val deepLinkHandler: com.rvodevelopment.tuinmaat.service.DeepLinkHandler
+    private val tuinRepository: TuinRepository,
+    private val sharingService: SharingService,
+    private val biometricService: BiometricService,
+    private val deepLinkHandler: DeepLinkHandler,
+    private val premiumService: PremiumService,
+    private val billingService: BillingService
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow<UserData?>(null)
@@ -32,6 +34,8 @@ class InstellingenViewModel(
 
     private val _foutMelding = MutableStateFlow<String?>(null)
     val foutMelding: StateFlow<String?> = _foutMelding
+
+    val isPremium: StateFlow<Boolean> = premiumService.isPremium
 
     private var userDataJob: kotlinx.coroutines.Job? = null
 
@@ -110,6 +114,32 @@ class InstellingenViewModel(
                 userRepository.updateLocaties(profile.uid, locaties, standaardLocatie)
                     .onFailure { _foutMelding.value = it.message }
             }
+        }
+    }
+
+    fun upgradeToPremium() {
+        viewModelScope.launch {
+            _isLaden.value = true
+            billingService.purchasePremium(
+                onSuccess = { _isLaden.value = false },
+                onError = { error ->
+                    _foutMelding.value = error
+                    _isLaden.value = false
+                }
+            )
+        }
+    }
+
+    fun restorePurchases() {
+        viewModelScope.launch {
+            _isLaden.value = true
+            billingService.restorePurchases(
+                onSuccess = { _isLaden.value = false },
+                onError = { error ->
+                    _foutMelding.value = error
+                    _isLaden.value = false
+                }
+            )
         }
     }
 
