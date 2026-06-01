@@ -37,6 +37,10 @@ class InstellingenViewModel(
 
     val isPremium: StateFlow<Boolean> = premiumService.isPremium
 
+    fun getPremiumPrice(): String {
+        return billingService.getProductPrice(premiumService.premiumProductId) ?: "€4,99"
+    }
+
     private var userDataJob: kotlinx.coroutines.Job? = null
 
     init {

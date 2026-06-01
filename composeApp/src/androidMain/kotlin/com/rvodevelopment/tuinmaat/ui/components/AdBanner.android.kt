@@ -18,7 +18,7 @@ actual fun AdBanner(modifier: Modifier) {
         factory = { context ->
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
-                adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test ID
+                adUnitId = com.rvodevelopment.tuinmaat.composeapp.BuildConfig.ADMOB_BANNER_ID
                 loadAd(AdRequest.Builder().build())
             }
         }

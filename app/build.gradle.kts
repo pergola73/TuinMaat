@@ -17,7 +17,7 @@ android {
         applicationId = "com.rvodevelopment.tuinmaat"
         minSdk = 24
         targetSdk = 35
-        versionCode = 19
+        versionCode = 20
         versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -30,9 +30,11 @@ android {
         }
         val geminiApiKey: String = properties.getProperty("GEMINI_API_KEY") ?: (project.findProperty("GEMINI_API_KEY") as String? ?: "")
         val plantnetApiKey: String = properties.getProperty("PLANTNET_API_KEY") ?: (project.findProperty("PLANTNET_API_KEY") as String? ?: "")
+        val admobAppId: String = properties.getProperty("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "PLANTNET_API_KEY", "\"$plantnetApiKey\"")
+        manifestPlaceholders["admobAppId"] = admobAppId
     }
 
     buildTypes {

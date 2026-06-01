@@ -10,4 +10,8 @@ class IosBillingService : BillingService {
         // iOS implementatie met StoreKit volgt later
         onError("Nog niet beschikbaar op iOS")
     }
+
+    override fun getProductPrice(productId: String): String? {
+        return null
+    }
 }

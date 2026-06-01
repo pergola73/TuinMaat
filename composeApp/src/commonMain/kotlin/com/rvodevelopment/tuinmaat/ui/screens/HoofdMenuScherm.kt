@@ -212,7 +212,10 @@ fun HoofdMenuScherm(
             }
 
             if (!state.isPremium) {
-                AdBanner(modifier = Modifier.padding(top = 24.dp))
+                NativeAd(
+                    adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(64.dp))

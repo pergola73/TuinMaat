@@ -140,6 +140,9 @@ android {
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "PLANTNET_API_KEY", "\"$plantnetApiKey\"")
+        buildConfigField("String", "ADMOB_BANNER_ID", "\"${props.getProperty("ADMOB_BANNER_ID") ?: "ca-app-pub-3940256099942544/6300978111"}\"")
+        buildConfigField("String", "ADMOB_NATIVE_HOME_ID", "\"${props.getProperty("ADMOB_NATIVE_HOME_ID") ?: "ca-app-pub-3940256099942544/2247696110"}\"")
+        buildConfigField("String", "ADMOB_NATIVE_LIST_ID", "\"${props.getProperty("ADMOB_NATIVE_LIST_ID") ?: "ca-app-pub-3940256099942544/2247696110"}\"")
         buildConfigField("String", "APP_VERSION", "\"2.0.0\"")
         buildConfigField("int", "BUILD_NUMBER", "19")
     }

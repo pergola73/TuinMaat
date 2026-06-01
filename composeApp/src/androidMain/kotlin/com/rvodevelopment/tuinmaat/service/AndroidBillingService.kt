@@ -13,6 +13,7 @@ class AndroidBillingService(
 ) : BillingService, PurchasesUpdatedListener {
 
     private var billingClient: BillingClient? = null
+    private var productDetails: ProductDetails? = null
 
     init {
         val activity = ActivityProvider.getCurrentActivity()
@@ -54,6 +55,22 @@ class AndroidBillingService(
                 if (hasPremium) {
                     premiumService.setPremium(true)
                 }
+            }
+        }
+
+        // Fetch product details for price display
+        val productList = listOf(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId(premiumService.premiumProductId)
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
+        val detailsParams = QueryProductDetailsParams.newBuilder()
+            .setProductList(productList)
+            .build()
+        billingClient?.queryProductDetailsAsync(detailsParams) { _, detailsList ->
+            if (detailsList.isNotEmpty()) {
+                productDetails = detailsList[0]
             }
         }
     }
@@ -121,6 +138,10 @@ class AndroidBillingService(
                 onError("Fout bij herstellen: ${billingResult.debugMessage}")
             }
         }
+    }
+
+    override fun getProductPrice(productId: String): String? {
+        return productDetails?.oneTimePurchaseOfferDetails?.formattedPrice
     }
 
     override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.rvodevelopment.tuinmaat.ui.components.AdBanner
+import com.rvodevelopment.tuinmaat.ui.components.NativeAd
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
@@ -140,8 +142,13 @@ fun PlantenLijstScherm(
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(state.gefilterdePlanten) { plant ->
+                    itemsIndexed(state.gefilterdePlanten) { index, plant ->
                         PlantKaart(plant, onNavigateToDetail)
+                        
+                        if (!state.isPremium && index == 3) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            NativeAd(adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId)
+                        }
                     }
                 }
             } else {

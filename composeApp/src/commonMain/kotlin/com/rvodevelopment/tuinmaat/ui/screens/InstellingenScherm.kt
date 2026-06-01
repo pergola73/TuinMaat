@@ -67,9 +67,6 @@ fun InstellingenScherm(
         }
 
         Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-            InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
-            InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
-            
             if (!isPremium) {
                 Surface(
                     onClick = { toonPremiumDialoog = true },
@@ -94,6 +91,8 @@ fun InstellingenScherm(
                 InstellingItem("Premium Status: Actief", Icons.Default.Verified, onClick = { toonPremiumDialoog = true })
             }
 
+            InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
+            InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
             InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
             InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
             InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
@@ -155,7 +154,7 @@ fun InstellingenScherm(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
                     ) {
-                        Text("Nu upgraden (€4,99)")
+                        Text("Nu upgraden (${viewModel.getPremiumPrice()})")
                     }
                 } else {
                     Button(onClick = { toonPremiumDialoog = false }) {

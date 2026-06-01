@@ -9,3 +9,6 @@ actual val appVersion: String = run {
     val build = NSBundle.mainBundle.infoDictionary?.get("CFBundleVersion") as? String ?: "1"
     "$version ($build)"
 }
+
+actual val admobNativeHomeId: String = ""
+actual val admobNativeListId: String = ""
