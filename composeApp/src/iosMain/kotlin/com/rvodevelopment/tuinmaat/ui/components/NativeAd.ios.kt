@@ -7,8 +7,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.ui.interop.UIKitView
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UIView
+
+@OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun NativeAd(adUnitId: String, modifier: Modifier) {
-    // Placeholder voor iOS
-    Box(modifier = modifier.fillMaxWidth().height(100.dp))
+    val factory = PlatformViewRegistry.nativeAdFactory
+    if (factory != null) {
+        UIKitView(
+            factory = { factory(adUnitId) as UIView },
+            modifier = modifier.fillMaxWidth().height(100.dp)
+        )
+    } else {
+        Box(modifier = modifier.fillMaxWidth().height(100.dp))
+    }
 }

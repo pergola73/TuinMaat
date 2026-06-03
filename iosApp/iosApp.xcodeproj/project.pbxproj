@@ -10,9 +10,16 @@
 		2AAE93F42FACD05D007EE171 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 2AAE93F32FACD05D007EE171 /* FirebaseAuth */; };
 		2AAE93F62FACD05D007EE171 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2AAE93F52FACD05D007EE171 /* FirebaseFirestore */; };
 		2AAE93F82FACD05D007EE171 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 2AAE93F72FACD05D007EE171 /* FirebaseStorage */; };
+		3674F5852FD0256C00BFA4C7 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3674F5842FD0256C00BFA4C7 /* StoreKit.framework */; };
+		3674F5912FD0503800BFA4C7 /* PurchasesHybridCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5902FD0503800BFA4C7 /* PurchasesHybridCommon */; };
+		3674F5932FD0503800BFA4C7 /* PurchasesHybridCommonUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5922FD0503800BFA4C7 /* PurchasesHybridCommonUI */; };
+		3674F5962FD0526600BFA4C7 /* PurchasesHybridCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5952FD0526600BFA4C7 /* PurchasesHybridCommon */; };
+		3674F5982FD0526600BFA4C7 /* PurchasesHybridCommonUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */; };
+		3674F59B2FD0550A00BFA4C7 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3674F5842FD0256C00BFA4C7 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuinMaat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -47,9 +54,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3674F5962FD0526600BFA4C7 /* PurchasesHybridCommon in Frameworks */,
+				3674F5912FD0503800BFA4C7 /* PurchasesHybridCommon in Frameworks */,
 				2AAE93F42FACD05D007EE171 /* FirebaseAuth in Frameworks */,
+				3674F59B2FD0550A00BFA4C7 /* GoogleMobileAds in Frameworks */,
 				2AAE93F62FACD05D007EE171 /* FirebaseFirestore in Frameworks */,
 				2AAE93F82FACD05D007EE171 /* FirebaseStorage in Frameworks */,
+				3674F5932FD0503800BFA4C7 /* PurchasesHybridCommonUI in Frameworks */,
+				3674F5982FD0526600BFA4C7 /* PurchasesHybridCommonUI in Frameworks */,
+				3674F5852FD0256C00BFA4C7 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +72,7 @@
 		2AEF1A6C2FAD383C00ACA43E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3674F5842FD0256C00BFA4C7 /* StoreKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -105,6 +119,11 @@
 				2AAE93F32FACD05D007EE171 /* FirebaseAuth */,
 				2AAE93F52FACD05D007EE171 /* FirebaseFirestore */,
 				2AAE93F72FACD05D007EE171 /* FirebaseStorage */,
+				3674F5902FD0503800BFA4C7 /* PurchasesHybridCommon */,
+				3674F5922FD0503800BFA4C7 /* PurchasesHybridCommonUI */,
+				3674F5952FD0526600BFA4C7 /* PurchasesHybridCommon */,
+				3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */,
+				3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */,
 			);
 			productName = iosApp;
 			productReference = A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */;
@@ -136,6 +155,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2AAE93F22FACD05D007EE171 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				3674F5942FD0526600BFA4C7 /* XCRemoteSwiftPackageReference "purchases-hybrid-common" */,
+				3674F5992FD0550A00BFA4C7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 44BB949D672FABDEBF0ABACF /* Products */;
@@ -421,6 +442,22 @@
 				minimumVersion = 12.13.0;
 			};
 		};
+		3674F5942FD0526600BFA4C7 /* XCRemoteSwiftPackageReference "purchases-hybrid-common" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-hybrid-common.git";
+			requirement = {
+				kind = exactVersion;
+				version = 17.55.1;
+			};
+		};
+		3674F5992FD0550A00BFA4C7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.4.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -438,6 +475,29 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2AAE93F22FACD05D007EE171 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		3674F5902FD0503800BFA4C7 /* PurchasesHybridCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PurchasesHybridCommon;
+		};
+		3674F5922FD0503800BFA4C7 /* PurchasesHybridCommonUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PurchasesHybridCommonUI;
+		};
+		3674F5952FD0526600BFA4C7 /* PurchasesHybridCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3674F5942FD0526600BFA4C7 /* XCRemoteSwiftPackageReference "purchases-hybrid-common" */;
+			productName = PurchasesHybridCommon;
+		};
+		3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3674F5942FD0526600BFA4C7 /* XCRemoteSwiftPackageReference "purchases-hybrid-common" */;
+			productName = PurchasesHybridCommonUI;
+		};
+		3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3674F5992FD0550A00BFA4C7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

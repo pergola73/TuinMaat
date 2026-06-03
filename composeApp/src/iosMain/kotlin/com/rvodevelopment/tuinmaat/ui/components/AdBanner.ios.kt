@@ -10,14 +10,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.interop.UIKitView
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UIView
+
+@OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun AdBanner(modifier: Modifier) {
-    // Voor iOS is verdere configuratie in Xcode nodig voor Google Mobile Ads
-    Box(
-        modifier = modifier.fillMaxWidth().height(50.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Placeholder
-        // Text("Ad Banner iOS", fontSize = 10.sp)
+    val factory = PlatformViewRegistry.bannerFactory
+    if (factory != null) {
+        val bannerId = "ca-app-pub-3940256099942544/2934735716" // Test banner ID
+        UIKitView(
+            factory = { factory(bannerId) as UIView },
+            modifier = modifier.fillMaxWidth().height(50.dp)
+        )
+    } else {
+        Box(modifier = modifier.fillMaxWidth().height(50.dp))
     }
 }

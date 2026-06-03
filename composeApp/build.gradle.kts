@@ -147,7 +147,7 @@ android {
         buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${props.getProperty("REVENUECAT_ANDROID_KEY") ?: ""}\"")
         buildConfigField("String", "REVENUECAT_IOS_KEY", "\"${props.getProperty("REVENUECAT_IOS_KEY") ?: ""}\"")
         buildConfigField("String", "APP_VERSION", "\"2.0.0\"")
-        buildConfigField("int", "BUILD_NUMBER", "19")
+        buildConfigField("int", "BUILD_NUMBER", "21")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
