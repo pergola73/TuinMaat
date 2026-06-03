@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -31,8 +30,8 @@ fun App() {
     TuinMaatTheme {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            contentWindowInsets = WindowInsets(0, 0, 0, 0) // Laat NavHost zelf insets afhandelen
-        ) { padding ->
+            contentWindowInsets = WindowInsets(0, 0, 0, 0), // Laat NavHost zelf insets afhandelen
+        ) { _ ->
             SecurityWrapper {
                 val navController = rememberNavController()
                 
@@ -44,27 +43,25 @@ fun App() {
                 NavHost(
                     navController = navController,
                     startDestination = startDestination,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     composable("login") {
                         val viewModel: LoginViewModel = koinInject()
                         LoginScherm(
                             viewModel = viewModel,
-                            onLoginSuccess = {
-                                navController.navigate("hoofdmenu") {
-                                    popUpTo("login") { inclusive = true }
-                                }
+                        ) {
+                            navController.navigate("hoofdmenu") {
+                                popUpTo("login") { inclusive = true }
                             }
-                        )
+                        }
                     }
                     composable("hoofdmenu") {
                         val viewModel: HoofdMenuViewModel = koinInject()
                         HoofdMenuScherm(
                             viewModel = viewModel,
-                            onNavigate = { route ->
-                                navController.navigate(route)
-                            }
-                        )
+                        ) { route ->
+                            navController.navigate(route)
+                        }
                     }
                     composable("lijst") {
                         val viewModel: PlantenLijstViewModel = koinInject()
@@ -72,8 +69,7 @@ fun App() {
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
                             onNavigateToDetail = { id -> navController.navigate("detail/$id") },
-                            onNavigateToToevoegen = { navController.navigate("toevoegen") }
-                        )
+                        ) { navController.navigate("toevoegen") }
                     }
                     composable("detail/{plantId}") { backStackEntry ->
                         val plantId = backStackEntry.arguments?.getString("plantId")

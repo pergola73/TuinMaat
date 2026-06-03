@@ -36,7 +36,7 @@ fun PlantenLijstScherm(
     viewModel: PlantenLijstViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (String) -> Unit,
-    onNavigateToToevoegen: () -> Unit
+    onNavigateToToevoegen: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -45,12 +45,12 @@ fun PlantenLijstScherm(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding()
+                .navigationBarsPadding(),
         ) {
             // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp),
             ) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
@@ -87,16 +87,14 @@ fun PlantenLijstScherm(
                 item {
                     LocationChip(
                         selected = state.geselecteerdeLocatie == "Alle",
-                        label = "Alle",
-                        onClick = { viewModel.onLocatieSelectie("Alle") }
-                    )
+                        label = "Alle"
+                    ) { viewModel.onLocatieSelectie("Alle") }
                 }
                 items(state.locaties) { loc ->
                     LocationChip(
                         selected = state.geselecteerdeLocatie == loc,
-                        label = loc,
-                        onClick = { viewModel.onLocatieSelectie(loc) }
-                    )
+                        label = loc
+                    ) { viewModel.onLocatieSelectie(loc) }
                 }
             }
 
@@ -145,7 +143,7 @@ fun PlantenLijstScherm(
                     itemsIndexed(state.gefilterdePlanten) { index, plant ->
                         PlantKaart(plant, onNavigateToDetail)
                         
-                        if (!state.isPremium && index == 3) {
+                        if (!state.isPremium && (index == 3)) {
                             Spacer(modifier = Modifier.height(16.dp))
                             NativeAd(adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId)
                         }

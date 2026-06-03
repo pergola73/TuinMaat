@@ -18,24 +18,27 @@ fun initKoin(
     useMock: Boolean = false,
     plantnetApiKey: String = "",
     geminiApiKey: String = "",
-    appDeclaration: KoinAppDeclaration = {}
+    revenueCatApiKey: String = "",
+    appDeclaration: KoinAppDeclaration = {},
 ) = startKoin {
     appDeclaration()
-    modules(commonModule(useMock, plantnetApiKey, geminiApiKey), platformModule())
+    modules(commonModule(useMock, plantnetApiKey, geminiApiKey, revenueCatApiKey), platformModule())
 }
 
 // called by iOS etc
 fun doInitKoin(
     useMock: Boolean = false,
     plantnetApiKey: String = "",
-    geminiApiKey: String = ""
+    geminiApiKey: String = "",
+    revenueCatApiKey: String = ""
 ) = initKoin(
     useMock = useMock,
     plantnetApiKey = plantnetApiKey,
-    geminiApiKey = geminiApiKey
+    geminiApiKey = geminiApiKey,
+    revenueCatApiKey = revenueCatApiKey
 ) {}
 
-fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String) = module {
+fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String, revenueCatApiKey: String) = module {
     // Gebruik de meegegeven keys of fallback naar wat in platformModule staat (voor Android)
     if (plantnetApiKey.isNotEmpty()) {
         single(named("PLANTNET_API_KEY")) { plantnetApiKey }
@@ -43,19 +46,24 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String)
     if (geminiApiKey.isNotEmpty()) {
         single(named("GEMINI_API_KEY")) { geminiApiKey }
     }
+    
+    single(named("REVENUECAT_API_KEY")) { revenueCatApiKey }
 
     single { 
         HttpClient {
             install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                })
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        isLenient = true
+                    },
+                )
             }
         }
     }
     single { MessageService() }
     single<PremiumService> { DefaultPremiumService() }
+    single<BillingService> { RevenueCatService(get(), get(named("REVENUECAT_API_KEY"))) }
     single { DeepLinkHandler(get(), get(), get()) }
     single<TuintipService> { DefaultTuintipService(get()) }
     

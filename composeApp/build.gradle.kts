@@ -72,6 +72,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.multiplatform.settings)
+            implementation(libs.purchases.core)
             
             // Koin
             implementation(libs.koin.core)
@@ -143,6 +144,8 @@ android {
         buildConfigField("String", "ADMOB_BANNER_ID", "\"${props.getProperty("ADMOB_BANNER_ID") ?: "ca-app-pub-3940256099942544/6300978111"}\"")
         buildConfigField("String", "ADMOB_NATIVE_HOME_ID", "\"${props.getProperty("ADMOB_NATIVE_HOME_ID") ?: "ca-app-pub-3940256099942544/2247696110"}\"")
         buildConfigField("String", "ADMOB_NATIVE_LIST_ID", "\"${props.getProperty("ADMOB_NATIVE_LIST_ID") ?: "ca-app-pub-3940256099942544/2247696110"}\"")
+        buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${props.getProperty("REVENUECAT_ANDROID_KEY") ?: ""}\"")
+        buildConfigField("String", "REVENUECAT_IOS_KEY", "\"${props.getProperty("REVENUECAT_IOS_KEY") ?: ""}\"")
         buildConfigField("String", "APP_VERSION", "\"2.0.0\"")
         buildConfigField("int", "BUILD_NUMBER", "19")
     }

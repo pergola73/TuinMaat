@@ -31,9 +31,11 @@ android {
         val geminiApiKey: String = properties.getProperty("GEMINI_API_KEY") ?: (project.findProperty("GEMINI_API_KEY") as String? ?: "")
         val plantnetApiKey: String = properties.getProperty("PLANTNET_API_KEY") ?: (project.findProperty("PLANTNET_API_KEY") as String? ?: "")
         val admobAppId: String = properties.getProperty("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"
+        val revenueCatApiKey: String = properties.getProperty("REVENUECAT_ANDROID_KEY") ?: ""
 
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "PLANTNET_API_KEY", "\"$plantnetApiKey\"")
+        buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"$revenueCatApiKey\"")
         manifestPlaceholders["admobAppId"] = admobAppId
     }
 
@@ -81,7 +83,6 @@ dependencies {
     implementation(libs.play.services.base)
     implementation(libs.play.services.auth)
     implementation(libs.play.services.ads)
-    implementation(libs.billing.ktx)
 
 
     // Firebase

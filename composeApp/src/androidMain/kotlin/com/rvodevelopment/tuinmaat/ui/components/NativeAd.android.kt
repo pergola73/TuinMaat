@@ -7,7 +7,6 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,7 +16,6 @@ import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
-import com.rvodevelopment.tuinmaat.composeapp.BuildConfig
 import com.rvodevelopment.tuinmaat.composeapp.R
 
 @SuppressLint("MissingPermission")
@@ -47,15 +45,13 @@ actual fun NativeAd(adUnitId: String, modifier: Modifier) {
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
             factory = { ctx ->
-                // We laden een XML layout voor de Native Ad
-                val view = LayoutInflater.from(ctx).inflate(R.layout.native_ad_layout, null) as NativeAdView
+                val view = LayoutInflater.from(ctx).inflate(R.layout.native_ad_layout, null, false) as NativeAdView
                 populateNativeAdView(nativeAd!!, view)
                 view
             },
-            update = { view ->
-                populateNativeAdView(nativeAd!!, view)
-            }
-        )
+        ) { view ->
+            populateNativeAdView(nativeAd!!, view)
+        }
     }
 }
 

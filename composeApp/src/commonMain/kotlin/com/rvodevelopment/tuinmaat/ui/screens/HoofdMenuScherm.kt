@@ -1,11 +1,9 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,10 +25,10 @@ import com.rvodevelopment.tuinmaat.ui.viewmodel.HoofdMenuViewModel
 @Composable
 fun HoofdMenuScherm(
     viewModel: HoofdMenuViewModel,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
-    var toonTuintip by remember { mutableStateOf(true) }
+    var toonTuintip by remember { mutableStateOf(value = true) }
 
     TuinAchtergrond {
         Column(
@@ -38,18 +36,18 @@ fun HoofdMenuScherm(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
         ) {
             // Garden Switcher
-            if (state.gekoppeldeGid != null && state.gekoppeldeGid != state.eigenGid) {
+            if (state.gekoppeldeGid != null && (state.gekoppeldeGid != state.eigenGid)) {
                 Surface(
                     color = Color.White.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp))
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).neumorphicShadow(shape = RoundedCornerShape(12.dp)),
                 ) {
                     Row(
                         modifier = Modifier.padding(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Button(
                             onClick = { state.eigenGid?.let { viewModel.switchGarden(it) } },
@@ -192,12 +190,10 @@ fun HoofdMenuScherm(
                         tip = state.huidigeTip,
                         huidigeIndex = state.huidigeTipIndex,
                         totaalAantal = state.tuintips.size,
-                        maand = state.huidigeMaand,
                         isLoading = state.isTuintipLaden,
                         onVolgende = { viewModel.volgendeTip() },
                         onVorige = { viewModel.vorigeTip() },
-                        onDismiss = { toonTuintip = false }
-                    )
+                    ) { toonTuintip = false }
                 }
 
                 if (!state.isPremium) {
@@ -255,7 +251,6 @@ fun TuintipCard(
     tip: String,
     huidigeIndex: Int,
     totaalAantal: Int,
-    maand: Int,
     isLoading: Boolean,
     onVolgende: () -> Unit,
     onVorige: () -> Unit,

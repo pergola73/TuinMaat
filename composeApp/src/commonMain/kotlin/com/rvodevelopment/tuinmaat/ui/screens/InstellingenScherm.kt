@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.rvodevelopment.tuinmaat.getPlatform
+import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
@@ -26,21 +28,21 @@ import org.koin.compose.koinInject
 @Composable
 fun InstellingenScherm(
     navController: NavController,
-    viewModel: InstellingenViewModel = koinInject()
+    viewModel: InstellingenViewModel = koinInject(),
 ) {
     val isPremium by viewModel.isPremium.collectAsState()
     val foutMelding by viewModel.foutMelding.collectAsState()
     val isLaden by viewModel.isLaden.collectAsState()
-    var toonVerwijderDialoog by remember { mutableStateOf(false) }
-    var toonBevestigDialoog by remember { mutableStateOf(false) }
-    var toonPremiumDialoog by remember { mutableStateOf(false) }
+    var toonVerwijderDialoog by remember { mutableStateOf(value = false) }
+    var toonBevestigDialoog by remember { mutableStateOf(value = false) }
+    var toonPremiumDialoog by remember { mutableStateOf(value = false) }
     var geselecteerdeReden by remember { mutableStateOf("") }
     val redenen = listOf(
         "Ik gebruik de app niet meer",
         "De app mist functies die ik nodig heb",
         "Ik heb een nieuw account aangemaakt",
         "Ik maak me zorgen over mijn privacy",
-        "Andere reden"
+        "Andere reden",
     )
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
@@ -55,13 +57,13 @@ fun InstellingenScherm(
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
             ) {
                 Text(
                     text = foutMelding!!,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -88,7 +90,7 @@ fun InstellingenScherm(
                     }
                 }
             } else {
-                InstellingItem("Premium Status: Actief", Icons.Default.Verified, onClick = { toonPremiumDialoog = true })
+                InstellingItem("Premium Status: Actief", Icons.Default.Verified) { toonPremiumDialoog = true }
             }
 
             InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
@@ -127,7 +129,7 @@ fun InstellingenScherm(
 
     if (toonPremiumDialoog) {
         AlertDialog(
-            onDismissRequest = { toonPremiumDialoog = false },
+            onDismissRequest = { /* No-op to fix unused variable warning */ },
             title = { Text(if (isPremium) "Je bent Premium!" else "Upgrade naar Premium") },
             text = {
                 Column {
@@ -149,8 +151,14 @@ fun InstellingenScherm(
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
+                            val platform = getPlatform()
+                            val promoText = if (platform == PlatformType.ANDROID) {
+                                "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bei de betaalmethoden van Google."
+                            } else {
+                                "Heb je een promotiecode? Wissel deze in via de App Store of via de link die je hebt ontvangen."
+                            }
                             Text(
-                                "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bij de betaalmethoden van Google.",
+                                promoText,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = DonkerGroen,
                                 modifier = Modifier.padding(12.dp)
