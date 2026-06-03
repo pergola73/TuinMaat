@@ -1,11 +1,12 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,7 +19,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.rvodevelopment.tuinmaat.ui.components.LocationChip
+import com.rvodevelopment.tuinmaat.ui.components.PlantKaart
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.SnoeiKalenderViewModel
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
@@ -35,10 +39,9 @@ fun SnoeiKalenderScherm(
     viewModel: SnoeiKalenderViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val planten = state.planten
 
     val maanden = listOf("Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December")
-    val currentMoment = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    val currentMoment = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     val huidigMaandIndex = currentMoment.monthNumber - 1 // 1-12 to 0-11
 
     // Sorteer de maanden zodat de huidige maand bovenaan staat en we precies 1 jaar tonen
@@ -52,69 +55,87 @@ fun SnoeiKalenderScherm(
 
     val listState = rememberLazyListState()
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
-        // Header (Titel & Terug knop)
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp, 16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-            }
-            Column {
-                Text(
-                    text = if (state.tuinnaam == "Laden...") "Snoei Kalender" else state.tuinnaam,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = DonkerGroen,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                state.eigenaarNaam?.let { naam ->
+    TuinAchtergrond {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            // Header (Titel & Terug knop)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp, 16.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                }
+                Column {
                     Text(
-                        text = "Tuin van $naam",
+                        text = "Snoei Kalender",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = DonkerGroen,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = state.tuinnaam,
                         style = MaterialTheme.typography.bodySmall,
-                        color = DonkerGroen.copy(alpha = 0.7f)
+                        color = DonkerGroen.copy(alpha = 0.7f),
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                     )
                 }
             }
-        }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().navigationBarsPadding(),
-            state = listState,
-            contentPadding = PaddingValues(bottom = 32.dp)
-        ) {
-            // We lopen door de 12 maanden heen, beginnend bij de huidige
-            gesorteerdeMaanden.forEach { maandNaam ->
-                val plantenVoorMaand = planten.filter { it.snoeiMaand.contains(maandNaam, ignoreCase = true) }
+            // Locatie filters
+            LazyRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    LocationChip(
+                        selected = state.geselecteerdeLocatie == "Alle",
+                        label = "Alle"
+                    ) { viewModel.onLocatieSelectie("Alle") }
+                }
+                items(state.locaties) { loc ->
+                    LocationChip(
+                        selected = state.geselecteerdeLocatie == loc,
+                        label = loc
+                    ) { viewModel.onLocatieSelectie(loc) }
+                }
+            }
 
-                if (plantenVoorMaand.isNotEmpty()) {
-                    stickyHeader(key = maandNaam) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(ZachtBeige)
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                                .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
-                            color = Color.White.copy(alpha = 0.95f),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
-                        ) {
-                            Text(
-                                text = if (maandNaam == maanden[huidigMaandIndex]) "$maandNaam (Nu)" else maandNaam,
-                                modifier = Modifier.padding(16.dp, 10.dp),
-                                style = MaterialTheme.typography.titleMedium,
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+                state = listState,
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
+                // We lopen door de 12 maanden heen, beginnend bij de huidige
+                gesorteerdeMaanden.forEach { maandNaam ->
+                    val plantenVoorMaand = state.gefilterdePlanten.filter { it.snoeiMaand.contains(maandNaam, ignoreCase = true) }
+
+                    if (plantenVoorMaand.isNotEmpty()) {
+                        stickyHeader(key = maandNaam) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                                    .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
                                 color = DonkerGroen,
-                                fontWeight = FontWeight.Bold
-                            )
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = if (maandNaam == maanden[huidigMaandIndex]) "$maandNaam (Nu)" else maandNaam,
+                                    modifier = Modifier.padding(16.dp, 10.dp),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color(0xFFF5F5F0),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
-                    }
 
-                    items(items = plantenVoorMaand, key = { "${it.firestoreId}-$maandNaam" }) { plant ->
-                        Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
-                            PlantKaart(plant, onNavigateToDetail = {
-                                navController.navigate("detail/${plant.firestoreId}")
-                            })
+                        items(items = plantenVoorMaand, key = { "${it.firestoreId}-$maandNaam" }) { plant ->
+                            Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
+                                PlantKaart(plant, onNavigateToDetail = {
+                                    navController.navigate("detail/${plant.firestoreId}")
+                                })
+                            }
                         }
-                    }
 
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                        item { Spacer(modifier = Modifier.height(16.dp)) }
+                    }
                 }
             }
         }

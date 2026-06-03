@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 
 import androidx.compose.runtime.collectAsState
@@ -39,76 +40,78 @@ fun LocatieBeheerScherm(
     var standaardLocatie by remember(userData) { mutableStateOf(userData?.standaardLocatie ?: "Tuin") }
     var nieuweLocatie by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-            }
-            Text("Locaties Beheren", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-        }
-
-        Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = nieuweLocatie,
-                    onValueChange = { nieuweLocatie = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Nieuwe plek...") },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = DonkerGroen,
-                        unfocusedTextColor = DonkerGroen,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedBorderColor = DonkerGroen,
-                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
-                    )
-                )
-                IconButton(onClick = {
-                    if (nieuweLocatie.isNotBlank()) {
-                        val updatedLocaties = locaties + nieuweLocatie
-                        locaties = updatedLocaties
-                        viewModel.updateLocaties(updatedLocaties, standaardLocatie)
-                        nieuweLocatie = ""
-                    }
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = "Toevoegen", tint = DonkerGroen)
+    TuinAchtergrond {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                 }
+                Text("Locaties Beheren", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            locaties.forEach { loc ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = { 
-                        standaardLocatie = loc 
-                        viewModel.updateLocaties(locaties, loc)
-                    }
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            if (loc == standaardLocatie) Icons.Default.Star else Icons.Default.StarBorder,
-                            contentDescription = null,
-                            tint = if (loc == standaardLocatie) Color(0xFFFFD700) else Color.Gray
+            Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = nieuweLocatie,
+                        onValueChange = { nieuweLocatie = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Nieuwe plek...") },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = DonkerGroen,
+                            unfocusedTextColor = DonkerGroen,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedBorderColor = DonkerGroen,
+                            unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = loc,
-                            modifier = Modifier.weight(1f),
-                            fontWeight = if (loc == standaardLocatie) FontWeight.Bold else FontWeight.Normal,
-                            color = DonkerGroen
-                        )
-                        IconButton(onClick = {
-                            val updatedLocaties = locaties - loc
+                    )
+                    IconButton(onClick = {
+                        if (nieuweLocatie.isNotBlank()) {
+                            val updatedLocaties = locaties + nieuweLocatie
                             locaties = updatedLocaties
-                            val newStandaard = if (standaardLocatie == loc) "" else standaardLocatie
-                            standaardLocatie = newStandaard
-                            viewModel.updateLocaties(updatedLocaties, newStandaard)
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Verwijderen", tint = Color.Red.copy(alpha = 0.6f))
+                            viewModel.updateLocaties(updatedLocaties, standaardLocatie)
+                            nieuweLocatie = ""
+                        }
+                    }) {
+                        Icon(Icons.Default.Add, contentDescription = "Toevoegen", tint = DonkerGroen)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                locaties.forEach { loc ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = { 
+                            standaardLocatie = loc 
+                            viewModel.updateLocaties(locaties, loc)
+                        }
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                if (loc == standaardLocatie) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = null,
+                                tint = if (loc == standaardLocatie) Color(0xFFFFD700) else Color.Gray
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = loc,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = if (loc == standaardLocatie) FontWeight.Bold else FontWeight.Normal,
+                                color = DonkerGroen
+                            )
+                            IconButton(onClick = {
+                                val updatedLocaties = locaties - loc
+                                locaties = updatedLocaties
+                                val newStandaard = if (standaardLocatie == loc) "" else standaardLocatie
+                                standaardLocatie = newStandaard
+                                viewModel.updateLocaties(updatedLocaties, newStandaard)
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Verwijderen", tint = Color.Red.copy(alpha = 0.6f))
+                            }
                         }
                     }
                 }

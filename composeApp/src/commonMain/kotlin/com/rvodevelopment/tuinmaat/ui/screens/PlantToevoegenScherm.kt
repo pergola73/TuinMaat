@@ -25,6 +25,7 @@ import coil3.compose.AsyncImage
 import com.rvodevelopment.tuinmaat.ui.components.InvoerVeldMetIcoon
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantToevoegenViewModel
 
@@ -56,72 +57,73 @@ fun PlantToevoegenScherm(
         }
     }
 
-    Scaffold(
-        containerColor = ZachtBeige,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text(if (state.plant.firestoreId.isNotEmpty()) "Plant Bewerken" else "Plant Toevoegen", color = DonkerGroen, fontWeight = FontWeight.Bold)
-                        state.eigenaarNaam?.let { naam ->
-                            Text("In tuin van $naam", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.6f))
+    TuinAchtergrond {
+        Scaffold(
+            containerColor = Color.Transparent,
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    title = { 
+                        Column {
+                            Text(if (state.plant.firestoreId.isNotEmpty()) "Plant Bewerken" else "Plant Toevoegen", color = DonkerGroen, fontWeight = FontWeight.Bold)
+                            state.eigenaarNaam?.let { naam ->
+                                Text("In tuin van $naam", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.6f))
+                            }
                         }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ZachtBeige)
-            )
-        },
-        bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Opslaan knop (links)
-                FilledIconButton(
-                    onClick = { viewModel.savePlant { onSaveSuccess() } },
-                    modifier = Modifier.size(56.dp),
-                    enabled = state.plant.naam.isNotBlank() && !state.isLaden,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = DonkerGroen.copy(alpha = 0.7f),
-                        contentColor = Color.White
-                    ),
-                    shape = CircleShape
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            },
+            bottomBar = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (state.isLaden) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.Save, contentDescription = "Opslaan")
-                    }
-                }
-
-                // Verwijder knop (rechts, alleen bij bewerken)
-                if (state.plant.firestoreId.isNotEmpty()) {
+                    // Opslaan knop (links)
                     FilledIconButton(
-                        onClick = { showDeleteConfirm = true },
+                        onClick = { viewModel.savePlant { onSaveSuccess() } },
                         modifier = Modifier.size(56.dp),
+                        enabled = state.plant.naam.isNotBlank() && !state.isLaden,
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = DonkerGroen.copy(alpha = 0.7f),
                             contentColor = Color.White
                         ),
                         shape = CircleShape
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Verwijderen")
+                        if (state.isLaden) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.Save, contentDescription = "Opslaan")
+                        }
+                    }
+
+                    // Verwijder knop (rechts, alleen bij bewerken)
+                    if (state.plant.firestoreId.isNotEmpty()) {
+                        FilledIconButton(
+                            onClick = { showDeleteConfirm = true },
+                            modifier = Modifier.size(56.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = DonkerGroen.copy(alpha = 0.7f),
+                                contentColor = Color.White
+                            ),
+                            shape = CircleShape
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Verwijderen")
+                        }
                     }
                 }
             }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(scrollState).background(ZachtBeige)
-        ) {
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier.fillMaxSize().padding(paddingValues).verticalScroll(scrollState)
+            ) {
             // Foto Sectie
             Box(
                 modifier = Modifier
@@ -424,4 +426,5 @@ fun PlantToevoegenScherm(
             )
         }
     }
+}
 }

@@ -21,6 +21,8 @@ import com.rvodevelopment.tuinmaat.service.WeerBericht
 import com.rvodevelopment.tuinmaat.ui.components.*
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.HoofdMenuViewModel
+import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun HoofdMenuScherm(
@@ -29,6 +31,10 @@ fun HoofdMenuScherm(
 ) {
     val state by viewModel.state.collectAsState()
     var toonTuintip by remember { mutableStateOf(value = true) }
+    var toonPremiumDialog by remember { mutableStateOf(value = false) }
+    val instellingenViewModel: InstellingenViewModel = koinInject()
+    val isPremium by instellingenViewModel.isPremium.collectAsState()
+    val isPremiumLaden by instellingenViewModel.isLaden.collectAsState()
 
     TuinAchtergrond {
         Column(
@@ -136,23 +142,32 @@ fun HoofdMenuScherm(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        color = Color.White.copy(alpha = 0.5f),
+                        onClick = { onNavigate("lijst") },
+                        color = Color(0xFFF5F5F0),
                         shape = RoundedCornerShape(50.dp),
-                        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(50.dp))
+                        modifier = Modifier.height(36.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp)
                         ) {
-                            Icon(
-                                Icons.Default.LocalFlorist,
-                                contentDescription = null,
-                                tint = DonkerGroen,
-                                modifier = Modifier.size(14.dp)
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Park,
+                                    contentDescription = null,
+                                    tint = GrasGroen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Icon(
+                                    Icons.Default.FiberManualRecord,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFB6C1), // LightPink voor het roosje
+                                    modifier = Modifier.size(6.dp).offset(y = (-2).dp)
+                                )
+                            }
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                "${state.aantalPlanten} Planten",
+                                state.aantalPlanten.toString(),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = DonkerGroen
@@ -162,6 +177,34 @@ fun HoofdMenuScherm(
 
                     state.weerBericht?.let { weer ->
                         WeerCard(weer)
+                    }
+
+                    if (!state.isPremium) {
+                        Surface(
+                            onClick = { toonPremiumDialog = true },
+                            color = Color(0xFFF5F5F0),
+                            shape = RoundedCornerShape(50.dp),
+                            modifier = Modifier.height(36.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD4AF37),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Upgrade Premium",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = DonkerGroen
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -195,43 +238,9 @@ fun HoofdMenuScherm(
                         onVorige = { viewModel.vorigeTip() },
                     ) { toonTuintip = false }
                 }
-
-                if (!state.isPremium) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Surface(
-                        onClick = { onNavigate("instellingen") },
-                        color = GrasGroen.copy(alpha = 0.08f),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth().neumorphicShadow(shape = RoundedCornerShape(16.dp))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color.White, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Star, null, tint = Color(0xFFFFD600), modifier = Modifier.size(24.dp))
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text("Ontgrendel TuinMaat Premium", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = DonkerGroen)
-                                Text("Verwijder advertenties en krijg meer tips", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.7f))
-                            }
-                        }
-                    }
-                }
             }
 
-            if (!state.isPremium) {
-                NativeAd(
-                    adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Menu Items
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -239,9 +248,28 @@ fun HoofdMenuScherm(
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
+
+                if (!state.isPremium) {
+                    NativeAd(
+                        adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(64.dp))
+        }
+
+        if (toonPremiumDialog) {
+            PremiumUpgradeDialog(
+                isPremium = isPremium,
+                isLaden = isPremiumLaden,
+                price = instellingenViewModel.getPremiumPrice(),
+                onUpgrade = { instellingenViewModel.upgradeToPremium() },
+                onRestore = { instellingenViewModel.restorePurchases() }
+            ) {
+                toonPremiumDialog = false
+            }
         }
     }
 }
@@ -389,13 +417,13 @@ fun WeerCard(weer: WeerBericht) {
     }
 
     Surface(
-        color = Color.White.copy(alpha = 0.5f),
+        color = Color(0xFFF5F5F0),
         shape = RoundedCornerShape(50.dp),
-        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(50.dp))
+        modifier = Modifier.height(36.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 12.dp)
         ) {
             Icon(
                 weerIcoon,

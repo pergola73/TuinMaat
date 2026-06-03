@@ -6,6 +6,7 @@ import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.service.AuthService
+import com.rvodevelopment.tuinmaat.service.SelectionService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +18,9 @@ import kotlinx.coroutines.launch
 
 data class SnoeiKalenderState(
     val planten: List<Plant> = emptyList(),
+    val gefilterdePlanten: List<Plant> = emptyList(),
+    val locaties: List<String> = emptyList(),
+    val geselecteerdeLocatie: String = "Alle",
     val tuinnaam: String = "Laden...",
     val eigenaarNaam: String? = null,
 )
@@ -24,7 +28,8 @@ data class SnoeiKalenderState(
 class SnoeiKalenderViewModel(
     private val tuinRepository: TuinRepository,
     private val userRepository: UserRepository,
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val selectionService: SelectionService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SnoeiKalenderState())
@@ -35,6 +40,16 @@ class SnoeiKalenderViewModel(
 
     init {
         loadData()
+        observeSelection()
+    }
+
+    private fun observeSelection() {
+        viewModelScope.launch {
+            selectionService.geselecteerdeLocatie.collect { locatie ->
+                _state.update { it.copy(geselecteerdeLocatie = locatie) }
+                updateFilteredList()
+            }
+        }
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -71,10 +86,24 @@ class SnoeiKalenderViewModel(
                     _planten.value = plantenlijst
                     _state.update { it.copy(
                         planten = plantenlijst,
+                        locaties = plantenlijst.asSequence().map { p -> p.locatie }.distinct().filter { l -> l.isNotBlank() }.toList(),
                         tuinnaam = tuinnaam,
                         eigenaarNaam = eigenaar
                     ) }
+                    updateFilteredList()
                 }
         }
+    }
+
+    fun onLocatieSelectie(locatie: String) {
+        selectionService.updateLocatie(locatie)
+    }
+
+    private fun updateFilteredList() {
+        val s = _state.value
+        val gefilterd = s.planten.filter { plant ->
+            (s.geselecteerdeLocatie == "Alle") || (plant.locatie == s.geselecteerdeLocatie)
+        }
+        _state.update { it.copy(gefilterdePlanten = gefilterd) }
     }
 }

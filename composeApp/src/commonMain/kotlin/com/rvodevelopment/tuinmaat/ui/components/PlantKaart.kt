@@ -1,4 +1,4 @@
-package com.rvodevelopment.tuinmaat.ui.screens
+package com.rvodevelopment.tuinmaat.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -10,12 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import coil3.compose.AsyncImage
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
@@ -31,7 +29,7 @@ fun PlantKaart(plant: Plant, onNavigateToDetail: (String) -> Unit) {
             .padding(vertical = 4.dp)
             .neumorphicShadow(shape = RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
-        color = ZachtBeige,
+        color = Color(0xFFF5F5F0),
         onClick = { onNavigateToDetail(plant.firestoreId) }
     ) {
         Row(
@@ -97,4 +95,3 @@ fun PlantKaart(plant: Plant, onNavigateToDetail: (String) -> Unit) {
         }
     }
 }
-

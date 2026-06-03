@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.ui.components.InvoerVeldMetIcoon
+import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
 import com.rvodevelopment.tuinmaat.ui.theme.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.LoginViewModel
 import org.jetbrains.compose.resources.painterResource
@@ -90,18 +91,7 @@ fun LoginScherm(
             verticalArrangement = Arrangement.Top
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            Surface(
-                modifier = Modifier.size(90.dp).neumorphicShadow(shape = CircleShape),
-                shape = CircleShape,
-                color = Color.White
-            ) {
-                Image(
-                    painter = painterResource(Res.drawable.tuin_logo),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(12.dp).clip(CircleShape),
-                    contentScale = ContentScale.Fit
-                )
-            }
+            TuinMaatLogo(modifier = Modifier.size(90.dp))
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = if (isRegistreren) "Nieuw Account" else "TuinMaat",
@@ -203,7 +193,7 @@ fun LoginScherm(
 
             Button(
                 onClick = { viewModel.voerActieUit(onLoginSuccess) },
-                modifier = Modifier.fillMaxWidth().height(56.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GrasGroen),
                 shape = RoundedCornerShape(16.dp),
                 enabled = !isLaden
@@ -236,7 +226,7 @@ fun LoginScherm(
 
                 OutlinedButton(
                     onClick = { viewModel.loginWithGoogle(onLoginSuccess) },
-                    modifier = Modifier.fillMaxWidth().height(56.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, DonkerGroen.copy(alpha = 0.5f)),
                     colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White.copy(alpha = 0.7f)),

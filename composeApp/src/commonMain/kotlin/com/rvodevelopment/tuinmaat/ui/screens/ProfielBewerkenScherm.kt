@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 
 import androidx.compose.runtime.collectAsState
@@ -36,77 +37,79 @@ fun ProfielBewerkenScherm(
     var tuinnaam by remember(userData) { mutableStateOf(userData?.tuinnaam ?: "") }
     val isLaden by viewModel.isLaden.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+    TuinAchtergrond {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                }
+                Text("Profiel Bewerken", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
             }
-            Text("Profiel Bewerken", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-        }
 
-        Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
-            OutlinedTextField(
-                value = voornaam,
-                onValueChange = { voornaam = it },
-                label = { Text("Voornaam", color = DonkerGroen) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = DonkerGroen,
-                    unfocusedTextColor = DonkerGroen,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = DonkerGroen,
-                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+            Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    value = voornaam,
+                    onValueChange = { voornaam = it },
+                    label = { Text("Voornaam", color = DonkerGroen) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = DonkerGroen,
+                        unfocusedTextColor = DonkerGroen,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
                 )
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = achternaam,
-                onValueChange = { achternaam = it },
-                label = { Text("Achternaam", color = DonkerGroen) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = DonkerGroen,
-                    unfocusedTextColor = DonkerGroen,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = DonkerGroen,
-                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = achternaam,
+                    onValueChange = { achternaam = it },
+                    label = { Text("Achternaam", color = DonkerGroen) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = DonkerGroen,
+                        unfocusedTextColor = DonkerGroen,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
                 )
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = tuinnaam,
-                onValueChange = { tuinnaam = it },
-                label = { Text("Tuinnaam", color = DonkerGroen) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = DonkerGroen,
-                    unfocusedTextColor = DonkerGroen,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = DonkerGroen,
-                    unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = tuinnaam,
+                    onValueChange = { tuinnaam = it },
+                    label = { Text("Tuinnaam", color = DonkerGroen) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = DonkerGroen,
+                        unfocusedTextColor = DonkerGroen,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
                 )
-            )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    viewModel.updateProfile(voornaam, achternaam, tuinnaam)
-                    navController.popBackStack()
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
-                enabled = !isLaden
-            ) {
-                if (isLaden) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("Opslaan")
+                Button(
+                    onClick = {
+                        viewModel.updateProfile(voornaam, achternaam, tuinnaam)
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
+                    enabled = !isLaden
+                ) {
+                    if (isLaden) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    else Text("Opslaan")
+                }
             }
         }
     }

@@ -20,7 +20,12 @@ import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.getPlatform
 import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
+import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
+import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
+import com.rvodevelopment.tuinmaat.ui.components.BulletPoint
+import com.rvodevelopment.tuinmaat.ui.components.PremiumUpgradeDialog
 import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
 import com.rvodevelopment.tuinmaat.appVersion
 import org.koin.compose.koinInject
@@ -45,157 +50,98 @@ fun InstellingenScherm(
         "Andere reden",
     )
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) { 
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
+    TuinAchtergrond {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) { 
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
+                }
+                Text("Instellingen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
             }
-            Text("Instellingen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-        }
 
-        if (foutMelding != null) {
-            Surface(
-                color = MaterialTheme.colorScheme.errorContainer,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(
-                    text = foutMelding!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-
-        Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-            if (!isPremium) {
+            if (foutMelding != null) {
                 Surface(
-                    onClick = { toonPremiumDialoog = true },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = DonkerGroen,
-                    contentColor = Color.White
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(
+                        text = foutMelding!!,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+                if (!isPremium) {
+                    Surface(
+                        onClick = { toonPremiumDialoog = true },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = DonkerGroen,
+                        contentColor = Color.White
                     ) {
-                        Icon(Icons.Default.Star, null, tint = Color.Yellow)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("Word Premium", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                            Text("Geen advertenties & meer functies", style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Star, null, tint = Color.Yellow)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text("Word Premium", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                Text("Geen advertenties & meer functies", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
+                } else {
+                    InstellingItem("Premium Status: Actief", Icons.Default.Verified) { toonPremiumDialoog = true }
                 }
-            } else {
-                InstellingItem("Premium Status: Actief", Icons.Default.Verified) { toonPremiumDialoog = true }
-            }
 
-            InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
-            InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
-            InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
-            InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
-            InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
+                InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
+                InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
+                InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
+                InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
+                InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("login") { 
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
-                    viewModel.signOut()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.5f), contentColor = DonkerGroen)
-            ) {
-                Text("Uitloggen")
-            }
+                Button(
+                    onClick = {
+                        navController.navigate("login") { 
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                        viewModel.signOut()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F0), contentColor = DonkerGroen)
+                ) {
+                    Text("Uitloggen")
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(
-                onClick = { toonVerwijderDialoog = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(contentColor = Color.Red.copy(alpha = 0.7f))
-            ) {
-                Text("Account verwijderen")
+                TextButton(
+                    onClick = { toonVerwijderDialoog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red.copy(alpha = 0.7f))
+                ) {
+                    Text("Account verwijderen")
+                }
             }
         }
     }
 
     if (toonPremiumDialoog) {
-        AlertDialog(
-            onDismissRequest = { toonPremiumDialoog = false },
-            title = { Text(if (isPremium) "Je bent Premium!" else "Upgrade naar Premium") },
-            text = {
-                Column {
-                    Text("Met TuinMaat Premium geniet je van:")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    BulletPoint("Geen advertenties")
-                    BulletPoint("Onbeperkt aantal planten")
-                    BulletPoint("Exclusieve tuintips")
-                    
-                    if (isLaden) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DonkerGroen)
-                    } else if (isPremium) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Bedankt voor je steun!", fontWeight = FontWeight.Bold, color = DonkerGroen)
-                    } else {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Surface(
-                            color = DonkerGroen.copy(alpha = 0.05f),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val platform = getPlatform()
-                            val promoText = if (platform == PlatformType.ANDROID) {
-                                "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bij de betaalmethoden van Google."
-                            } else {
-                                "Heb je een promotiecode? Wissel deze in via de App Store of via de link die je hebt ontvangen."
-                            }
-                            Text(
-                                promoText,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DonkerGroen,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                if (!isPremium) {
-                    Button(
-                        onClick = {
-                            viewModel.upgradeToPremium()
-                            toonPremiumDialoog = false
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
-                    ) {
-                        Text("Nu upgraden (${viewModel.getPremiumPrice()})")
-                    }
-                } else {
-                    Button(onClick = { toonPremiumDialoog = false }) {
-                        Text("Sluiten")
-                    }
-                }
-            },
-            dismissButton = {
-                if (!isPremium) {
-                    Row {
-                        TextButton(onClick = { toonPremiumDialoog = false }) {
-                            Text("Annuleren", color = Color.Gray)
-                        }
-                        TextButton(onClick = { viewModel.restorePurchases() }) {
-                            Text("Aankopen herstellen")
-                        }
-                    }
-                }
-            }
+        PremiumUpgradeDialog(
+            isPremium = isPremium,
+            isLaden = isLaden,
+            price = viewModel.getPremiumPrice(),
+            onUpgrade = { viewModel.upgradeToPremium() },
+            onRestore = { viewModel.restorePurchases() },
+            onDismiss = { toonPremiumDialoog = false }
         )
     }
 
@@ -274,9 +220,12 @@ fun InstellingenScherm(
 fun InstellingItem(text: String, icon: ImageVector, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
-        color = Color.White.copy(alpha = 0.5f)
+        color = Color(0xFFF5F5F0)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -297,67 +246,60 @@ fun InfoScherm(
     val userData by viewModel.userData.collectAsState()
     var tapCount by remember { mutableStateOf(0) }
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding().navigationBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) { 
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
-            }
-            Text("Informatie", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-        }
-
-        Card(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Surface(
-                    onClick = {
-                        tapCount++
-                        if (tapCount >= 5) {
-                            viewModel.devResetPremium()
-                            tapCount = 0
-                        }
-                    },
-                    color = Color.Transparent
-                ) {
-                    Icon(Icons.Default.Park, contentDescription = null, tint = DonkerGroen, modifier = Modifier.size(64.dp))
+    TuinAchtergrond {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                IconButton(onClick = { navController.popBackStack() }) { 
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("TuinMaat", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Versie $appVersion", style = MaterialTheme.typography.bodyMedium)
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(16.dp))
+                Text("Informatie", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+            }
 
-                Text("${userData?.voornaam ?: ""} ${userData?.achternaam ?: ""}", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                InfoRow("E-mail", userData?.email ?: "Laden...")
-                InfoRow("User ID", userData?.id ?: "Laden...")
-                InfoRow("Tuin ID", userData?.sharedGardenId ?: userData?.id ?: "Laden...")
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Surface(
+                        onClick = {
+                            tapCount++
+                            if (tapCount >= 5) {
+                                viewModel.devResetPremium()
+                                tapCount = 0
+                            }
+                        },
+                        color = Color.Transparent
+                    ) {
+                        TuinMaatLogo(modifier = Modifier.size(64.dp))
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("TuinMaat", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Versie $appVersion", style = MaterialTheme.typography.bodyMedium)
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Support", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                InfoRow("Copyright", "rvodevelopment")
-                InfoRow("Support", "rvanoel@etik.com")
+                    Text("${userData?.voornaam ?: ""} ${userData?.achternaam ?: ""}", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    InfoRow("E-mail", userData?.email ?: "Laden...")
+                    InfoRow("User ID", userData?.id ?: "Laden...")
+                    InfoRow("Tuin ID", userData?.sharedGardenId ?: userData?.id ?: "Laden...")
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Support", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    InfoRow("Copyright", "rvodevelopment")
+                    InfoRow("Support", "rvanoel@etik.com")
+                }
             }
         }
-    }
-}
-
-@Composable
-fun BulletPoint(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-        Icon(Icons.Default.Check, null, tint = DonkerGroen, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

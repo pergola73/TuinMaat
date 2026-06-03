@@ -1,5 +1,6 @@
 package com.rvodevelopment.tuinmaat.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.Park
@@ -32,6 +34,8 @@ import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.rvodevelopment.tuinmaat.getPlatform
+import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import org.jetbrains.compose.resources.painterResource
@@ -39,18 +43,12 @@ import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
 
 @Composable
 fun TuinMaatLogo(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.size(64.dp).neumorphicShadow(shape = CircleShape),
-        shape = CircleShape,
-        color = Color.White
-    ) {
-        Image(
-            painter = painterResource(Res.drawable.tuin_logo),
-            contentDescription = "TuinMaat Logo",
-            modifier = Modifier.fillMaxSize().padding(8.dp).clip(CircleShape),
-            contentScale = ContentScale.Fit
-        )
-    }
+    Image(
+        painter = painterResource(Res.drawable.tuin_logo),
+        contentDescription = "TuinMaat Logo",
+        modifier = modifier.size(64.dp).clip(RoundedCornerShape(12.dp)),
+        contentScale = ContentScale.Fit
+    )
 }
 
 @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
@@ -149,10 +147,10 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .height(64.dp),
+            .height(56.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.7f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DonkerGroen.copy(alpha = 0.1f))
+        color = Color(0xFFF5F5F0)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp),
@@ -179,3 +177,121 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun LocationChip(selected: Boolean, label: String, onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color.Transparent
+    ) {
+        FilterChip(
+            selected = selected,
+            onClick = onClick,
+            label = { Text(label) },
+            modifier = Modifier.height(40.dp),
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = DonkerGroen,
+                selectedLabelColor = Color(0xFFF5F5F0),
+                containerColor = Color(0xFFF5F5F0),
+                labelColor = DonkerGroen
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+                borderColor = Color.Transparent,
+                selectedBorderColor = Color.Transparent
+            )
+        )
+    }
+}
+
+@Composable
+fun BulletPoint(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Icon(Icons.Default.Check, null, tint = DonkerGroen, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+fun PremiumUpgradeDialog(
+    isPremium: Boolean,
+    isLaden: Boolean,
+    price: String,
+    onUpgrade: () -> Unit,
+    onRestore: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (isPremium) "Je bent Premium!" else "Upgrade naar Premium") },
+        text = {
+            Column {
+                Text("Met TuinMaat Premium geniet je van:")
+                Spacer(modifier = Modifier.height(8.dp))
+                BulletPoint("Geen advertenties")
+                BulletPoint("Onbeperkt aantal planten")
+                BulletPoint("Exclusieve tuintips")
+                
+                if (isLaden) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DonkerGroen)
+                } else if (isPremium) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Bedankt voor je steun!", fontWeight = FontWeight.Bold, color = DonkerGroen)
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Surface(
+                        color = DonkerGroen.copy(alpha = 0.05f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val platform = getPlatform()
+                        val promoText = if (platform == PlatformType.ANDROID) {
+                            "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bij de betaalmethoden van Google."
+                        } else {
+                            "Heb je een promotiecode? Wissel deze in via de App Store of via de link die je hebt ontvangen."
+                        }
+                        Text(
+                            promoText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = DonkerGroen,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (!isPremium) {
+                Button(
+                    onClick = onUpgrade,
+                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
+                ) {
+                    Text(
+                        text = "Nu upgraden ($price)",
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            } else {
+                Button(onClick = onDismiss) {
+                    Text("Sluiten")
+                }
+            }
+        },
+        dismissButton = {
+            if (!isPremium) {
+                Row {
+                    TextButton(onClick = onDismiss) {
+                        Text("Annuleren", color = Color.Gray)
+                    }
+                    TextButton(onClick = onRestore) {
+                        Text("Aankopen herstellen")
+                    }
+                }
+            }
+        }
+    )
+}
+

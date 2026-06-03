@@ -25,7 +25,8 @@ class PlantenLijstViewModel(
     private val authService: AuthService,
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
-    private val premiumService: PremiumService
+    private val premiumService: PremiumService,
+    private val selectionService: SelectionService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlantenLijstState())
@@ -34,6 +35,16 @@ class PlantenLijstViewModel(
     init {
         observeData()
         observePremium()
+        observeSelection()
+    }
+
+    private fun observeSelection() {
+        viewModelScope.launch {
+            selectionService.geselecteerdeLocatie.collect { locatie ->
+                _state.update { it.copy(geselecteerdeLocatie = locatie) }
+                updateFilteredList()
+            }
+        }
     }
 
     private fun observePremium() {
@@ -92,8 +103,7 @@ class PlantenLijstViewModel(
     }
 
     fun onLocatieSelectie(locatie: String) {
-        _state.update { it.copy(geselecteerdeLocatie = locatie) }
-        updateFilteredList()
+        selectionService.updateLocatie(locatie)
     }
 
     fun toggleZoekveld() {

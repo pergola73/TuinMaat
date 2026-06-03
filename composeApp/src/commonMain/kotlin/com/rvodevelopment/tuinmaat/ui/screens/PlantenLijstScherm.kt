@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.rvodevelopment.tuinmaat.ui.components.AdBanner
 import com.rvodevelopment.tuinmaat.ui.components.NativeAd
+import com.rvodevelopment.tuinmaat.ui.components.LocationChip
+import com.rvodevelopment.tuinmaat.ui.components.PlantKaart
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
@@ -57,18 +59,17 @@ fun PlantenLijstScherm(
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = state.tuinnaam,
+                        text = "Mijn Planten",
                         style = MaterialTheme.typography.headlineSmall,
                         color = DonkerGroen,
                         fontWeight = FontWeight.ExtraBold
                     )
-                    state.eigenaarNaam?.let { naam ->
-                        Text(
-                            text = "Tuin van $naam",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = DonkerGroen.copy(alpha = 0.7f)
-                        )
-                    }
+                    Text(
+                        text = state.tuinnaam,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DonkerGroen.copy(alpha = 0.7f),
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
                 }
                 IconButton(onClick = { viewModel.toggleZoekveld() }) {
                     Icon(
@@ -180,30 +181,4 @@ fun PlantenLijstScherm(
     }
 }
 
-@Composable
-fun LocationChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.neumorphicShadow(shape = RoundedCornerShape(10.dp)),
-        shape = RoundedCornerShape(10.dp),
-        color = Color.Transparent
-    ) {
-        FilterChip(
-            selected = selected,
-            onClick = onClick,
-            label = { Text(label) },
-            modifier = Modifier.height(40.dp),
-            colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = GrasGroen,
-                selectedLabelColor = Color.White,
-                containerColor = Color.White.copy(alpha = 0.6f),
-                labelColor = DonkerGroen
-            ),
-            border = FilterChipDefaults.filterChipBorder(
-                enabled = true,
-                selected = selected,
-                borderColor = Color.Transparent,
-                selectedBorderColor = Color.Transparent
-            )
-        )
-    }
-}
+
