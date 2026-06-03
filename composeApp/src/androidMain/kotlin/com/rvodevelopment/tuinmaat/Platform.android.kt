@@ -7,3 +7,4 @@ actual val appVersion: String = "2.0.0 (21)"
 // Gebruik hardcoded test-IDs als fallback als BuildConfig nog niet is bijgewerkt
 actual val admobNativeHomeId: String = "ca-app-pub-3940256099942544/2247696110"
 actual val admobNativeListId: String = "ca-app-pub-3940256099942544/2247696110"
+actual val admobBannerId: String = "ca-app-pub-3940256099942544/6300978111"

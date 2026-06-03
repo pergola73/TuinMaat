@@ -19,7 +19,7 @@ import platform.UIKit.UIView
 actual fun AdBanner(modifier: Modifier) {
     val factory = PlatformViewRegistry.bannerFactory
     if (factory != null) {
-        val bannerId = "ca-app-pub-3940256099942544/2934735716" // Test banner ID
+        val bannerId = com.rvodevelopment.tuinmaat.admobBannerId
         UIKitView(
             factory = { factory(bannerId) as UIView },
             modifier = modifier.fillMaxWidth().height(50.dp)

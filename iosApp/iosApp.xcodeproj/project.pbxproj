@@ -16,10 +16,12 @@
 		3674F5962FD0526600BFA4C7 /* PurchasesHybridCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5952FD0526600BFA4C7 /* PurchasesHybridCommon */; };
 		3674F5982FD0526600BFA4C7 /* PurchasesHybridCommonUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */; };
 		3674F59B2FD0550A00BFA4C7 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */; };
+		3674F59F2FD0786300BFA4C7 /* TuinMaat.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3674F59E2FD0786300BFA4C7 /* TuinMaat.storekit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		3674F5842FD0256C00BFA4C7 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		3674F59E2FD0786300BFA4C7 /* TuinMaat.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = TuinMaat.storekit; sourceTree = "<group>"; };
 		A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuinMaat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -88,6 +90,7 @@
 		B1224C5B42C15825F7943C4B = {
 			isa = PBXGroup;
 			children = (
+				3674F59E2FD0786300BFA4C7 /* TuinMaat.storekit */,
 				262BB509815C2FF0EC462D03 /* Configuration */,
 				5A872BC7F2FA5638247E8DC2 /* iosApp */,
 				2AEF1A6C2FAD383C00ACA43E /* Frameworks */,
@@ -173,6 +176,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3674F59F2FD0786300BFA4C7 /* TuinMaat.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

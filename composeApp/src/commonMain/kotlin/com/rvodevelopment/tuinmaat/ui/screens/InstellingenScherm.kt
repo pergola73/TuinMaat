@@ -129,7 +129,7 @@ fun InstellingenScherm(
 
     if (toonPremiumDialoog) {
         AlertDialog(
-            onDismissRequest = { /* No-op to fix unused variable warning */ },
+            onDismissRequest = { toonPremiumDialoog = false },
             title = { Text(if (isPremium) "Je bent Premium!" else "Upgrade naar Premium") },
             text = {
                 Column {
@@ -153,7 +153,7 @@ fun InstellingenScherm(
                         ) {
                             val platform = getPlatform()
                             val promoText = if (platform == PlatformType.ANDROID) {
-                                "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bei de betaalmethoden van Google."
+                                "Heb je een promotiecode? Klik op 'Nu upgraden' en kies 'Code inwisselen' bij de betaalmethoden van Google."
                             } else {
                                 "Heb je een promotiecode? Wissel deze in via de App Store of via de link die je hebt ontvangen."
                             }
@@ -186,8 +186,13 @@ fun InstellingenScherm(
             },
             dismissButton = {
                 if (!isPremium) {
-                    TextButton(onClick = { viewModel.restorePurchases() }) {
-                        Text("Aankopen herstellen")
+                    Row {
+                        TextButton(onClick = { toonPremiumDialoog = false }) {
+                            Text("Annuleren", color = Color.Gray)
+                        }
+                        TextButton(onClick = { viewModel.restorePurchases() }) {
+                            Text("Aankopen herstellen")
+                        }
                     }
                 }
             }
