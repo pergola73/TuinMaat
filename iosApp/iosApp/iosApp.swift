@@ -102,7 +102,7 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
             adView.trailingAnchor.constraint(equalTo: self.trailingAnchor)
         ])
 
-        // 1. Mandatory Ad Attribution (Gedaan zoals in de plantenlijst)
+        // 1. Mandatory Ad Attribution label
         let adBadge = UILabel()
         adBadge.text = " Ad "
         adBadge.font = .systemFont(ofSize: 10, weight: .bold)
@@ -114,14 +114,14 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         adView.addSubview(adBadge)
         adBadge.translatesAutoresizingMaskIntoConstraints = false
 
-        // 2. AdChoices (Verplicht)
+        // 2. AdChoices View (Mandatory)
         let adChoicesView = AdChoicesView()
         adChoicesView.isUserInteractionEnabled = false
         adView.addSubview(adChoicesView)
         adChoicesView.translatesAutoresizingMaskIntoConstraints = false
         adView.adChoicesView = adChoicesView
 
-        // 3. Icon
+        // 3. Icon View
         let iconView = UIImageView()
         iconView.contentMode = .scaleAspectFill
         iconView.layer.cornerRadius = 6
@@ -133,34 +133,43 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
 
         // 4. Headline (Mandatory)
         let headlineLabel = UILabel()
-        headlineLabel.font = .boldSystemFont(ofSize: 14)
+        headlineLabel.font = .boldSystemFont(ofSize: 15)
         headlineLabel.textColor = UIColor(red: 0.18, green: 0.49, blue: 0.20, alpha: 1.0)
         headlineLabel.isUserInteractionEnabled = false
         adView.addSubview(headlineLabel)
         headlineLabel.translatesAutoresizingMaskIntoConstraints = false
         adView.headlineView = headlineLabel
 
-        // 5. Media View (120pts)
+        // 5. Body View
+        let bodyLabel = UILabel()
+        bodyLabel.font = .systemFont(ofSize: 12)
+        bodyLabel.textColor = .darkGray
+        bodyLabel.numberOfLines = 1
+        bodyLabel.isUserInteractionEnabled = false
+        adView.addSubview(bodyLabel)
+        bodyLabel.translatesAutoresizingMaskIntoConstraints = false
+        adView.bodyView = bodyLabel
+
+        // 6. Media View (120pts height as requested)
         let mediaView = MediaView()
-        mediaView.isUserInteractionEnabled = true
+        mediaView.isUserInteractionEnabled = true // Required for media interaction
         adView.addSubview(mediaView)
         mediaView.translatesAutoresizingMaskIntoConstraints = false
         adView.mediaView = mediaView
 
-        // 6. CTA Button (Mandatory)
+        // 7. CTA Button (Mandatory)
         let ctaButton = UIButton()
         ctaButton.backgroundColor = UIColor(red: 0.48, green: 0.65, blue: 0.36, alpha: 1.0)
         ctaButton.setTitleColor(.white, for: .normal)
-        ctaButton.titleLabel?.font = .boldSystemFont(ofSize: 13)
+        ctaButton.titleLabel?.font = .boldSystemFont(ofSize: 14)
         ctaButton.layer.cornerRadius = 8
         ctaButton.isUserInteractionEnabled = false
         adView.addSubview(ctaButton)
         ctaButton.translatesAutoresizingMaskIntoConstraints = false
         adView.callToActionView = ctaButton
 
-        // Layout die precies de 'foutloze' indeling volgt maar met media
+        // Layout Constraints for Medium
         NSLayoutConstraint.activate([
-            // Bovenste rij: Badge en AdChoices (ruimte ertussen laten)
             adBadge.topAnchor.constraint(equalTo: adView.topAnchor, constant: 8),
             adBadge.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 8),
 
@@ -169,32 +178,34 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
             adChoicesView.widthAnchor.constraint(equalToConstant: 20),
             adChoicesView.heightAnchor.constraint(equalToConstant: 20),
 
-            // Tweede rij: Icon en Headline
             iconView.topAnchor.constraint(equalTo: adBadge.bottomAnchor, constant: 6),
             iconView.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 8),
             iconView.widthAnchor.constraint(equalToConstant: 32),
             iconView.heightAnchor.constraint(equalToConstant: 32),
 
-            headlineLabel.centerYAnchor.constraint(equalTo: iconView.centerYAnchor),
-            headlineLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 10),
+            headlineLabel.topAnchor.constraint(equalTo: adBadge.topAnchor),
+            headlineLabel.leadingAnchor.constraint(equalTo: adBadge.trailingAnchor, constant: 8),
             headlineLabel.trailingAnchor.constraint(equalTo: adChoicesView.leadingAnchor, constant: -8),
 
-            // Derde rij: MediaView
+            bodyLabel.topAnchor.constraint(equalTo: headlineLabel.bottomAnchor, constant: 2),
+            bodyLabel.leadingAnchor.constraint(equalTo: headlineLabel.leadingAnchor),
+            bodyLabel.trailingAnchor.constraint(equalTo: headlineLabel.trailingAnchor),
+
             mediaView.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 8),
             mediaView.leadingAnchor.constraint(equalTo: adView.leadingAnchor),
             mediaView.trailingAnchor.constraint(equalTo: adView.trailingAnchor),
             mediaView.heightAnchor.constraint(equalToConstant: 120),
 
-            // Onderste rij: CTA
             ctaButton.topAnchor.constraint(equalTo: mediaView.bottomAnchor, constant: 10),
             ctaButton.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 12),
             ctaButton.trailingAnchor.constraint(equalTo: adView.trailingAnchor, constant: -12),
             ctaButton.bottomAnchor.constraint(equalTo: adView.bottomAnchor, constant: -10),
-            ctaButton.heightAnchor.constraint(equalToConstant: 36)
+            ctaButton.heightAnchor.constraint(equalToConstant: 38)
         ])
 
-        // Assign data
+        // Assign content
         (adView.headlineView as? UILabel)?.text = nativeAd.headline
+        (adView.bodyView as? UILabel)?.text = nativeAd.body
         (adView.callToActionView as? UIButton)?.setTitle(nativeAd.callToAction, for: .normal)
         iconView.image = nativeAd.icon?.image
 

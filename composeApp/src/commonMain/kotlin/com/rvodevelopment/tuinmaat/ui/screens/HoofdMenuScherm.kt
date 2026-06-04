@@ -248,7 +248,6 @@ fun HoofdMenuScherm(
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
-
                 if (!state.isPremium) {
                     Spacer(modifier = Modifier.height(16.dp))
                     NativeAd(
