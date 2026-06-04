@@ -7,14 +7,8 @@ import dev.gitlive.firebase.storage.StorageReference
 // Unieke naam om conflicten met platform-specifieke SDK's te voorkomen
 expect suspend fun StorageReference.performByteArrayUpload(bytes: ByteArray)
 
-class FirebaseStorageService : StorageService {
+class FirebaseStorageService : ImageStorageService {
     private val storage = Firebase.storage
-
-    override fun getString(key: String, defaultValue: String): String = ""
-    override fun setString(key: String, value: String) {}
-    override fun getBoolean(key: String, defaultValue: Boolean): Boolean = false
-    override fun setBoolean(key: String, value: Boolean) {}
-    override fun remove(key: String) {}
 
     override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
         return try {

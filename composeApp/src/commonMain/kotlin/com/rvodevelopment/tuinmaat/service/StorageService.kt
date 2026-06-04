@@ -6,5 +6,4 @@ interface StorageService {
     fun getBoolean(key: String, defaultValue: Boolean = false): Boolean
     fun setBoolean(key: String, value: Boolean)
     fun remove(key: String)
-    suspend fun uploadFile(path: String, bytes: ByteArray): Result<String>
 }

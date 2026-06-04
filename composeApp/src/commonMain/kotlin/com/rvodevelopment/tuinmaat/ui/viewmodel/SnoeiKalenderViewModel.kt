@@ -23,13 +23,15 @@ data class SnoeiKalenderState(
     val geselecteerdeLocatie: String = "Alle",
     val tuinnaam: String = "Laden...",
     val eigenaarNaam: String? = null,
+    val isPremium: Boolean = false
 )
 
 class SnoeiKalenderViewModel(
     private val tuinRepository: TuinRepository,
     private val userRepository: UserRepository,
     private val authService: AuthService,
-    private val selectionService: SelectionService
+    private val selectionService: SelectionService,
+    private val premiumService: com.rvodevelopment.tuinmaat.service.PremiumService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SnoeiKalenderState())
@@ -41,6 +43,15 @@ class SnoeiKalenderViewModel(
     init {
         loadData()
         observeSelection()
+        observePremium()
+    }
+
+    private fun observePremium() {
+        viewModelScope.launch {
+            premiumService.isPremium.collect { isPremium ->
+                _state.update { it.copy(isPremium = isPremium) }
+            }
+        }
     }
 
     private fun observeSelection() {

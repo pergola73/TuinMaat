@@ -13,6 +13,7 @@ import com.rvodevelopment.tuinmaat.service.AiService
 import com.rvodevelopment.tuinmaat.service.AuthService
 import com.rvodevelopment.tuinmaat.service.MediaService
 import com.rvodevelopment.tuinmaat.service.StorageService
+import com.rvodevelopment.tuinmaat.service.ImageStorageService
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -44,6 +45,7 @@ class PlantToevoegenViewModel(
     private val tuinRepository: TuinRepository,
     private val aiService: AiService,
     private val storageService: StorageService,
+    private val imageStorageService: ImageStorageService,
     private val mediaService: MediaService,
     private val client: HttpClient,
     private val plantId: String?
@@ -232,7 +234,7 @@ class PlantToevoegenViewModel(
             if (imageBytes != null) {
                 val timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
                 val path = "planten/${profile.uid}_$timestamp.jpg"
-                val uploadResult = storageService.uploadFile(path, imageBytes)
+                val uploadResult = imageStorageService.uploadFile(path, imageBytes)
                 uploadResult.onSuccess { url ->
                     plantToSave = plantToSave.copy(fotoUri = url)
                 }.onFailure { e ->

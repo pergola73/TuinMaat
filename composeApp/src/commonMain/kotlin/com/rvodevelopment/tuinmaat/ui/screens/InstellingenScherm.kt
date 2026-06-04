@@ -25,6 +25,7 @@ import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
 import com.rvodevelopment.tuinmaat.ui.components.BulletPoint
+import com.rvodevelopment.tuinmaat.ui.components.NativeAd
 import com.rvodevelopment.tuinmaat.ui.components.PremiumUpgradeDialog
 import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
 import com.rvodevelopment.tuinmaat.appVersion
@@ -95,6 +96,14 @@ fun InstellingenScherm(
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    NativeAd(
+                        adUnitId = com.rvodevelopment.tuinmaat.admobNativeInstellingenId,
+                        modifier = Modifier.fillMaxWidth(),
+                        isMedium = true
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 } else {
                     InstellingItem("Premium Status: Actief", Icons.Default.Verified) { toonPremiumDialoog = true }
                 }

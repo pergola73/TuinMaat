@@ -14,7 +14,7 @@ class MockAuthService : AuthService {
     override suspend fun sendEmailVerification() = Result.success(Unit)
 }
 
-class MockStorageService : StorageService {
+class MockStorageService : StorageService, ImageStorageService {
     override fun getString(key: String, defaultValue: String) = ""
     override fun setString(key: String, value: String) {}
     override fun getBoolean(key: String, defaultValue: Boolean) = false

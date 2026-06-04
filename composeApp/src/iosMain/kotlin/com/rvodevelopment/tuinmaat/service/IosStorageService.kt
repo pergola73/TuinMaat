@@ -24,8 +24,4 @@ class IosStorageService : StorageService {
     override fun remove(key: String) {
         defaults.removeObjectForKey(key)
     }
-    
-    override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
-        return Result.failure(Exception("iOS Local Storage upload niet geïmplementeerd"))
-    }
 }

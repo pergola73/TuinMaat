@@ -250,9 +250,11 @@ fun HoofdMenuScherm(
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
 
                 if (!state.isPremium) {
+                    Spacer(modifier = Modifier.height(16.dp))
                     NativeAd(
                         adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        isMedium = true
                     )
                 }
             }

@@ -8,5 +8,5 @@ import androidx.compose.ui.Modifier
  */
 object PlatformViewRegistry {
     var bannerFactory: ((String) -> Any)? = null
-    var nativeAdFactory: ((String) -> Any)? = null
+    var nativeAdFactory: ((String, Boolean) -> Any)? = null
 }

@@ -20,8 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.ui.components.LocationChip
+import com.rvodevelopment.tuinmaat.ui.components.NativeAd
 import com.rvodevelopment.tuinmaat.ui.components.PlantKaart
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.SnoeiKalenderViewModel
@@ -102,6 +104,7 @@ fun SnoeiKalenderScherm(
                 state = listState,
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
+                var totaalPlantenTeler = 0
                 // We lopen door de 12 maanden heen, beginnend bij de huidige
                 gesorteerdeMaanden.forEach { maandNaam ->
                     val plantenVoorMaand = state.gefilterdePlanten.filter { it.snoeiMaand.contains(maandNaam, ignoreCase = true) }
@@ -113,7 +116,7 @@ fun SnoeiKalenderScherm(
                                     .fillMaxWidth()
                                     .padding(horizontal = 24.dp, vertical = 8.dp)
                                     .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
-                                color = DonkerGroen,
+                                color = GrasGroen,
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
@@ -126,11 +129,24 @@ fun SnoeiKalenderScherm(
                             }
                         }
 
-                        items(items = plantenVoorMaand, key = { "${it.firestoreId}-$maandNaam" }) { plant ->
-                            Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
-                                PlantKaart(plant, onNavigateToDetail = {
-                                    navController.navigate("detail/${plant.firestoreId}")
-                                })
+                        itemsIndexed(items = plantenVoorMaand, key = { _, plant -> "${plant.firestoreId}-$maandNaam" }) { _, plant ->
+                            totaalPlantenTeler++
+                            Column {
+                                Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
+                                    PlantKaart(plant, onNavigateToDetail = {
+                                        navController.navigate("detail/${plant.firestoreId}")
+                                    })
+                                }
+
+                                if (!state.isPremium && totaalPlantenTeler == 3) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    NativeAd(
+                                        adUnitId = com.rvodevelopment.tuinmaat.admobNativeSnoeiId,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                        isMedium = true
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
                             }
                         }
 

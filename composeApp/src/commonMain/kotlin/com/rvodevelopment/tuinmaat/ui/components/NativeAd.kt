@@ -4,4 +4,4 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-expect fun NativeAd(adUnitId: String, modifier: Modifier = Modifier)
+expect fun NativeAd(adUnitId: String, modifier: Modifier = Modifier, isMedium: Boolean = true)

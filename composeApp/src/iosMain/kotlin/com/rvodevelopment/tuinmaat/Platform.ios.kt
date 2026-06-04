@@ -12,4 +12,6 @@ actual val appVersion: String = run {
 
 actual val admobNativeHomeId: String = "ca-app-pub-8227056273089055/1599222975"
 actual val admobNativeListId: String = "ca-app-pub-8227056273089055/4967777875"
+actual val admobNativeSnoeiId: String = "ca-app-pub-8227056273089055/5512672970"
+actual val admobNativeInstellingenId: String = "ca-app-pub-8227056273089055/8750574781"
 actual val admobBannerId: String = "ca-app-pub-3940256099942544/2934735716" // Test ID
