@@ -265,8 +265,8 @@ fun InfoScherm(
             }
 
             Card(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.7f)),
+                modifier = Modifier.padding(16.dp).fillMaxWidth().neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -285,10 +285,10 @@ fun InfoScherm(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("TuinMaat", style = MaterialTheme.typography.headlineSmall, color = DonkerGroen, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Versie $appVersion", style = MaterialTheme.typography.bodyMedium)
+                    Text("Versie $appVersion", style = MaterialTheme.typography.bodyMedium, color = DonkerGroen.copy(alpha = 0.7f))
                     
                     Spacer(modifier = Modifier.height(24.dp))
-                    HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+                    HorizontalDivider(color = DonkerGroen.copy(alpha = 0.2f), thickness = 1.dp)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text("${userData?.voornaam ?: ""} ${userData?.achternaam ?: ""}", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
@@ -299,7 +299,7 @@ fun InfoScherm(
                     InfoRow("Tuin ID", userData?.sharedGardenId ?: userData?.id ?: "Laden...")
                     
                     Spacer(modifier = Modifier.height(24.dp))
-                    HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+                    HorizontalDivider(color = DonkerGroen.copy(alpha = 0.2f), thickness = 1.dp)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text("Support", style = MaterialTheme.typography.titleMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
@@ -315,7 +315,7 @@ fun InfoScherm(
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = DonkerGroen.copy(alpha = 0.5f))
+        Text(value, style = MaterialTheme.typography.bodySmall, color = DonkerGroen, fontWeight = FontWeight.Medium)
     }
 }

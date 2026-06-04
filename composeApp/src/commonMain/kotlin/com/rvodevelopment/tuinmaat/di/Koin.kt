@@ -62,7 +62,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
         }
     }
     single { MessageService() }
-    single { SelectionService() }
+    single { SelectionService(get()) }
     single<PremiumService> { DefaultPremiumService() }
     single<BillingService> { RevenueCatService(get(), get(named("REVENUECAT_API_KEY"))) }
     single { DeepLinkHandler(get(), get(), get()) }
@@ -93,13 +93,13 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
         mediaService = get()
     ) }
 
-    factory { LoginViewModel(get(), get(), get(), get()) }
+    factory { LoginViewModel(get(), get(), get(), get(), get()) }
     factory { HoofdMenuViewModel(get(), get(), get(), get(), get(), get()) }
     factory { PlantenLijstViewModel(get(), get(), get(), get(), get()) }
     factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), get(), get(), plantId) }
-    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get(), get(), get()) }
-    factory { InstellingenViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { InstellingenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
 expect fun platformModule(): Module

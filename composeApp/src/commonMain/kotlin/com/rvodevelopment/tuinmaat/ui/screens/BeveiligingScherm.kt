@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.rvodevelopment.tuinmaat.getPlatform
+import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
@@ -31,6 +33,8 @@ fun BeveiligingScherm(
     val isBiometrieIngeschakeld = userData?.biometrieIngeschakeld ?: false
     val isBiometrieBeschikbaar by viewModel.isBiometrieBeschikbaar.collectAsState()
     val isLaden by viewModel.isLaden.collectAsState()
+    val platform = getPlatform()
+    val biometrieNaam = if (platform == PlatformType.IOS) "FaceID" else "Biometrische beveiliging"
 
     Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
@@ -48,7 +52,7 @@ fun BeveiligingScherm(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        "Biometrische beveiliging",
+                        biometrieNaam,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,

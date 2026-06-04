@@ -194,14 +194,15 @@ fun PlantDetailScherm(
                         modifier = Modifier
                             .align(Alignment.CenterStart)
                             .padding(start = 8.dp)
+                            .offset(y = 120.dp) // Nog lager geplaatst om over tekst te voorkomen
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.3f), CircleShape),
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.ChevronLeft,
                             contentDescription = "Vorige",
-                            tint = DonkerGroen.copy(alpha = 0.5f),
+                            tint = DonkerGroen,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -213,14 +214,15 @@ fun PlantDetailScherm(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .padding(end = 8.dp)
+                            .offset(y = 120.dp) // Nog lager geplaatst om over tekst te voorkomen
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.3f), CircleShape),
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.ChevronRight,
                             contentDescription = "Volgende",
-                            tint = DonkerGroen.copy(alpha = 0.5f),
+                            tint = DonkerGroen,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -231,8 +233,8 @@ fun PlantDetailScherm(
         if (state.toonBeheerLocatiesTip) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissBeheerLocatiesTip() },
-                title = { Text("Locaties beheren 🏠") },
-                text = { Text("Wist je dat je via 'Instellingen' zelf locaties kunt toevoegen of wijzigen? Zo kun je bijvoorbeeld ook makkelijk je kamerplanten bijhouden!") },
+                title = { Text("Locaties beheren 🏠", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                text = { Text("Wist je dat je via 'Instellingen' zelf locaties kunt toevoegen of wijzigen? Zo kun je bijvoorbeeld ook makkelijk je kamerplanten bijhouden!", color = Color.Black) },
                 confirmButton = {
                     Button(onClick = { 
                         viewModel.dismissBeheerLocatiesTip()
@@ -254,8 +256,8 @@ fun PlantDetailScherm(
         if (state.toonSnoeiKalenderTip) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissSnoeiKalenderTip() },
-                title = { Text("Snoeikalender ✂️") },
-                text = { Text("Via de snoeikalender zie je snel en makkelijk welke planten in welke maand gesnoeid moeten worden. Zo vergeet je nooit meer een snoeibeurt!") },
+                title = { Text("Snoeikalender ✂️", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                text = { Text("Via de snoeikalender zie je snel en makkelijk welke planten in welke maand gesnoeid moeten worden. Zo vergeet je nooit meer een snoeibeurt!", color = Color.Black) },
                 confirmButton = {
                     Button(onClick = { 
                         viewModel.dismissSnoeiKalenderTip()

@@ -24,6 +24,14 @@ class FirebaseAuthService : AuthService {
         return try {
             val result = auth.signInWithEmailAndPassword(email, wachtwoord)
             val user = result.user ?: throw Exception("Inloggen mislukt")
+            
+            // Sync email naar Firestore als deze ontbreekt
+            try {
+                firestore.collection("users").document(user.uid).set(mapOf("email" to (user.email ?: email)), merge = true)
+            } catch (e: Exception) {
+                println("FirebaseAuthService: Kon email niet syncen naar Firestore: ${e.message}")
+            }
+
             Result.success(UserProfile(user.uid, user.email, null, null))
         } catch (e: Exception) {
             Result.failure(e)

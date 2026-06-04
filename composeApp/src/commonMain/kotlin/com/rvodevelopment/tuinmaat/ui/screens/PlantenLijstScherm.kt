@@ -135,17 +135,32 @@ fun PlantenLijstScherm(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Lijst met planten
-            if (state.gefilterdePlanten.isNotEmpty()) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    itemsIndexed(state.gefilterdePlanten) { index, plant ->
-                        Column {
-                            PlantKaart(plant, onNavigateToDetail)
-                            
-                            if (!state.isPremium && (index == 2)) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (state.gefilterdePlanten.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        itemsIndexed(state.gefilterdePlanten) { index, plant ->
+                            Column {
+                                PlantKaart(plant, onNavigateToDetail)
+                                
+                                if (!state.isPremium && (index == 2)) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    NativeAd(
+                                        adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        isMedium = true
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                            }
+                        }
+                        
+                        // Als er minder dan 3 planten zijn, toon de ad aan het eind van de lijst
+                        if (!state.isPremium && state.gefilterdePlanten.size < 3) {
+                            item {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 NativeAd(
                                     adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId,
@@ -156,10 +171,12 @@ fun PlantenLijstScherm(
                             }
                         }
                     }
-                }
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
                             if (state.planten.isEmpty()) "Je hebt nog geen planten." else "Niets gevonden.",
                             color = DonkerGroen.copy(alpha = 0.5f)
@@ -176,6 +193,16 @@ fun PlantenLijstScherm(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("Voeg nu je eerste plant toe!", fontWeight = FontWeight.Bold)
                             }
+                        }
+                        
+                        // Altijd een ad tonen, ook bij lege lijst
+                        if (!state.isPremium) {
+                            Spacer(modifier = Modifier.height(32.dp))
+                            NativeAd(
+                                adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                isMedium = true
+                            )
                         }
                     }
                 }

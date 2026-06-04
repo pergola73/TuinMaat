@@ -47,6 +47,7 @@ class PlantToevoegenViewModel(
     private val storageService: StorageService,
     private val imageStorageService: ImageStorageService,
     private val mediaService: MediaService,
+    private val selectionService: com.rvodevelopment.tuinmaat.service.SelectionService,
     private val client: HttpClient,
     private val plantId: String?
 ) : ViewModel() {
@@ -279,6 +280,7 @@ class PlantToevoegenViewModel(
 
     fun pickImage() {
         viewModelScope.launch {
+            selectionService.markeerSysteemActie()
             mediaService.pickImage()?.let { bytes ->
                 _state.update { it.copy(selectedImageBytes = bytes) }
                 identifyPlant(bytes)
@@ -289,6 +291,7 @@ class PlantToevoegenViewModel(
     fun takePhoto() {
         viewModelScope.launch {
             if (mediaService.requestCameraPermission()) {
+                selectionService.markeerSysteemActie()
                 mediaService.takePhoto()?.let { bytes ->
                     _state.update { it.copy(selectedImageBytes = bytes) }
                     identifyPlant(bytes)

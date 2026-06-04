@@ -76,18 +76,16 @@ class HoofdMenuViewModel(
                                 actieveGid = activeGid
                             ) }
 
-                            if (isEigenTuin) {
-                                _state.update { it.copy(
-                                    tuinnaam = userData.tuinnaam,
-                                    eigenaarNaam = null
-                                ) }
-                            } else {
-                                // Fetch details van de gedeelde tuin
-                                launch {
-                                    tuinRepository.getTuinnaam(activeGid).collect { naam ->
-                                        _state.update { it.copy(tuinnaam = naam) }
-                                    }
+                            // Fetch altijd de tuinnaam uit de 'tuinen' collectie voor consistentie
+                            launch {
+                                tuinRepository.getTuinnaam(activeGid).collect { naam ->
+                                    _state.update { it.copy(tuinnaam = naam) }
                                 }
+                            }
+
+                            if (isEigenTuin) {
+                                _state.update { it.copy(eigenaarNaam = null) }
+                            } else {
                                 launch {
                                     userRepository.getUserData(activeGid).collect { ownerData ->
                                         _state.update { it.copy(eigenaarNaam = ownerData?.voornaam) }

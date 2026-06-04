@@ -35,6 +35,7 @@ fun ProfielBewerkenScherm(
     var voornaam by remember(userData) { mutableStateOf(userData?.voornaam ?: "") }
     var achternaam by remember(userData) { mutableStateOf(userData?.achternaam ?: "") }
     var tuinnaam by remember(userData) { mutableStateOf(userData?.tuinnaam ?: "") }
+    var email by remember(userData) { mutableStateOf(userData?.email ?: "") }
     val isLaden by viewModel.isLaden.collectAsState()
 
     TuinAchtergrond {
@@ -47,6 +48,22 @@ fun ProfielBewerkenScherm(
             }
 
             Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("E-mailadres", color = DonkerGroen) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = DonkerGroen,
+                        unfocusedTextColor = DonkerGroen,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = DonkerGroen,
+                        unfocusedBorderColor = DonkerGroen.copy(alpha = 0.5f)
+                    )
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = voornaam,
                     onValueChange = { voornaam = it },
@@ -99,7 +116,7 @@ fun ProfielBewerkenScherm(
 
                 Button(
                     onClick = {
-                        viewModel.updateProfile(voornaam, achternaam, tuinnaam)
+                        viewModel.updateProfile(voornaam, achternaam, tuinnaam, email)
                         navController.popBackStack()
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),

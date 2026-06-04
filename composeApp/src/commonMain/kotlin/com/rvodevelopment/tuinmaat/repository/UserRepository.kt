@@ -25,7 +25,7 @@ data class UserData(
 interface UserRepository {
     fun getUserData(uid: String): Flow<UserData?>
     suspend fun updateSharedGardenId(uid: String, sharedGardenId: String?): Result<Unit>
-    suspend fun updateProfile(uid: String, voornaam: String, achternaam: String, tuinnaam: String): Result<Unit>
+    suspend fun updateProfile(uid: String, voornaam: String, achternaam: String, tuinnaam: String, email: String): Result<Unit>
     suspend fun updateBiometrie(uid: String, ingeschakeld: Boolean): Result<Unit>
     suspend fun updateLocaties(uid: String, locaties: List<String>, standaardLocatie: String): Result<Unit>
     suspend fun unlinkGarden(uid: String): Result<Unit>

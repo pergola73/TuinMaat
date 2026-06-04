@@ -104,53 +104,88 @@ fun SnoeiKalenderScherm(
                 state = listState,
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
-                var totaalPlantenTeler = 0
-                // We lopen door de 12 maanden heen, beginnend bij de huidige
-                gesorteerdeMaanden.forEach { maandNaam ->
-                    val plantenVoorMaand = state.gefilterdePlanten.filter { it.snoeiMaand.contains(maandNaam, ignoreCase = true) }
+                // Bereken of we de ad al hebben getoond
+                val totaalAantalPlanten = state.gefilterdePlanten.size
+                var plantenTeller = 0
+                var adGetoond = false
 
-                    if (plantenVoorMaand.isNotEmpty()) {
-                        stickyHeader(key = maandNaam) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 8.dp)
-                                    .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
-                                color = GrasGroen,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
+                if (totaalAantalPlanten == 0) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillParentMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = if (maandNaam == maanden[huidigMaandIndex]) "$maandNaam (Nu)" else maandNaam,
-                                    modifier = Modifier.padding(16.dp, 10.dp),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color(0xFFF5F5F0),
-                                    fontWeight = FontWeight.Bold
+                                    "Geen planten om te snoeien in deze selectie.",
+                                    color = DonkerGroen.copy(alpha = 0.5f)
                                 )
-                            }
-                        }
-
-                        itemsIndexed(items = plantenVoorMaand, key = { _, plant -> "${plant.firestoreId}-$maandNaam" }) { _, plant ->
-                            totaalPlantenTeler++
-                            Column {
-                                Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
-                                    PlantKaart(plant, onNavigateToDetail = {
-                                        navController.navigate("detail/${plant.firestoreId}")
-                                    })
-                                }
-
-                                if (!state.isPremium && totaalPlantenTeler == 3) {
-                                    Spacer(modifier = Modifier.height(16.dp))
+                                
+                                if (!state.isPremium) {
+                                    Spacer(modifier = Modifier.height(32.dp))
                                     NativeAd(
                                         adUnitId = com.rvodevelopment.tuinmaat.admobNativeSnoeiId,
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                                         isMedium = true
                                     )
-                                    Spacer(modifier = Modifier.height(16.dp))
                                 }
                             }
                         }
+                    }
+                } else {
+                    // We lopen door de 12 maanden heen, beginnend bij de huidige
+                    gesorteerdeMaanden.forEach { maandNaam ->
+                        val plantenVoorMaand = state.gefilterdePlanten.filter { it.snoeiMaand.contains(maandNaam, ignoreCase = true) }
 
-                        item { Spacer(modifier = Modifier.height(16.dp)) }
+                        if (plantenVoorMaand.isNotEmpty()) {
+                            stickyHeader(key = maandNaam) {
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                                        .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
+                                    color = GrasGroen,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        text = if (maandNaam == maanden[huidigMaandIndex]) "$maandNaam (Nu)" else maandNaam,
+                                        modifier = Modifier.padding(16.dp, 10.dp),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color(0xFFF5F5F0),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            itemsIndexed(items = plantenVoorMaand, key = { _, plant -> "${plant.firestoreId}-$maandNaam" }) { _, plant ->
+                                plantenTeller++
+                                val toonAdHier = !state.isPremium && (
+                                    (plantenTeller == 3) || 
+                                    (totaalAantalPlanten < 3 && plantenTeller == totaalAantalPlanten && !adGetoond)
+                                )
+                                
+                                Column {
+                                    Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)) {
+                                        PlantKaart(plant, onNavigateToDetail = {
+                                            navController.navigate("detail/${plant.firestoreId}")
+                                        })
+                                    }
+
+                                    if (toonAdHier) {
+                                        adGetoond = true
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        NativeAd(
+                                            adUnitId = com.rvodevelopment.tuinmaat.admobNativeSnoeiId,
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                            isMedium = true
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                    }
+                                }
+                            }
+
+                            item { Spacer(modifier = Modifier.height(16.dp)) }
+                        }
                     }
                 }
             }

@@ -13,6 +13,7 @@ class LoginViewModel(
     private val authService: AuthService,
     private val biometricService: BiometricService,
     private val storageService: StorageService,
+    private val selectionService: com.rvodevelopment.tuinmaat.service.SelectionService,
     private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository
 ) : ViewModel() {
 
@@ -145,6 +146,8 @@ class LoginViewModel(
     fun loginWithGoogle(onSuccess: () -> Unit) {
         viewModelScope.launch {
             _isLaden.value = true
+            // Gebruik de persistentie vlag zodat we niet vergrendelen bij terugkeer van Google
+            selectionService.markeerSysteemActie()
             authService.signInWithGoogle()
                 .onSuccess { profile ->
                     // Migreer data na inloggen

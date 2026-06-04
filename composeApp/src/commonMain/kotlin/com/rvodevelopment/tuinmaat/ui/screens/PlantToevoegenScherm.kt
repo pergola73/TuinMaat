@@ -27,6 +27,7 @@ import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
+import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantToevoegenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalComposeUiApi::class)
@@ -62,60 +63,80 @@ fun PlantToevoegenScherm(
             containerColor = Color.Transparent,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
-                TopAppBar(
-                    title = { 
-                        Column {
-                            Text(if (state.plant.firestoreId.isNotEmpty()) "Plant Bewerken" else "Plant Toevoegen", color = DonkerGroen, fontWeight = FontWeight.Bold)
-                            state.eigenaarNaam?.let { naam ->
-                                Text("In tuin van $naam", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.6f))
+                Surface(
+                    color = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TopAppBar(
+                        title = { 
+                            Column {
+                                Text(if (state.plant.firestoreId.isNotEmpty()) "Plant Bewerken" else "Plant Toevoegen", color = DonkerGroen, fontWeight = FontWeight.Bold)
+                                state.eigenaarNaam?.let { naam ->
+                                    Text("In tuin van $naam", style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.6f))
+                                }
                             }
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) { 
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    )
+                }
             },
             bottomBar = {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    color = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
-                    // Opslaan knop (links)
-                    FilledIconButton(
-                        onClick = { viewModel.savePlant { onSaveSuccess() } },
-                        modifier = Modifier.size(56.dp),
-                        enabled = state.plant.naam.isNotBlank() && !state.isLaden,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = DonkerGroen.copy(alpha = 0.7f),
-                            contentColor = Color.White
-                        ),
-                        shape = CircleShape
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (state.isLaden) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Save, contentDescription = "Opslaan")
-                        }
-                    }
-
-                    // Verwijder knop (rechts, alleen bij bewerken)
-                    if (state.plant.firestoreId.isNotEmpty()) {
-                        FilledIconButton(
-                            onClick = { showDeleteConfirm = true },
-                            modifier = Modifier.size(56.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = DonkerGroen.copy(alpha = 0.7f),
-                                contentColor = Color.White
-                            ),
-                            shape = CircleShape
+                        // Opslaan knop
+                        Surface(
+                            onClick = { if (state.plant.naam.isNotBlank() && !state.isLaden) viewModel.savePlant { onSaveSuccess() } },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                                .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFF5F5F0), // Lichte achtergrond conform menu knoppen
+                            contentColor = DonkerGroen
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Verwijderen")
+                            Box(contentAlignment = Alignment.Center) {
+                                if (state.isLaden) {
+                                    CircularProgressIndicator(color = DonkerGroen, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(
+                                        Icons.Default.Save, 
+                                        contentDescription = "Opslaan",
+                                        modifier = Modifier.size(36.dp),
+                                        tint = if (state.plant.naam.isNotBlank()) DonkerGroen else DonkerGroen.copy(alpha = 0.3f)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Verwijder knop (alleen bij bewerken)
+                        if (state.plant.firestoreId.isNotEmpty()) {
+                            Surface(
+                                onClick = { showDeleteConfirm = true },
+                                modifier = Modifier.size(56.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFFFFEBEE), // Heel licht rood
+                                contentColor = Color.Red
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Verwijderen")
+                                }
+                            }
                         }
                     }
                 }
@@ -154,8 +175,8 @@ fun PlantToevoegenScherm(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Plant herkennen...", color = DonkerGroen)
                         } else {
-                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
-                            Text("Tik om foto toe te voegen", color = Color.Gray, style = MaterialTheme.typography.labelMedium)
+                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(48.dp), tint = DonkerGroen.copy(alpha = 0.4f))
+                            Text("Tik om foto toe te voegen", color = DonkerGroen.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -170,7 +191,7 @@ fun PlantToevoegenScherm(
                     FilledIconButton(
                         onClick = { viewModel.takePhoto() },
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = DonkerGroen.copy(alpha = 0.7f),
+                            containerColor = DonkerGroen,
                             contentColor = Color.White
                         )
                     ) {
@@ -179,7 +200,7 @@ fun PlantToevoegenScherm(
                     FilledIconButton(
                         onClick = { viewModel.pickImage() },
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = DonkerGroen.copy(alpha = 0.7f),
+                            containerColor = DonkerGroen,
                             contentColor = Color.White
                         )
                     ) {
@@ -306,6 +327,8 @@ fun PlantToevoegenScherm(
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
                                 focusedBorderColor = DonkerGroen,
@@ -353,7 +376,9 @@ fun PlantToevoegenScherm(
                             label = { Text(maand) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = GrasGroen,
-                                selectedLabelColor = Color.White
+                                selectedLabelColor = Color.White,
+                                labelColor = DonkerGroen,
+                                iconColor = DonkerGroen
                             )
                         )
                     }
@@ -373,8 +398,8 @@ fun PlantToevoegenScherm(
         if (showDeleteConfirm) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirm = false },
-                title = { Text("Plant Verwijderen") },
-                text = { Text("Weet je zeker dat je '${state.plant.naam}' wilt verwijderen? Dit kan niet ongedaan worden gemaakt.") },
+                title = { Text("Plant Verwijderen", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                text = { Text("Weet je zeker dat je '${state.plant.naam}' wilt verwijderen? Dit kan niet ongedaan worden gemaakt.", color = Color.Black) },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -399,8 +424,8 @@ fun PlantToevoegenScherm(
         if (state.toonEersteTip) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissEersteTip() },
-                title = { Text("Welkom bij TuinMaat! 🌱") },
-                text = { Text("Wist je dat je alleen maar een foto hoeft te maken van je plant? De AI vult daarna automatisch alle gegevens voor je in. Super handig toch?") },
+                title = { Text("Welkom bij TuinMaat! 🌱", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                text = { Text("Wist je dat je alleen maar een foto hoeft te maken van je plant? De AI vult daarna automatisch alle gegevens voor je in. Super handig toch?", color = Color.Black) },
                 confirmButton = {
                     Button(onClick = { viewModel.dismissEersteTip() }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
                         Text("Top, ga ik doen!")
@@ -414,8 +439,8 @@ fun PlantToevoegenScherm(
         if (state.toonLocatieTip) {
             AlertDialog(
                 onDismissRequest = { viewModel.handleLocatieTipDone(onSaveSuccess) },
-                title = { Text("Plant opgeslagen! 🎉") },
-                text = { Text("Goed bezig! Je plant is succesvol toegevoegd aan je lijst.") },
+                title = { Text("Plant opgeslagen! 🎉", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                text = { Text("Goed bezig! Je plant is succesvol toegevoegd aan je lijst.", color = Color.Black) },
                 confirmButton = {
                     Button(onClick = { viewModel.handleLocatieTipDone(onSaveSuccess) }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
                         Text("Top!")

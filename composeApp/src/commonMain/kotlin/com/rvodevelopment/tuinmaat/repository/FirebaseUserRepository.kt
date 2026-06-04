@@ -84,15 +84,24 @@ class FirebaseUserRepository : UserRepository {
         }
     }
 
-    override suspend fun updateProfile(uid: String, voornaam: String, achternaam: String, tuinnaam: String): Result<Unit> {
+    override suspend fun updateProfile(uid: String, voornaam: String, achternaam: String, tuinnaam: String, email: String): Result<Unit> {
         return try {
             val data = mapOf(
                 "voornaam" to voornaam,
                 "achternaam" to achternaam,
                 "name" to "$voornaam $achternaam",
-                "tuinNaam" to tuinnaam
+                "tuinNaam" to tuinnaam,
+                "email" to email
             )
             firestore.collection("users").document(uid).set(data, merge = true)
+            
+            // Ook de tuin naam bijwerken in de tuinen collectie voor de eigen tuin
+            try {
+                firestore.collection("tuinen").document(uid).set(mapOf("naam" to tuinnaam), merge = true)
+            } catch (e: Exception) {
+                println("FirebaseUserRepository: Kon tuinnaam niet bijwerken in tuinen collectie: ${e.message}")
+            }
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -101,7 +110,10 @@ class FirebaseUserRepository : UserRepository {
 
     override suspend fun updateBiometrie(uid: String, ingeschakeld: Boolean): Result<Unit> {
         return try {
-            val data = mapOf("biometrieIngeschakeld" to ingeschakeld)
+            val data = mapOf(
+                "biometrieIngeschakeld" to ingeschakeld,
+                "securityType" to if (ingeschakeld) "BIOMETRIC" else "NONE"
+            )
             firestore.collection("users").document(uid).set(data, merge = true)
             Result.success(Unit)
         } catch (e: Exception) {

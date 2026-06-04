@@ -15,6 +15,7 @@ class InstellingenViewModel(
     private val tuinRepository: TuinRepository,
     private val sharingService: SharingService,
     private val biometricService: BiometricService,
+    private val selectionService: SelectionService,
     private val deepLinkHandler: DeepLinkHandler,
     private val premiumService: PremiumService,
     private val billingService: BillingService
@@ -89,12 +90,12 @@ class InstellingenViewModel(
         }
     }
 
-    fun updateProfile(voornaam: String, achternaam: String, tuinnaam: String) {
+    fun updateProfile(voornaam: String, achternaam: String, tuinnaam: String, email: String) {
         viewModelScope.launch {
             _isLaden.value = true
             val profile = authService.currentUser.first()
             if (profile != null) {
-                userRepository.updateProfile(profile.uid, voornaam, achternaam, tuinnaam)
+                userRepository.updateProfile(profile.uid, voornaam, achternaam, tuinnaam, email)
                     .onFailure { _foutMelding.value = it.message }
             }
             _isLaden.value = false
@@ -124,9 +125,14 @@ class InstellingenViewModel(
     fun upgradeToPremium() {
         viewModelScope.launch {
             _isLaden.value = true
+            selectionService.markeerSysteemActie()
             billingService.purchasePremium(
-                onSuccess = { _isLaden.value = false },
+                onSuccess = { 
+                    selectionService.markeerSysteemActie() // Extra veiligheid voor terugkeer
+                    _isLaden.value = false 
+                },
                 onError = { error ->
+                    selectionService.markeerSysteemActie() // Extra veiligheid voor terugkeer bij fout
                     _foutMelding.value = error
                     _isLaden.value = false
                 }
@@ -137,9 +143,14 @@ class InstellingenViewModel(
     fun restorePurchases() {
         viewModelScope.launch {
             _isLaden.value = true
+            selectionService.markeerSysteemActie()
             billingService.restorePurchases(
-                onSuccess = { _isLaden.value = false },
+                onSuccess = { 
+                    selectionService.markeerSysteemActie()
+                    _isLaden.value = false 
+                },
                 onError = { error ->
+                    selectionService.markeerSysteemActie()
                     _foutMelding.value = error
                     _isLaden.value = false
                 }
@@ -169,6 +180,8 @@ class InstellingenViewModel(
         viewModelScope.launch {
             val profile = authService.currentUser.first()
             if (profile != null) {
+                // Voorkom dat de app blokkeert bij het openen van het share-menu
+                selectionService.markeerSysteemActie()
                 val shareText = """
                     Kom je meehelpen in mijn tuin op TuinMaat? 
                     
