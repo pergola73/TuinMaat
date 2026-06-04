@@ -2,7 +2,7 @@ package com.rvodevelopment.tuinmaat
 
 actual fun getPlatform(): PlatformType = PlatformType.ANDROID
 
-actual val appVersion: String = "2.0.0 (21)"
+actual val appVersion: String = "2.1.0 (24)"
 
 // Gebruik hardcoded test-IDs als fallback als BuildConfig nog niet is bijgewerkt
 actual val admobNativeHomeId: String = "ca-app-pub-8227056273089055/3080745478"
