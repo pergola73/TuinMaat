@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.ui.components.LocationChip
 import com.rvodevelopment.tuinmaat.ui.components.PlantKaart
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.viewmodel.SnoeiKalenderViewModel
@@ -113,7 +114,7 @@ fun SnoeiKalenderScherm(
                                     .fillMaxWidth()
                                     .padding(horizontal = 24.dp, vertical = 8.dp)
                                     .neumorphicShadow(shape = RoundedCornerShape(12.dp)),
-                                color = DonkerGroen,
+                                color = GrasGroen,
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(

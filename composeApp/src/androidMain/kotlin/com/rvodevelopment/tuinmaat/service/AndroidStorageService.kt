@@ -25,10 +25,4 @@ class AndroidStorageService(context: Context) : StorageService {
     override fun remove(key: String) {
         prefs.edit().remove(key).apply()
     }
-
-    override suspend fun uploadFile(path: String, bytes: ByteArray): Result<String> {
-        // Deze service lijkt een SharedPreferences wrapper te zijn ondanks de naam.
-        // Voor werkelijke file upload gebruiken we FirebaseStorageService.
-        return Result.failure(Exception("Niet geïmplementeerd in AndroidStorageService"))
-    }
 }

@@ -45,7 +45,8 @@ class RevenueCatService(
     }
 
     private fun checkPremiumStatus(customerInfo: CustomerInfo) {
-        val hasPremium = customerInfo.entitlements.active.containsKey("premium")
+        // Als er een actieve entitlement is, beschouwen we de gebruiker als premium
+        val hasPremium = customerInfo.entitlements.active.isNotEmpty()
         premiumService.setPremium(hasPremium)
     }
 

@@ -248,13 +248,17 @@ fun HoofdMenuScherm(
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
+            }
 
-                if (!state.isPremium) {
-                    NativeAd(
-                        adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
-                }
+            if (!state.isPremium) {
+                Spacer(modifier = Modifier.height(24.dp))
+                NativeAd(
+                    adUnitId = com.rvodevelopment.tuinmaat.admobNativeHomeId,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    isMedium = true
+                )
             }
 
             Spacer(modifier = Modifier.height(64.dp))

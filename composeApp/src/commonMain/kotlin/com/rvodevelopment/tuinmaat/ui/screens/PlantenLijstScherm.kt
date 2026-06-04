@@ -142,11 +142,18 @@ fun PlantenLijstScherm(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     itemsIndexed(state.gefilterdePlanten) { index, plant ->
-                        PlantKaart(plant, onNavigateToDetail)
-                        
-                        if (!state.isPremium && (index == 3)) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            NativeAd(adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId)
+                        Column {
+                            PlantKaart(plant, onNavigateToDetail)
+                            
+                            if (!state.isPremium && (index == 2)) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                NativeAd(
+                                    adUnitId = com.rvodevelopment.tuinmaat.admobNativeListId,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    isMedium = true
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
                         }
                     }
                 }

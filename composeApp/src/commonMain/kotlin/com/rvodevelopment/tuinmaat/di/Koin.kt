@@ -71,11 +71,12 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     if (useMock) {
         single<AuthService> { MockAuthService() }
         single<StorageService> { MockStorageService() }
+        single<ImageStorageService> { get<StorageService>() as ImageStorageService }
     } else {
         single<UserRepository> { FirebaseUserRepository() }
         single<TuinRepository> { FirebaseTuinRepository() }
         single<AuthService> { FirebaseAuthService() }
-        single<StorageService> { FirebaseStorageService() }
+        single<ImageStorageService> { FirebaseStorageService() }
     }
 
     single<MediaService> { get() }
@@ -96,7 +97,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     factory { HoofdMenuViewModel(get(), get(), get(), get(), get(), get()) }
     factory { PlantenLijstViewModel(get(), get(), get(), get(), get()) }
     factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), get(), get(), plantId) }
-    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get(), get()) }
     factory { InstellingenViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

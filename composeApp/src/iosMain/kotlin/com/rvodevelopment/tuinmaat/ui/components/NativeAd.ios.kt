@@ -13,14 +13,15 @@ import platform.UIKit.UIView
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
-actual fun NativeAd(adUnitId: String, modifier: Modifier) {
+actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
     val factory = PlatformViewRegistry.nativeAdFactory
+    val height = if (isMedium) 260.dp else 100.dp
     if (factory != null) {
         UIKitView(
-            factory = { factory(adUnitId) as UIView },
-            modifier = modifier.fillMaxWidth().height(100.dp)
+            factory = { factory(adUnitId, isMedium) as UIView },
+            modifier = modifier.fillMaxWidth().height(height)
         )
     } else {
-        Box(modifier = modifier.fillMaxWidth().height(100.dp))
+        Box(modifier = modifier.fillMaxWidth().height(height))
     }
 }
