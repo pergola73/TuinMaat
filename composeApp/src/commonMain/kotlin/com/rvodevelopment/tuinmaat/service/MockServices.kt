@@ -5,13 +5,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class MockAuthService : AuthService {
     override val currentUser = MutableStateFlow<UserProfile?>(null)
     override fun isUserLoggedIn(): Boolean = currentUser.value != null
-    override suspend fun signIn(email: String, wachtwoord: String) = Result.success(UserProfile("1", "test@test.nl", "Test", "User"))
-    override suspend fun signUp(email: String, wachtwoord: String, voornaam: String, achternaam: String) = Result.success(UserProfile("1", email, voornaam, achternaam))
-    override suspend fun signInWithGoogle() = Result.success(UserProfile("1", "test@test.nl", "Test", "User"))
+    override suspend fun signIn(email: String, wachtwoord: String) = Result.success(UserProfile("1", "test@test.nl", "Test", "User", true))
+    override suspend fun signUp(email: String, wachtwoord: String, voornaam: String, achternaam: String) = Result.success(UserProfile("1", email, voornaam, achternaam, false))
+    override suspend fun signInWithGoogle() = Result.success(UserProfile("1", "test@test.nl", "Test", "User", true))
     override suspend fun signOut() {}
     override suspend fun deleteAccount() = Result.success(Unit)
     override suspend fun sendPasswordResetEmail(email: String) = Result.success(Unit)
     override suspend fun sendEmailVerification() = Result.success(Unit)
+    override suspend fun reloadUser() = Result.success(Unit)
 }
 
 class MockStorageService : StorageService, ImageStorageService {

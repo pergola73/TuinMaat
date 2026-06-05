@@ -19,7 +19,8 @@ data class UserData(
     val activeGardenId: String? = null,
     val locaties: List<String> = listOf("Tuin", "Balkon", "Kas"),
     val standaardLocatie: String = "Tuin",
-    val sharedByUsers: List<String> = emptyList() // UIDs van mensen die toegang hebben tot JOUW tuin
+    val sharedByUsers: List<String> = emptyList(), // UIDs van mensen die toegang hebben tot JOUW tuin
+    val isHandmatigGeverifieerd: Boolean = false
 )
 
 interface UserRepository {

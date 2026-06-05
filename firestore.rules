@@ -1,15 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functie om te controleren of een gebruiker geverifieerd is (via Firebase of handmatig)
+    function isGeverifieerd() {
+      return request.auth != null && (
+        request.auth.token.email_verified == true ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isHandmatigGeverifieerd == true
+      );
+    }
+
     // Gebruikersprofiel regels
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Sta aanmaken toe zodat nieuwe gebruikers hun profiel kunnen registreren
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Lezen en updaten mag als de gebruiker de eigenaar is EN geverifieerd is
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId && (
+        request.auth.token.email_verified == true ||
+        resource.data.isHandmatigGeverifieerd == true
+      );
     }
 
     // Tuinen regels
     match /tuinen/{gardenId} {
-      // Sta lezen en schrijven toe als de gebruiker de eigenaar is OF als de gardenId overeenkomt met de sharedGardenId van de gebruiker
-      allow read, write: if request.auth != null && (
+      // Alle toegang tot tuinen vereist een geverifieerde status
+      allow read, write: if isGeverifieerd() && (
         resource == null ||
         resource.data.eigenaar == request.auth.uid ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sharedGardenId == gardenId
@@ -17,7 +33,7 @@ service cloud.firestore {
 
       // Subcollecties (planten en locaties) overerven de toegang van de tuin
       match /{path=**} {
-        allow read, write: if request.auth != null && (
+        allow read, write: if isGeverifieerd() && (
           get(/databases/$(database)/documents/tuinen/$(gardenId)).data.eigenaar == request.auth.uid ||
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sharedGardenId == gardenId
         );

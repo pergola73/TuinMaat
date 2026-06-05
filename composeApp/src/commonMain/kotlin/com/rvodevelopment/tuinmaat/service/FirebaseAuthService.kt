@@ -12,7 +12,7 @@ class FirebaseAuthService : AuthService {
 
     override val currentUser: Flow<UserProfile?> = auth.authStateChanged.map { user ->
         user?.let {
-            UserProfile(it.uid, it.email, null, null)
+            UserProfile(it.uid, it.email, null, null, it.isEmailVerified)
         }
     }
 
@@ -32,7 +32,7 @@ class FirebaseAuthService : AuthService {
                 println("FirebaseAuthService: Kon email niet syncen naar Firestore: ${e.message}")
             }
 
-            Result.success(UserProfile(user.uid, user.email, null, null))
+            Result.success(UserProfile(user.uid, user.email, null, null, user.isEmailVerified))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -43,6 +43,9 @@ class FirebaseAuthService : AuthService {
             val result = auth.createUserWithEmailAndPassword(email, wachtwoord)
             val user = result.user ?: throw Exception("Registratie mislukt")
             
+            // Stuur verificatie email
+            user.sendEmailVerification()
+            
             val profile = mapOf(
                 "voornaam" to voornaam,
                 "achternaam" to achternaam,
@@ -50,7 +53,7 @@ class FirebaseAuthService : AuthService {
             )
             firestore.collection("users").document(user.uid).set(profile)
             
-            Result.success(UserProfile(user.uid, email, voornaam, achternaam))
+            Result.success(UserProfile(user.uid, email, voornaam, achternaam, user.isEmailVerified))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -82,7 +85,7 @@ class FirebaseAuthService : AuthService {
                 firestore.collection("users").document(user.uid).set(profile)
             }
 
-            Result.success(UserProfile(user.uid, user.email, null, null))
+            Result.success(UserProfile(user.uid, user.email, null, null, user.isEmailVerified))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -113,6 +116,15 @@ class FirebaseAuthService : AuthService {
     override suspend fun sendEmailVerification(): Result<Unit> {
         return try {
             auth.currentUser?.sendEmailVerification()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun reloadUser(): Result<Unit> {
+        return try {
+            auth.currentUser?.reload()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

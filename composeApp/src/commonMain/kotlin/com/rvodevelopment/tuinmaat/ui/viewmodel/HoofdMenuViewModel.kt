@@ -25,7 +25,9 @@ data class HoofdMenuState(
     val actieveGid: String? = null,
     val huidigeMaand: Int = 1,
     val planten: List<String> = emptyList(),
-    val isPremium: Boolean = false
+    val isPremium: Boolean = false,
+    val isEmailVerified: Boolean = true,
+    val isLoading: Boolean = false
 ) {
     val huidigeTip: String get() = if (tuintips.isNotEmpty()) tuintips[huidigeTipIndex] else ""
 }
@@ -65,6 +67,14 @@ class HoofdMenuViewModel(
             authService.currentUser.collectLatest { user ->
                 if (user != null) {
                     userRepository.getUserData(user.uid).collectLatest { userData ->
+                        val isVerified = user.isEmailVerified || userData?.isHandmatigGeverifieerd == true
+                        _state.update { it.copy(isEmailVerified = isVerified) }
+                        
+                        if (!isVerified) {
+                            _state.update { it.copy(isLoading = false) }
+                            return@collectLatest
+                        }
+
                         if (userData != null) {
                             val activeGid = userData.activeGardenId ?: user.uid
                             val isEigenTuin = activeGid == user.uid
@@ -139,6 +149,18 @@ class HoofdMenuViewModel(
                 }
             }
             _state.update { it.copy(isTuintipLaden = false) }
+        }
+    }
+
+    fun reloadUserStatus() {
+        viewModelScope.launch {
+            authService.reloadUser()
+        }
+    }
+
+    fun resendVerificationEmail() {
+        viewModelScope.launch {
+            authService.sendEmailVerification()
         }
     }
 

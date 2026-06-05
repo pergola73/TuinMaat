@@ -6,7 +6,8 @@ data class UserProfile(
     val uid: String,
     val email: String?,
     val voornaam: String?,
-    val achternaam: String?
+    val achternaam: String?,
+    val isEmailVerified: Boolean = false
 )
 
 interface AuthService {
@@ -20,4 +21,5 @@ interface AuthService {
     suspend fun deleteAccount(): Result<Unit>
     suspend fun sendPasswordResetEmail(email: String): Result<Unit>
     suspend fun sendEmailVerification(): Result<Unit>
+    suspend fun reloadUser(): Result<Unit>
 }
