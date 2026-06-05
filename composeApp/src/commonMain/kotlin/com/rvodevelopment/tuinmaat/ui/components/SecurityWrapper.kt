@@ -1,5 +1,10 @@
 package com.rvodevelopment.tuinmaat.ui.components
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,7 +31,10 @@ import com.rvodevelopment.tuinmaat.getPlatform
 import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.service.AuthService
 import com.rvodevelopment.tuinmaat.service.BiometricService
+import com.rvodevelopment.tuinmaat.repository.UserData
 import com.rvodevelopment.tuinmaat.repository.UserRepository
+import com.rvodevelopment.tuinmaat.ui.theme.AchtergrondGroenLicht
+import com.rvodevelopment.tuinmaat.ui.theme.AchtergrondGroenMidden
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import kotlinx.coroutines.delay
@@ -48,6 +57,9 @@ fun SecurityWrapper(
     val scope = rememberCoroutineScope()
     
     var isLocked by remember { mutableStateOf(false) }
+    var showWelcome by remember { mutableStateOf(false) }
+    var userData by remember { mutableStateOf<UserData?>(null) }
+    var lastLoggedInUid by remember { mutableStateOf<String?>(null) }
     var hasCheckedInitialLock by remember { mutableStateOf(false) }
     var securityType by remember { mutableStateOf("NONE") }
     var savedPin by remember { mutableStateOf("") }
@@ -108,11 +120,20 @@ fun SecurityWrapper(
     LaunchedEffect(currentUser) {
         val uid = currentUser?.uid
         if (uid != null) {
+            val isNewLogin = lastLoggedInUid == null
+            lastLoggedInUid = uid
+            
             userRepository.getUserData(uid)
                 .catch { emit(null) }
-                .collect { userData ->
-                    securityType = userData?.securityType ?: "NONE"
-                    savedPin = userData?.securityPin ?: ""
+                .collect { data ->
+                    userData = data
+                    securityType = data?.securityType ?: "NONE"
+                    savedPin = data?.securityPin ?: ""
+                    
+                    // Toon welkom scherm pas als we data hebben bij een nieuwe login
+                    if (isNewLogin && data != null && !showWelcome) {
+                        showWelcome = true
+                    }
                     
                     // Initiële check bij koude start
                     if (!hasCheckedInitialLock && securityType != "NONE") {
@@ -124,6 +145,8 @@ fun SecurityWrapper(
             securityType = "NONE"
             isLocked = false
             hasCheckedInitialLock = false
+            userData = null
+            lastLoggedInUid = null
         }
     }
 
@@ -163,10 +186,73 @@ fun SecurityWrapper(
                     selectionService = selectionService,
                     onUnlock = {
                         isLocked = false
+                        showWelcome = true
                         activityState.lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
                     }
                 )
             }
+
+            AnimatedVisibility(
+                visible = showWelcome,
+                enter = fadeIn(animationSpec = tween(400)) + scaleIn(initialScale = 0.9f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)),
+                exit = fadeOut(animationSpec = tween(600)) + slideOutVertically(targetOffsetY = { -it }, animationSpec = spring(stiffness = Spring.StiffnessLow))
+            ) {
+                WelcomeOverlay(
+                    voornaam = userData?.voornaam ?: "",
+                    tuinnaam = userData?.tuinnaam ?: "Mijn Tuin",
+                    onDismiss = { showWelcome = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WelcomeOverlay(
+    voornaam: String,
+    tuinnaam: String,
+    onDismiss: () -> Unit
+) {
+    var startAnim by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (startAnim) 1f else 0.8f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+    )
+
+    LaunchedEffect(Unit) {
+        startAnim = true
+        delay(2200)
+        onDismiss()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AchtergrondGroenLicht)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
+        ) {
+            TuinMaatLogo(modifier = Modifier.size(130.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = if (voornaam.isNotEmpty()) "Welkom terug, $voornaam!" else "Welkom terug!",
+                style = MaterialTheme.typography.headlineMedium,
+                color = DonkerGroen,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = tuinnaam,
+                style = MaterialTheme.typography.bodyLarge,
+                color = DonkerGroen.copy(alpha = 0.7f),
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+            )
         }
     }
 }
