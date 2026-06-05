@@ -26,6 +26,7 @@ import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.components.TuinMaatLogo
 import com.rvodevelopment.tuinmaat.ui.components.BulletPoint
 import com.rvodevelopment.tuinmaat.ui.components.NativeAd
+import com.rvodevelopment.tuinmaat.ui.components.AdBanner
 import com.rvodevelopment.tuinmaat.ui.components.PremiumUpgradeDialog
 import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
 import com.rvodevelopment.tuinmaat.appVersion
@@ -54,10 +55,15 @@ fun InstellingenScherm(
     TuinAchtergrond {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-                IconButton(onClick = { navController.popBackStack() }) { 
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
                 }
-                Text("Instellingen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+                Text(
+                    "Instellingen",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = DonkerGroen,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             if (foutMelding != null) {
@@ -96,21 +102,23 @@ fun InstellingenScherm(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    NativeAd(
-                        adUnitId = com.rvodevelopment.tuinmaat.admobNativeInstellingenId,
-                        modifier = Modifier.fillMaxWidth(),
-                        isMedium = true
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                } else {
+                if (isPremium) {
                     InstellingItem("Premium Status: Actief", Icons.Default.Verified) { toonPremiumDialoog = true }
                 }
 
                 InstellingItem("Profiel bewerken", Icons.Default.Person) { navController.navigate("profiel_bewerken") }
                 InstellingItem("Tuin delen", Icons.Default.Share) { navController.navigate("tuin_delen") }
                 InstellingItem("Locaties beheren", Icons.Default.Place) { navController.navigate("locatiebeheer") }
+                
+                if (!isPremium) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AdBanner(modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 InstellingItem("Beveiliging", Icons.Default.Security) { navController.navigate("beveiliging") }
                 InstellingItem("Info", Icons.Default.Info) { navController.navigate("info") }
 

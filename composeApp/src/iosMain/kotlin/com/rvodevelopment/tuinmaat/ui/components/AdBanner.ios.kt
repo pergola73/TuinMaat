@@ -17,8 +17,9 @@ import platform.UIKit.UIView
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun AdBanner(modifier: Modifier) {
+    val isLocked = LocalIsLocked.current
     val factory = PlatformViewRegistry.bannerFactory
-    if (factory != null) {
+    if (factory != null && !isLocked) {
         val bannerId = com.rvodevelopment.tuinmaat.admobBannerId
         UIKitView(
             factory = { factory(bannerId) as UIView },

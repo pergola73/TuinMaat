@@ -33,6 +33,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+val LocalIsLocked = compositionLocalOf { false }
+
 @Composable
 fun SecurityWrapper(
     authService: AuthService = koinInject(),
@@ -150,19 +152,21 @@ fun SecurityWrapper(
                 }
             }
     ) {
-        content()
+        CompositionLocalProvider(LocalIsLocked provides isLocked) {
+            content()
 
-        if (isLocked && currentUser != null && securityType != "NONE") {
-            LockScreen(
-                securityType = securityType,
-                savedPin = savedPin,
-                biometricService = biometricService,
-                selectionService = selectionService,
-                onUnlock = {
-                    isLocked = false
-                    activityState.lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
-                }
-            )
+            if (isLocked && currentUser != null && securityType != "NONE") {
+                LockScreen(
+                    securityType = securityType,
+                    savedPin = savedPin,
+                    biometricService = biometricService,
+                    selectionService = selectionService,
+                    onUnlock = {
+                        isLocked = false
+                        activityState.lastActiveTime = com.rvodevelopment.tuinmaat.currentTimeMillis()
+                    }
+                )
+            }
         }
     }
 }

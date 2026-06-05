@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.*
@@ -21,8 +22,10 @@ import com.rvodevelopment.tuinmaat.composeapp.R
 @SuppressLint("MissingPermission")
 @Composable
 actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
+    val isLocked = LocalIsLocked.current
     var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val height = if (isMedium) 240.dp else 100.dp
 
     LaunchedEffect(adUnitId) {
         val adLoader = AdLoader.Builder(context, adUnitId)
@@ -35,12 +38,12 @@ actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
         adLoader.loadAd(AdRequest.Builder().build())
     }
 
-    if (nativeAd != null) {
+    if (nativeAd != null && !isLocked) {
         key(nativeAd) {
             AndroidView(
                 modifier = modifier
                     .fillMaxWidth()
-                    .height(if (isMedium) 240.dp else 100.dp),
+                    .height(height),
                 factory = { ctx ->
                     val adView = LayoutInflater.from(ctx).inflate(R.layout.native_ad_layout, null, false) as NativeAdView
                     
@@ -72,5 +75,7 @@ actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
                 }
             )
         }
+    } else {
+        Box(modifier = modifier.fillMaxWidth().height(height))
     }
 }

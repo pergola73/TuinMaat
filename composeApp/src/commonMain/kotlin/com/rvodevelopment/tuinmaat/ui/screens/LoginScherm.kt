@@ -54,10 +54,6 @@ fun LoginScherm(
     val toonBiometrieVraag by viewModel.toonBiometrieVraag.collectAsState()
     val platform = remember { getPlatform() }
 
-    LaunchedEffect(Unit) {
-        viewModel.tryAutoBiometric(onLoginSuccess)
-    }
-
     if (toonBiometrieVraag) {
         AlertDialog(
             onDismissRequest = { viewModel.slaBiometrieOver(onLoginSuccess) },

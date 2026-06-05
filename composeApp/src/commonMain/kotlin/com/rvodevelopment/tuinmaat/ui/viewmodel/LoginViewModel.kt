@@ -172,17 +172,4 @@ class LoginViewModel(
             _isLaden.value = false
         }
     }
-
-    fun tryAutoBiometric(onSuccess: () -> Unit) {
-        if (_biometrieIngeschakeld.value) {
-            viewModelScope.launch {
-                biometricService.authenticate().onSuccess {
-                    // In a real app, you'd securely store credentials and retrieve them here
-                    // For now, assume authService.currentUser will handle the session if valid
-                    // or trigger a specific login flow.
-                    onSuccess()
-                }
-            }
-        }
-    }
 }
