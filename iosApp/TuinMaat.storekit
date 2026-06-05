@@ -15,13 +15,18 @@
   ],
   "products" : [
     {
-      "displayPrice" : "9.99",
+      "displayPrice" : "2.99",
       "familyShareable" : false,
       "internalID" : "18EC7B01",
       "localizations" : [
         {
-          "description" : "",
-          "displayName" : "",
+          "description" : "Onbeperkt toegang tot alle TuinMaat functies",
+          "displayName" : "TuinMaat Premium",
+          "locale" : "nl"
+        },
+        {
+          "description" : "Unlimited access to all TuinMaat features",
+          "displayName" : "TuinMaat Premium",
           "locale" : "en_US"
         }
       ],
@@ -36,9 +41,9 @@
     "_billingIssuesEnabled" : false,
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_locale" : "en_US",
+    "_locale" : "nl_NL",
     "_renewalBillingIssuesEnabled" : false,
-    "_storefront" : "USA",
+    "_storefront" : "NLD",
     "_storeKitErrors" : [
 
     ],

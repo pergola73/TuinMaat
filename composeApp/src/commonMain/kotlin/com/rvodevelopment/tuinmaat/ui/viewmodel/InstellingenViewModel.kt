@@ -6,6 +6,8 @@ import com.rvodevelopment.tuinmaat.repository.UserData
 import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.service.*
+import com.rvodevelopment.tuinmaat.getPlatform
+import com.rvodevelopment.tuinmaat.PlatformType
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -39,7 +41,7 @@ class InstellingenViewModel(
     val isPremium: StateFlow<Boolean> = premiumService.isPremium
 
     fun getPremiumPrice(): String {
-        return billingService.getProductPrice(premiumService.premiumProductId) ?: "€4,99"
+        return billingService.getProductPrice(premiumService.premiumProductId) ?: "€2,99"
     }
 
     private var userDataJob: kotlinx.coroutines.Job? = null

@@ -6,9 +6,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+import com.rvodevelopment.tuinmaat.getPlatform
+import com.rvodevelopment.tuinmaat.PlatformType
+
 interface PremiumService {
     val isPremium: StateFlow<Boolean>
-    val premiumProductId: String get() = "premium_unlock"
+    val premiumProductId: String get() = if (getPlatform() == PlatformType.IOS) "premium_unlock_ios" else "premium_unlock"
     fun setPremium(enabled: Boolean)
 }
 

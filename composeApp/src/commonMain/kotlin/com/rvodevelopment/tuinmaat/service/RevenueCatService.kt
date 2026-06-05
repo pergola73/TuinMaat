@@ -54,7 +54,17 @@ class RevenueCatService(
         try {
             val offerings = Purchases.sharedInstance.awaitOfferings()
             val current = offerings.current
-            _price.value = current?.availablePackages?.firstOrNull()?.storeProduct?.price?.formatted
+            
+            // We proberen het pakket te vinden dat overeenkomt met onze productID.
+            // Als we dat niet vinden, nemen we het eerste pakket.
+            val targetId = premiumService.premiumProductId
+            val pkg = current?.availablePackages?.find { it.storeProduct.id == targetId }
+                ?: current?.availablePackages?.firstOrNull()
+            
+            val formattedPrice = pkg?.storeProduct?.price?.formatted
+            if (formattedPrice != null) {
+                _price.value = formattedPrice
+            }
         } catch (e: Exception) {
             println("RevenueCat: Failed to fetch offerings: ${e.message}")
         }
@@ -63,10 +73,14 @@ class RevenueCatService(
     override fun purchasePremium(onSuccess: () -> Unit, onError: (String) -> Unit) {
         scope.launch {
             try {
+                // Refresh offerings voor de zekerheid vlak voor aankoop
                 val offerings = Purchases.sharedInstance.awaitOfferings()
                 val offering = offerings.current
                 if (offering != null) {
-                    val packageToPurchase = offering.availablePackages.firstOrNull()
+                    val targetId = premiumService.premiumProductId
+                    val packageToPurchase = offering.availablePackages.find { it.storeProduct.id == targetId }
+                        ?: offering.availablePackages.firstOrNull()
+
                     if (packageToPurchase != null) {
                         val result = Purchases.sharedInstance.awaitPurchase(packageToPurchase)
                         checkPremiumStatus(result.customerInfo)
