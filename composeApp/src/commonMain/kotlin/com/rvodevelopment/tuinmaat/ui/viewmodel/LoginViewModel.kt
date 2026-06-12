@@ -14,7 +14,8 @@ class LoginViewModel(
     private val biometricService: BiometricService,
     private val storageService: StorageService,
     private val selectionService: com.rvodevelopment.tuinmaat.service.SelectionService,
-    private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository
+    private val tuinRepository: com.rvodevelopment.tuinmaat.repository.TuinRepository,
+    private val analyticsService: com.rvodevelopment.tuinmaat.service.AnalyticsService
 ) : ViewModel() {
 
     private val _email = MutableStateFlow(storageService.getString("remembered_email", ""))
@@ -76,12 +77,16 @@ class LoginViewModel(
                 _isLaden.value = true
                 authService.signUp(_email.value, _wachtwoord.value, _voornaam.value, _achternaam.value)
                     .onSuccess { profile ->
+                        analyticsService.logEvent("signup_success")
                         savePrefs()
                         // Na registratie migratie draaien (ook al is er waarschijnlijk nog niks)
                         tuinRepository.migrateLegacyData(profile.uid, profile.uid)
                         onSuccess()
                     }
-                    .onFailure { _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) }
+                    .onFailure { 
+                        analyticsService.logEvent("signup_failed", mapOf("error" to (it.message ?: "unknown")))
+                        _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) 
+                    }
             } else {
                 if (_email.value.isBlank() || _wachtwoord.value.isBlank()) {
                     _foutMelding.value = "Vul e-mail en wachtwoord in."
@@ -90,6 +95,7 @@ class LoginViewModel(
                 _isLaden.value = true
                 authService.signIn(_email.value, _wachtwoord.value)
                     .onSuccess { profile ->
+                        analyticsService.logEvent("login_success", mapOf("method" to "email"))
                         savePrefs()
                         // Migreer data na inloggen
                         tuinRepository.migrateLegacyData(profile.uid, profile.uid)
@@ -100,7 +106,10 @@ class LoginViewModel(
                             onSuccess()
                         }
                     }
-                    .onFailure { _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) }
+                    .onFailure { 
+                        analyticsService.logEvent("login_failed", mapOf("method" to "email", "error" to (it.message ?: "unknown")))
+                        _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) 
+                    }
             }
             _isLaden.value = false
         }
@@ -150,11 +159,15 @@ class LoginViewModel(
             selectionService.markeerSysteemActie()
             authService.signInWithGoogle()
                 .onSuccess { profile ->
+                    analyticsService.logEvent("login_success", mapOf("method" to "google"))
                     // Migreer data na inloggen
                     tuinRepository.migrateLegacyData(profile.uid, profile.uid)
                     onSuccess()
                 }
-                .onFailure { _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) }
+                .onFailure { 
+                    analyticsService.logEvent("login_failed", mapOf("method" to "google", "error" to (it.message ?: "unknown")))
+                    _foutMelding.value = maakFoutmeldingGebruiksvriendelijk(it) 
+                }
             _isLaden.value = false
         }
     }

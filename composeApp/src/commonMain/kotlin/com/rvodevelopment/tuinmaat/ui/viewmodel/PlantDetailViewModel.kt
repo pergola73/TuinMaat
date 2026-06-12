@@ -5,8 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.repository.UserRepository
-import com.rvodevelopment.tuinmaat.service.AuthService
-import com.rvodevelopment.tuinmaat.service.StorageService
+import com.rvodevelopment.tuinmaat.service.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -24,6 +23,7 @@ class PlantDetailViewModel(
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
     private val storageService: StorageService,
+    private val analyticsService: AnalyticsService,
     private val initialPlantId: String?
 ) : ViewModel() {
 
@@ -33,6 +33,8 @@ class PlantDetailViewModel(
     init {
         loadPlanten()
         checkTips()
+        analyticsService.logScreenView("PlantDetail", "PlantDetailViewModel")
+        initialPlantId?.let { analyticsService.logEvent("view_plant_detail", mapOf("plant_id" to it)) }
     }
 
     private fun checkTips() {

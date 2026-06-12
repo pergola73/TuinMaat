@@ -6,12 +6,15 @@ import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class FirebaseAuthService : AuthService {
+class FirebaseAuthService(
+    private val analyticsService: AnalyticsService
+) : AuthService {
     private val auth = Firebase.auth
     private val firestore = Firebase.firestore
 
     override val currentUser: Flow<UserProfile?> = auth.authStateChanged.map { user ->
         user?.let {
+            analyticsService.setUserId(it.uid)
             UserProfile(it.uid, it.email, null, null, it.isEmailVerified)
         }
     }

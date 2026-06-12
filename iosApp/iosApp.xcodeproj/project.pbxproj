@@ -10,6 +10,7 @@
 		2AAE93F42FACD05D007EE171 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 2AAE93F32FACD05D007EE171 /* FirebaseAuth */; };
 		2AAE93F62FACD05D007EE171 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2AAE93F52FACD05D007EE171 /* FirebaseFirestore */; };
 		2AAE93F82FACD05D007EE171 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 2AAE93F72FACD05D007EE171 /* FirebaseStorage */; };
+		3623649D2FDC395D00FC6006 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 3623649C2FDC395D00FC6006 /* FirebaseAnalytics */; };
 		3674F5852FD0256C00BFA4C7 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3674F5842FD0256C00BFA4C7 /* StoreKit.framework */; };
 		3674F5912FD0503800BFA4C7 /* PurchasesHybridCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5902FD0503800BFA4C7 /* PurchasesHybridCommon */; };
 		3674F5932FD0503800BFA4C7 /* PurchasesHybridCommonUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5922FD0503800BFA4C7 /* PurchasesHybridCommonUI */; };
@@ -64,6 +65,7 @@
 				2AAE93F82FACD05D007EE171 /* FirebaseStorage in Frameworks */,
 				3674F5932FD0503800BFA4C7 /* PurchasesHybridCommonUI in Frameworks */,
 				3674F5982FD0526600BFA4C7 /* PurchasesHybridCommonUI in Frameworks */,
+				3623649D2FDC395D00FC6006 /* FirebaseAnalytics in Frameworks */,
 				3674F5852FD0256C00BFA4C7 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -127,6 +129,7 @@
 				3674F5952FD0526600BFA4C7 /* PurchasesHybridCommon */,
 				3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */,
 				3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */,
+				3623649C2FDC395D00FC6006 /* FirebaseAnalytics */,
 			);
 			productName = iosApp;
 			productReference = A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */;
@@ -479,6 +482,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2AAE93F22FACD05D007EE171 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		3623649C2FDC395D00FC6006 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2AAE93F22FACD05D007EE171 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
 		};
 		3674F5902FD0503800BFA4C7 /* PurchasesHybridCommon */ = {
 			isa = XCSwiftPackageProductDependency;

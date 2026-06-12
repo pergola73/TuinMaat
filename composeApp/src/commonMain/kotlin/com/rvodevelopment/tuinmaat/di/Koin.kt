@@ -63,7 +63,8 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     }
     single { MessageService() }
     single { SelectionService(get()) }
-    single<PremiumService> { DefaultPremiumService() }
+    single<AnalyticsService> { FirebaseAnalyticsService() }
+    single<PremiumService> { DefaultPremiumService(get()) }
     single<BillingService> { RevenueCatService(get(), get(named("REVENUECAT_API_KEY"))) }
     single { DeepLinkHandler(get(), get(), get()) }
     single<TuintipService> { DefaultTuintipService(get()) }
@@ -75,7 +76,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     } else {
         single<UserRepository> { FirebaseUserRepository() }
         single<TuinRepository> { FirebaseTuinRepository() }
-        single<AuthService> { FirebaseAuthService() }
+        single<AuthService> { FirebaseAuthService(get()) }
         single<ImageStorageService> { FirebaseStorageService() }
     }
 
@@ -93,11 +94,11 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
         mediaService = get()
     ) }
 
-    factory { LoginViewModel(get(), get(), get(), get(), get()) }
-    factory { HoofdMenuViewModel(get(), get(), get(), get(), get(), get()) }
-    factory { PlantenLijstViewModel(get(), get(), get(), get(), get()) }
-    factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), get(), get(), plantId) }
-    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), plantId) }
+    factory { LoginViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { HoofdMenuViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { PlantenLijstViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { (plantId: String?) -> PlantDetailViewModel(get(), get(), get(), get(), get(), plantId) }
+    factory { (plantId: String?) -> PlantToevoegenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), plantId) }
     factory { SnoeiKalenderViewModel(get(), get(), get(), get(), get()) }
     factory { InstellingenViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

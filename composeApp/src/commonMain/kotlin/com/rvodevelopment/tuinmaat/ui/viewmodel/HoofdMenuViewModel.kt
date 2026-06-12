@@ -38,7 +38,8 @@ class HoofdMenuViewModel(
     private val tuinRepository: TuinRepository,
     private val tuintipService: TuintipService,
     private val deepLinkHandler: DeepLinkHandler,
-    private val premiumService: PremiumService
+    private val premiumService: PremiumService,
+    private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HoofdMenuState())
@@ -48,9 +49,18 @@ class HoofdMenuViewModel(
         observeUserData()
         fetchTuintip()
         observePremium()
+        analyticsService.logScreenView("HoofdMenu", "HoofdMenuViewModel")
         
         viewModelScope.launch {
             deepLinkHandler.checkPendingDeepLink()
+        }
+    }
+
+    fun switchGarden(gardenId: String) {
+        analyticsService.logEvent("switch_garden", mapOf("garden_id" to gardenId))
+        viewModelScope.launch {
+            val uid = _state.value.eigenGid ?: return@launch
+            userRepository.setActiveGarden(uid, gardenId)
         }
     }
 
@@ -86,7 +96,6 @@ class HoofdMenuViewModel(
                                 actieveGid = activeGid
                             ) }
 
-                            // Fetch altijd de tuinnaam uit de 'tuinen' collectie voor consistentie
                             launch {
                                 tuinRepository.getTuinnaam(activeGid).collect { naam ->
                                     _state.update { it.copy(tuinnaam = naam) }
@@ -165,6 +174,7 @@ class HoofdMenuViewModel(
     }
 
     fun volgendeTip() {
+        analyticsService.logEvent("tuintip_volgende")
         if (_state.value.huidigeTipIndex < _state.value.tuintips.size - 1) {
             _state.update { it.copy(huidigeTipIndex = it.huidigeTipIndex + 1) }
             return
@@ -187,20 +197,13 @@ class HoofdMenuViewModel(
     }
 
     fun vorigeTip() {
+        analyticsService.logEvent("tuintip_vorige")
         _state.update {
             if (it.huidigeTipIndex > 0) {
                 it.copy(huidigeTipIndex = it.huidigeTipIndex - 1)
             } else {
                 it
             }
-        }
-    }
-    
-    fun switchGarden(gardenId: String) {
-        viewModelScope.launch {
-            val uid = _state.value.eigenGid ?: return@launch
-            // Gebruik setActiveGarden in plaats van updateSharedGardenId om de koppeling te behouden
-            userRepository.setActiveGarden(uid, gardenId)
         }
     }
 }

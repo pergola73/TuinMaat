@@ -48,6 +48,7 @@ class PlantToevoegenViewModel(
     private val imageStorageService: ImageStorageService,
     private val mediaService: MediaService,
     private val selectionService: com.rvodevelopment.tuinmaat.service.SelectionService,
+    private val analyticsService: com.rvodevelopment.tuinmaat.service.AnalyticsService,
     private val client: HttpClient,
     private val plantId: String?
 ) : ViewModel() {
@@ -57,6 +58,7 @@ class PlantToevoegenViewModel(
 
     init {
         loadData()
+        analyticsService.logScreenView("PlantToevoegen", "PlantToevoegenViewModel")
     }
 
     private fun checkFirstTime(plantCount: Int) {
@@ -142,6 +144,7 @@ class PlantToevoegenViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isAIBezig = true, error = null, infoBericht = null) }
             aiService.identifyPlant(imageBytes).onSuccess { result ->
+                analyticsService.logEvent("plant_identified_image", mapOf("plant_name" to result.naam))
                 _state.update { it.copy(
                     plant = it.plant.copy(
                         naam = result.naam,
@@ -176,6 +179,7 @@ class PlantToevoegenViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isAIBezig = true, error = null, infoBericht = null) }
             aiService.identifyPlantByName(name).onSuccess { result ->
+                analyticsService.logEvent("plant_identified_name", mapOf("plant_name" to result.naam))
                 _state.update { it.copy(
                     plant = it.plant.copy(
                         naam = result.naam,
@@ -245,6 +249,7 @@ class PlantToevoegenViewModel(
             }
             
             tuinRepository.savePlant(gardenId, plantToSave).onSuccess {
+                analyticsService.logEvent("plant_saved", mapOf("is_new" to (plantId == null)))
                 // Toon alleen een simpel succesbericht in dit scherm
                 _state.update { it.copy(toonLocatieTip = true, isLaden = false) }
                 // Soms willen we direct navigeren, maar hier tonen we eerst de popup

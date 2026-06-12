@@ -15,13 +15,24 @@ interface PremiumService {
     fun setPremium(enabled: Boolean)
 }
 
-class DefaultPremiumService : PremiumService {
+class DefaultPremiumService(
+    private val analyticsService: AnalyticsService
+) : PremiumService {
     private val settings = Settings()
     private val _isPremium = MutableStateFlow(settings.getBoolean("is_premium", false))
     override val isPremium: StateFlow<Boolean> = _isPremium.asStateFlow()
 
+    init {
+        updateSegment(_isPremium.value)
+    }
+
     override fun setPremium(enabled: Boolean) {
         settings["is_premium"] = enabled
         _isPremium.value = enabled
+        updateSegment(enabled)
+    }
+
+    private fun updateSegment(isPremium: Boolean) {
+        analyticsService.logUserSegment(if (isPremium) "premium" else "free")
     }
 }

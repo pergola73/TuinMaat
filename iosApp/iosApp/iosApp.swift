@@ -163,7 +163,7 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         ctaButton.setTitleColor(.white, for: .normal)
         ctaButton.titleLabel?.font = .boldSystemFont(ofSize: 14)
         ctaButton.layer.cornerRadius = 8
-        ctaButton.isUserInteractionEnabled = false
+        ctaButton.isUserInteractionEnabled = true // Aangezet voor betere interactie registratie
         adView.addSubview(ctaButton)
         ctaButton.translatesAutoresizingMaskIntoConstraints = false
         adView.callToActionView = ctaButton

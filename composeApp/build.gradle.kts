@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.firebase.kmp.auth)
             implementation(libs.firebase.kmp.firestore)
             implementation(libs.firebase.kmp.storage)
+            implementation(libs.firebase.kmp.analytics)
 
             // Ktor & Serialization
             implementation(libs.ktor.client.core)

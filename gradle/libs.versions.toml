@@ -95,6 +95,7 @@ purchases-core = { module = "com.revenuecat.purchases:purchases-kmp-core", versi
 firebase-kmp-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebase-kmp" }
 firebase-kmp-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebase-kmp" }
 firebase-kmp-storage = { module = "dev.gitlive:firebase-storage", version.ref = "firebase-kmp" }
+firebase-kmp-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-kmp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

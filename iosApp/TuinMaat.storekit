@@ -41,7 +41,7 @@
     "_billingIssuesEnabled" : false,
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_locale" : "nl_NL",
+    "_locale" : "nl",
     "_renewalBillingIssuesEnabled" : false,
     "_storefront" : "NLD",
     "_storeKitErrors" : [

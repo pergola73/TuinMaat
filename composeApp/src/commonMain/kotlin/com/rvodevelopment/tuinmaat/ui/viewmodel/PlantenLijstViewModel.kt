@@ -26,7 +26,8 @@ class PlantenLijstViewModel(
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
     private val premiumService: PremiumService,
-    private val selectionService: SelectionService
+    private val selectionService: SelectionService,
+    private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlantenLijstState())
@@ -36,11 +37,13 @@ class PlantenLijstViewModel(
         observeData()
         observePremium()
         observeSelection()
+        analyticsService.logScreenView("PlantenLijst", "PlantenLijstViewModel")
     }
 
     private fun observeSelection() {
         viewModelScope.launch {
             selectionService.geselecteerdeLocatie.collect { locatie ->
+                analyticsService.logEvent("filter_locatie", mapOf("locatie" to locatie))
                 _state.update { it.copy(geselecteerdeLocatie = locatie) }
                 updateFilteredList()
             }

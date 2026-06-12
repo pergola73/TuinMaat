@@ -18,10 +18,13 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 import com.rvodevelopment.tuinmaat.composeapp.R
+import com.rvodevelopment.tuinmaat.service.AnalyticsService
+import org.koin.compose.koinInject
 
 @SuppressLint("MissingPermission")
 @Composable
 actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
+    val analyticsService: AnalyticsService = koinInject()
     val isLocked = LocalIsLocked.current
     var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -31,8 +34,14 @@ actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
         val adLoader = AdLoader.Builder(context, adUnitId)
             .forNativeAd { ad -> nativeAd = ad }
             .withAdListener(object : com.google.android.gms.ads.AdListener() {
-                override fun onAdClicked() { Log.e("TuinMaatAds", "KLIK!") }
-                override fun onAdImpression() { Log.e("TuinMaatAds", "IMPRESSIE!") }
+                override fun onAdClicked() { 
+                    Log.e("TuinMaatAds", "KLIK!") 
+                    analyticsService.logEvent("ad_click_android", mapOf("ad_unit_id" to adUnitId))
+                }
+                override fun onAdImpression() { 
+                    Log.e("TuinMaatAds", "IMPRESSIE!") 
+                    analyticsService.logAdImpression(adUnitId, "Native_Android")
+                }
             })
             .build()
         adLoader.loadAd(AdRequest.Builder().build())
