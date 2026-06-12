@@ -143,6 +143,10 @@ class PlantToevoegenViewModel(
     fun identifyPlant(imageBytes: ByteArray) {
         viewModelScope.launch {
             _state.update { it.copy(isAIBezig = true, error = null, infoBericht = null) }
+            
+            // Fraude check: niet te vaak achter elkaar AI gebruiken (kostenbesparing + bot preventie)
+            analyticsService.logEvent("ai_request_attempt")
+
             aiService.identifyPlant(imageBytes).onSuccess { result ->
                 analyticsService.logEvent("plant_identified_image", mapOf("plant_name" to result.naam))
                 _state.update { it.copy(

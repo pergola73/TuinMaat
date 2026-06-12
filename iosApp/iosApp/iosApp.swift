@@ -163,7 +163,7 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         ctaButton.setTitleColor(.white, for: .normal)
         ctaButton.titleLabel?.font = .boldSystemFont(ofSize: 14)
         ctaButton.layer.cornerRadius = 8
-        ctaButton.isUserInteractionEnabled = true // Aangezet voor betere interactie registratie
+        ctaButton.isUserInteractionEnabled = false // Terug naar false: laat de GADNativeAdView de click afhandelen
         adView.addSubview(ctaButton)
         ctaButton.translatesAutoresizingMaskIntoConstraints = false
         adView.callToActionView = ctaButton
@@ -175,13 +175,13 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
 
             adChoicesView.topAnchor.constraint(equalTo: adView.topAnchor),
             adChoicesView.trailingAnchor.constraint(equalTo: adView.trailingAnchor),
-            adChoicesView.widthAnchor.constraint(equalToConstant: 20),
-            adChoicesView.heightAnchor.constraint(equalToConstant: 20),
+            adChoicesView.widthAnchor.constraint(equalToConstant: 24), // Iets groter voor betere zichtbaarheid
+            adChoicesView.heightAnchor.constraint(equalToConstant: 24),
 
             iconView.topAnchor.constraint(equalTo: adBadge.bottomAnchor, constant: 6),
             iconView.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 8),
-            iconView.widthAnchor.constraint(equalToConstant: 32),
-            iconView.heightAnchor.constraint(equalToConstant: 32),
+            iconView.widthAnchor.constraint(equalToConstant: 40), // Iets groter conform richtlijnen
+            iconView.heightAnchor.constraint(equalToConstant: 40),
 
             headlineLabel.topAnchor.constraint(equalTo: adBadge.topAnchor),
             headlineLabel.leadingAnchor.constraint(equalTo: adBadge.trailingAnchor, constant: 8),
@@ -200,16 +200,18 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
             ctaButton.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 12),
             ctaButton.trailingAnchor.constraint(equalTo: adView.trailingAnchor, constant: -12),
             ctaButton.bottomAnchor.constraint(equalTo: adView.bottomAnchor, constant: -10),
-            ctaButton.heightAnchor.constraint(equalToConstant: 38)
+            ctaButton.heightAnchor.constraint(equalToConstant: 44) // Standaard tap-hoogte
         ])
 
-        // Assign content
+        // Assign content BEFORE setting the nativeAd object
         (adView.headlineView as? UILabel)?.text = nativeAd.headline
         (adView.bodyView as? UILabel)?.text = nativeAd.body
         (adView.callToActionView as? UIButton)?.setTitle(nativeAd.callToAction, for: .normal)
-        iconView.image = nativeAd.icon?.image
-
+        (adView.iconView as? UIImageView)?.image = nativeAd.icon?.image
+        
+        // Verplicht voor de validator: koppel het object als LAATSTE stap
         adView.nativeAd = nativeAd
+
         adView.layoutIfNeeded()
         self.nativeAdView = adView
     }

@@ -11,18 +11,46 @@ interface AnalyticsService {
     fun logAdImpression(adUnitId: String, adType: String)
     fun logScreenView(screenName: String, screenClass: String)
     fun logUserSegment(segment: String)
+    
+    // Fraude detectie
+    fun trackPotentialFraud(type: String, details: String)
 }
 
 class FirebaseAnalyticsService : AnalyticsService {
-    // Gebruik een lazy delegate of getter om te voorkomen dat Firebase te vroeg wordt aangeroepen
     private val analytics get() = Firebase.analytics
+    private val actionTimestamps = mutableMapOf<String, MutableList<Long>>()
 
     override fun logEvent(name: String, params: Map<String, Any>) {
         try {
             analytics.logEvent(name, params)
+            
+            // Automatische click-rate monitoring voor AdMob
+            if (name == "ad_click_android" || name == "ad_click_ios") {
+                checkFrequency("ad_click", 3, 60000) // Max 3 clicks per minuut
+            }
         } catch (e: Exception) {
             println("Analytics Error: ${e.message}")
         }
+    }
+
+    private fun checkFrequency(action: String, maxCount: Int, timeFrameMs: Long) {
+        val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val timestamps = actionTimestamps.getOrPut(action) { mutableListOf() }
+        
+        timestamps.add(now)
+        timestamps.removeAll { it < now - timeFrameMs }
+        
+        if (timestamps.size > maxCount) {
+            trackPotentialFraud("high_frequency_$action", "Count: ${timestamps.size} in ${timeFrameMs/1000}s")
+        }
+    }
+
+    override fun trackPotentialFraud(type: String, details: String) {
+        logEvent("suspicious_activity", mapOf(
+            "fraud_type" to type,
+            "details" to details,
+            "platform" to com.rvodevelopment.tuinmaat.getPlatform().name
+        ))
     }
 
     override fun setUserProperty(name: String, value: String) {
