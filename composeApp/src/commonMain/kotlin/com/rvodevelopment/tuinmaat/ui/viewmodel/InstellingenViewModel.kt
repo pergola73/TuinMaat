@@ -20,7 +20,8 @@ class InstellingenViewModel(
     private val selectionService: SelectionService,
     private val deepLinkHandler: DeepLinkHandler,
     private val premiumService: PremiumService,
-    private val billingService: BillingService
+    private val billingService: BillingService,
+    private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow<UserData?>(null)
@@ -47,6 +48,7 @@ class InstellingenViewModel(
     private var userDataJob: kotlinx.coroutines.Job? = null
 
     init {
+        analyticsService.logScreenView("Instellingen", "InstellingenViewModel")
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         val userFlow = authService.currentUser.flatMapLatest { profile ->
             if (profile != null) {
@@ -125,15 +127,18 @@ class InstellingenViewModel(
     }
 
     fun upgradeToPremium() {
+        analyticsService.logEvent("click_upgrade_premium")
         viewModelScope.launch {
             _isLaden.value = true
             selectionService.markeerSysteemActie()
             billingService.purchasePremium(
                 onSuccess = { 
+                    analyticsService.logEvent("purchase_success")
                     selectionService.markeerSysteemActie() // Extra veiligheid voor terugkeer
                     _isLaden.value = false 
                 },
                 onError = { error ->
+                    analyticsService.logEvent("purchase_failed", mapOf("error" to error))
                     selectionService.markeerSysteemActie() // Extra veiligheid voor terugkeer bij fout
                     _foutMelding.value = error
                     _isLaden.value = false
@@ -143,15 +148,18 @@ class InstellingenViewModel(
     }
 
     fun restorePurchases() {
+        analyticsService.logEvent("click_restore_purchases")
         viewModelScope.launch {
             _isLaden.value = true
             selectionService.markeerSysteemActie()
             billingService.restorePurchases(
                 onSuccess = { 
+                    analyticsService.logEvent("restore_success")
                     selectionService.markeerSysteemActie()
                     _isLaden.value = false 
                 },
                 onError = { error ->
+                    analyticsService.logEvent("restore_failed", mapOf("error" to error))
                     selectionService.markeerSysteemActie()
                     _foutMelding.value = error
                     _isLaden.value = false

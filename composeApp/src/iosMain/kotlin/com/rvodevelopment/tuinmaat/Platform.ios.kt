@@ -10,6 +10,7 @@ actual val appVersion: String = run {
     "$version ($build)"
 }
 
+// AdMob Production IDs (iOS)
 actual val admobNativeHomeId: String = "ca-app-pub-8227056273089055/1599222975"
 actual val admobNativeListId: String = "ca-app-pub-8227056273089055/4967777875"
 actual val admobNativeSnoeiId: String = "ca-app-pub-8227056273089055/5512672970"

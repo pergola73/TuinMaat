@@ -31,7 +31,8 @@ class SnoeiKalenderViewModel(
     private val userRepository: UserRepository,
     private val authService: AuthService,
     private val selectionService: SelectionService,
-    private val premiumService: com.rvodevelopment.tuinmaat.service.PremiumService
+    private val premiumService: com.rvodevelopment.tuinmaat.service.PremiumService,
+    private val analyticsService: com.rvodevelopment.tuinmaat.service.AnalyticsService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SnoeiKalenderState())
@@ -44,6 +45,7 @@ class SnoeiKalenderViewModel(
         loadData()
         observeSelection()
         observePremium()
+        analyticsService.logScreenView("SnoeiKalender", "SnoeiKalenderViewModel")
     }
 
     private fun observePremium() {
