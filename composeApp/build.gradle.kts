@@ -147,8 +147,8 @@ android {
         buildConfigField("String", "ADMOB_NATIVE_LIST_ID", "\"${props.getProperty("ADMOB_NATIVE_LIST_ID") ?: "ca-app-pub-3940256099942544/2247696110"}\"")
         buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${props.getProperty("REVENUECAT_ANDROID_KEY") ?: ""}\"")
         buildConfigField("String", "REVENUECAT_IOS_KEY", "\"${props.getProperty("REVENUECAT_IOS_KEY") ?: ""}\"")
-        buildConfigField("String", "APP_VERSION", "\"2.1.1\"")
-        buildConfigField("int", "BUILD_NUMBER", "25")
+        buildConfigField("String", "APP_VERSION", "\"${project.parent?.project(":app")?.extensions?.getByType<com.android.build.api.dsl.ApplicationExtension>()?.defaultConfig?.versionName ?: "2.2.1"}\"")
+        buildConfigField("int", "BUILD_NUMBER", "${project.parent?.project(":app")?.extensions?.getByType<com.android.build.api.dsl.ApplicationExtension>()?.defaultConfig?.versionCode ?: 27}")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
