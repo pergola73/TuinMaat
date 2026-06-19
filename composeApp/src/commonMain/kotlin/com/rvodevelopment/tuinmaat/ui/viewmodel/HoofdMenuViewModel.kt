@@ -5,9 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.service.*
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -27,7 +25,9 @@ data class HoofdMenuState(
     val planten: List<String> = emptyList(),
     val isPremium: Boolean = false,
     val isEmailVerified: Boolean = true,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val toonNieuwLabel: Boolean = true,
+    val toonTuintekenaar: Boolean = false
 ) {
     val huidigeTip: String get() = if (tuintips.isNotEmpty()) tuintips[huidigeTipIndex] else ""
 }
@@ -39,6 +39,7 @@ class HoofdMenuViewModel(
     private val tuintipService: TuintipService,
     private val deepLinkHandler: DeepLinkHandler,
     private val premiumService: PremiumService,
+    private val premiumManager: com.rvodevelopment.tuinmaat.premium.PremiumManager,
     private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
@@ -49,11 +50,28 @@ class HoofdMenuViewModel(
         observeUserData()
         fetchTuintip()
         observePremium()
+        checkNewFeatureDuration()
+        checkFeatureVisibility()
         analyticsService.logScreenView("HoofdMenu", "HoofdMenuViewModel")
         
         viewModelScope.launch {
             deepLinkHandler.checkPendingDeepLink()
         }
+    }
+
+    private fun checkFeatureVisibility() {
+        _state.update { it.copy(
+            toonTuintekenaar = premiumManager.isFeatureVisible(com.rvodevelopment.tuinmaat.premium.PremiumFeature.GARDEN_PLANNER)
+        ) }
+    }
+
+    private fun checkNewFeatureDuration() {
+        // Markeer features als 'Nieuw' voor 14 dagen na release
+        // TODO: Aanpassen bij elke nieuwe feature release
+        val releaseDate = LocalDate(2025, 1, 10)
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val daysSinceRelease = today.toEpochDays() - releaseDate.toEpochDays()
+        _state.update { it.copy(toonNieuwLabel = daysSinceRelease in 0..14) }
     }
 
     fun switchGarden(gardenId: String) {

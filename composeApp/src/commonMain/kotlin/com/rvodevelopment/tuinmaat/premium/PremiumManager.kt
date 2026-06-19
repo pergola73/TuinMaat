@@ -12,8 +12,18 @@ class PremiumManager(
 ) {
     val isPremium: StateFlow<Boolean> = premiumService.isPremium
 
+    fun isFeatureVisible(feature: PremiumFeature): Boolean {
+        return when (feature) {
+            PremiumFeature.GARDEN_PLANNER -> {
+                // TODO: Later op true zetten voor productie
+                false 
+            }
+            else -> true
+        }
+    }
+
     fun canUseFeature(feature: PremiumFeature): Boolean {
-        // Voor nu is alles premium-only, maar we kunnen hier tiers toevoegen
+        // Voor nu is alles premium-only
         return isPremium.value
     }
 }

@@ -14,6 +14,10 @@ import com.rvodevelopment.tuinmaat.ui.theme.TuinMaatTheme
 import com.rvodevelopment.tuinmaat.ui.viewmodel.*
 import com.rvodevelopment.tuinmaat.premium.health.DrTuinmaatScherm
 import com.rvodevelopment.tuinmaat.premium.health.DrTuinmaatViewModel
+import com.rvodevelopment.tuinmaat.premium.notifications.TuinAgendaScherm
+import com.rvodevelopment.tuinmaat.premium.notifications.TuinAgendaViewModel
+import com.rvodevelopment.tuinmaat.premium.planner.GardenPlannerScherm
+import com.rvodevelopment.tuinmaat.premium.planner.GardenPlannerViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
@@ -113,6 +117,20 @@ fun App() {
                                     popUpTo("hoofdmenu") { inclusive = false }
                                 }
                             }
+                        )
+                    }
+                    composable("actiecentrum") {
+                        val viewModel: TuinAgendaViewModel = koinInject()
+                        TuinAgendaScherm(
+                            viewModel = viewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("tuintekenaar") {
+                        val viewModel: GardenPlannerViewModel = koinInject()
+                        GardenPlannerScherm(
+                            viewModel = viewModel,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                     composable("snoeikalender") {

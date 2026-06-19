@@ -261,10 +261,26 @@ fun HoofdMenuScherm(
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
                 MenuKnop(
+                    tekst = "Mijn Tuin-Agenda",
+                    icoon = Icons.Default.TaskAlt,
+                    isPremium = !state.isPremium,
+                    isNieuw = state.toonNieuwLabel
+                ) { onNavigate("actiecentrum") }
+
+                if (state.toonTuintekenaar) {
+                    MenuKnop(
+                        tekst = "2D Tuintekenaar",
+                        icoon = Icons.Default.Architecture,
+                        isPremium = !state.isPremium,
+                        isNieuw = state.toonNieuwLabel
+                    ) { onNavigate("tuintekenaar") }
+                }
+
+                MenuKnop(
                     tekst = "Dr. Tuinmaat",
                     icoon = Icons.Default.HealthAndSafety,
-                    isPremium = true,
-                    isNieuw = true
+                    isPremium = !state.isPremium,
+                    isNieuw = state.toonNieuwLabel
                 ) { onNavigate("drtuinmaat") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
                 if (!state.isPremium) {
