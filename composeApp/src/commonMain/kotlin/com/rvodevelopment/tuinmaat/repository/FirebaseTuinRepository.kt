@@ -38,7 +38,8 @@ class FirebaseTuinRepository : TuinRepository {
                             omschrijving = data["omschrijving"] as? String ?: "",
                             snoeiMaand = data["snoeiMaand"] as? String ?: "",
                             locatie = data["locatie"] as? String ?: "Tuin",
-                            fotoUri = data["fotoUri"] as? String
+                            fotoUri = data["fotoUri"] as? String,
+                            persoonlijkeNotitie = data["persoonlijkeNotitie"] as? String ?: ""
                         )
                     }
                 }
@@ -60,7 +61,8 @@ class FirebaseTuinRepository : TuinRepository {
                             omschrijving = data["omschrijving"] as? String ?: "",
                             snoeiMaand = data["snoeiMaand"] as? String ?: "",
                             locatie = data["locatie"] as? String ?: "Tuin",
-                            fotoUri = data["fotoUri"] as? String
+                            fotoUri = data["fotoUri"] as? String,
+                            persoonlijkeNotitie = data["persoonlijkeNotitie"] as? String ?: ""
                         )
                     }
                 } else {

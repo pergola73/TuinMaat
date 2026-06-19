@@ -23,5 +23,6 @@ data class Plant(
     val wetenschappelijkeNaam: String = "",
     val fotoUri: String? = null,
     val locatie: String = "",
-    val bron: String = ""
+    val bron: String = "",
+    val persoonlijkeNotitie: String = ""
 )

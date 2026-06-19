@@ -105,6 +105,7 @@ kotlin {
             // Firebase Android
             implementation(libs.firebase.auth)
             implementation(libs.firebase.firestore)
+            implementation(libs.firebase.messaging)
             implementation(libs.firebase.storage)
             implementation(libs.firebase.vertexai)
             implementation(libs.kotlinx.coroutines.play.services)

@@ -8,6 +8,10 @@ import com.rvodevelopment.tuinmaat.repository.*
 import com.rvodevelopment.tuinmaat.service.*
 import com.rvodevelopment.tuinmaat.data.*
 import com.rvodevelopment.tuinmaat.ui.viewmodel.*
+import com.rvodevelopment.tuinmaat.premium.PremiumManager
+import com.rvodevelopment.tuinmaat.premium.health.*
+import com.rvodevelopment.tuinmaat.premium.planner.*
+import com.rvodevelopment.tuinmaat.premium.notifications.*
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
@@ -66,6 +70,13 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     single<AnalyticsService> { FirebaseAnalyticsService() }
     single<PremiumService> { DefaultPremiumService(get()) }
     single<BillingService> { RevenueCatService(get(), get(named("REVENUECAT_API_KEY"))) }
+    
+    // Premium v2.3.0 Modules
+    single { PremiumManager(get()) }
+    single { DrTuinmaatService(get()) }
+    single { GardenPlannerService() }
+    single { ActionCenterService() }
+
     single { DeepLinkHandler(get(), get(), get()) }
     single<TuintipService> { DefaultTuintipService(get()) }
     

@@ -1,13 +1,14 @@
 package com.rvodevelopment.tuinmaat.data
 
 import androidx.room.*
+import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.rvodevelopment.tuinmaat.model.Locatie
 import com.rvodevelopment.tuinmaat.model.Plant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-@Database(entities = [Plant::class, Locatie::class], version = 2, exportSchema = false)
+@Database(entities = [Plant::class, Locatie::class], version = 3, exportSchema = true)
 @ConstructedBy(PlantDatabaseConstructor::class)
 abstract class PlantDatabase : RoomDatabase() {
     abstract fun plantDao(): PlantDao
@@ -27,5 +28,6 @@ fun getRoomDatabase(
     return builder
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
+        .fallbackToDestructiveMigration(true)
         .build()
 }

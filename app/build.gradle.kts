@@ -17,8 +17,8 @@ android {
         applicationId = "com.rvodevelopment.tuinmaat"
         minSdk = 24
         targetSdk = 35
-        versionCode = 28
-        versionName = "2.2.2"
+        versionCode = 29
+        versionName = "2.3.0-premium-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.play.services.base)
     implementation(libs.play.services.auth)
     implementation(libs.play.services.ads)
+    implementation(libs.firebase.messaging)
 
 
     // Firebase

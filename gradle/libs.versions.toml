@@ -70,6 +70,7 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
 firebase-vertexai = { group = "com.google.firebase", name = "firebase-vertexai", version = "16.0.0-beta01" }
 firebase-appcheck = { group = "com.google.firebase", name = "firebase-appcheck" }
