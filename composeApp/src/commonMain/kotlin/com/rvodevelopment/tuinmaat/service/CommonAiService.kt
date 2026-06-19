@@ -78,6 +78,27 @@ class CommonAiService(
         }
     }
 
+    override suspend fun identifyDisease(imageBytes: ByteArray, plantName: String?): Result<AiDiseaseResult> = withContext(Dispatchers.IO) {
+        try {
+            val resizedImage = mediaService.resizeImage(imageBytes, 1024)
+            val plantNetDisease = identificeerZiekteMetPlantNet(resizedImage)
+            
+            val eppoCode = plantNetDisease?.first ?: ""
+            val diseaseName = plantNetDisease?.second ?: "Onbekende aandoening"
+            val referencePhoto = plantNetDisease?.third
+
+            val geminiResult = verrijkZiekteMetGemini(diseaseName, plantName ?: "onbekende plant")
+            
+            Result.success(geminiResult.copy(
+                ziekteNaam = diseaseName,
+                eppoCode = eppoCode,
+                referentieFoto = referencePhoto
+            ))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private suspend fun identificeerMetPlantNet(imageBytes: ByteArray): Pair<String, String>? {
         return try {
             val response: String = client.submitFormWithBinaryData(
@@ -110,6 +131,101 @@ class CommonAiService(
         } catch (e: Exception) {
             println("PlantNet Error: ${e.message}")
             null
+        }
+    }
+
+    private suspend fun identificeerZiekteMetPlantNet(imageBytes: ByteArray): Triple<String, String, String?>? {
+        return try {
+            val response: String = client.submitFormWithBinaryData(
+                url = "https://my-api.plantnet.org/v2/diseases/identify?api-key=$plantnetApiKey&lang=nl&include-related-images=true",
+                formData = formData {
+                    append("images", imageBytes, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition, "filename=\"disease.jpg\"")
+                    })
+                }
+            ).body()
+
+            val json = Json.parseToJsonElement(response).jsonObject
+            val results = json["results"]?.jsonArray
+            if (results != null && results.isNotEmpty()) {
+                val bestMatch = results[0].jsonObject
+                val eppoCode = bestMatch["name"]?.jsonPrimitive?.content ?: ""
+                val description = bestMatch["description"]?.jsonPrimitive?.content ?: eppoCode
+                
+                val referenceImage = bestMatch["images"]?.jsonArray?.getOrNull(0)?.jsonObject
+                    ?.get("url")?.jsonObject?.get("m")?.jsonPrimitive?.content
+                
+                Triple(eppoCode, description, referenceImage)
+            } else null
+        } catch (e: Exception) {
+            println("PlantNet Disease Error: ${e.message}")
+            null
+        }
+    }
+
+    private suspend fun verrijkZiekteMetGemini(
+        ziekteNaam: String,
+        plantNaam: String
+    ): AiDiseaseResult {
+        val prompt = """
+            Ziekte: $ziekteNaam
+            Plant: $plantNaam
+            
+            Geef gedetailleerde informatie in JSON:
+            {
+              "omschrijving": "Korte uitleg van de ziekte (max 40 woorden)",
+              "advies": "Stapsgewijs advies om de plant te redden of verdere verspreiding te voorkomen (max 60 woorden)"
+            }
+            Taal: Nederlands.
+        """.trimIndent()
+
+        return try {
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
+                    putJsonArray("contents") {
+                        addJsonObject {
+                            putJsonArray("parts") {
+                                addJsonObject { put("text", prompt) }
+                            }
+                        }
+                    }
+                    putJsonObject("system_instruction") {
+                        putJsonArray("parts") {
+                            addJsonObject { put("text", "Je bent een expert plantendokter. Antwoord uitsluitend in valide JSON.") }
+                        }
+                    }
+                    putJsonObject("generationConfig") {
+                        put("response_mime_type", "application/json")
+                        put("temperature", 0.1)
+                    }
+                })
+            }.body()
+
+            val textResult = response["candidates"]?.jsonArray?.get(0)?.jsonObject
+                ?.get("content")?.jsonObject
+                ?.get("parts")?.jsonArray?.get(0)?.jsonObject
+                ?.get("text")?.jsonPrimitive?.content ?: "{}"
+
+            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(textResult).jsonObject
+
+            AiDiseaseResult(
+                ziekteNaam = ziekteNaam,
+                score = 0.0, // Wordt later gezet
+                eppoCode = "",
+                omschrijving = json["omschrijving"]?.jsonPrimitive?.content ?: "",
+                advies = json["advies"]?.jsonPrimitive?.content ?: ""
+            )
+        } catch (e: Exception) {
+            println("Gemini Disease Error: ${e.message}")
+            AiDiseaseResult(
+                ziekteNaam = ziekteNaam,
+                score = 0.0,
+                eppoCode = "",
+                omschrijving = "Informatie kon niet worden opgehaald.",
+                advies = "Raadpleeg een expert als de symptomen verergeren."
+            )
         }
     }
 

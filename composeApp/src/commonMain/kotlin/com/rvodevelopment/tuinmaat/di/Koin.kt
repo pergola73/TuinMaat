@@ -77,6 +77,8 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     single { GardenPlannerService() }
     single { ActionCenterService() }
 
+    factory { DrTuinmaatViewModel(get(), get(), get(), get(), get(), get()) }
+
     single { DeepLinkHandler(get(), get(), get()) }
     single<TuintipService> { DefaultTuintipService(get()) }
     

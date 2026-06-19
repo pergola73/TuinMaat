@@ -31,6 +31,7 @@ fun PlantDetailScherm(
     viewModel: PlantDetailViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
+    onNavigateToDrTuinmaat: (String) -> Unit,
     onNavigateToLocaties: () -> Unit = {},
     onNavigateToSnoeiKalender: () -> Unit = {}
 ) {
@@ -169,6 +170,20 @@ fun PlantDetailScherm(
 
                                 Spacer(modifier = Modifier.height(32.dp))
 
+                                if (p.persoonlijkeNotitie.isNotBlank()) {
+                                    SectionHeader("Persoonlijke Notitie")
+                                    Text(
+                                        text = p.persoonlijkeNotitie,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = DonkerGroen.copy(alpha = 0.8f),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 24.dp)
+                                            .background(DonkerGroen.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                            .padding(16.dp)
+                                    )
+                                }
+
                                 SectionHeader("Verzorging")
                                 Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                                     VerzorgingItem(Icons.Default.CalendarMonth, "Snoeimaand", p.snoeiMaand)
@@ -177,6 +192,20 @@ fun PlantDetailScherm(
                                     VerzorgingItem(Icons.Default.WaterDrop, "Water", p.waterBehoefte)
                                     VerzorgingItem(Icons.Default.Agriculture, "Voeding", p.voedingAdvies)
                                     VerzorgingItem(Icons.Default.ReportProblem, "EHBO", p.ehboSignaal)
+                                }
+
+                                Spacer(modifier = Modifier.height(32.dp))
+
+                                // Dr. Tuinmaat Button
+                                Button(
+                                    onClick = { onNavigateToDrTuinmaat(p.naam) },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Icon(Icons.Default.MedicalServices, null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Dr. Tuinmaat: Check Gezondheid", fontWeight = FontWeight.Bold)
                                 }
 
                                 Spacer(modifier = Modifier.height(120.dp))

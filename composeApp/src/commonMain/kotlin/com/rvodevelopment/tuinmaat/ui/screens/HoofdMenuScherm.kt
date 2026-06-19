@@ -1,5 +1,6 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -217,12 +218,24 @@ fun HoofdMenuScherm(
                                 .neumorphicShadow(shape = CircleShape)
                                 .background(Color.White.copy(alpha = 0.7f), CircleShape)
                         ) {
-                            Icon(
-                                Icons.Default.Lightbulb,
-                                contentDescription = "Toon Tuintip",
-                                tint = DonkerGroen,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Box {
+                                Icon(
+                                    Icons.Default.Lightbulb,
+                                    contentDescription = "Toon Tuintip",
+                                    tint = DonkerGroen,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                // Melding/attentie stipje voor nieuwe functies
+                                Surface(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 2.dp, y = (-2).dp),
+                                    color = GrasGroen,
+                                    shape = CircleShape,
+                                    border = BorderStroke(1.5.dp, Color.White)
+                                ) {}
+                            }
                         }
                     }
                 }
@@ -247,6 +260,12 @@ fun HoofdMenuScherm(
                 MenuKnop("Mijn Planten", Icons.AutoMirrored.Filled.List) { onNavigate("lijst") }
                 MenuKnop("Plant Toevoegen", Icons.Default.Add) { onNavigate("toevoegen") }
                 MenuKnop("Snoei Kalender", Icons.Default.CalendarToday) { onNavigate("snoeikalender") }
+                MenuKnop(
+                    tekst = "Dr. Tuinmaat",
+                    icoon = Icons.Default.HealthAndSafety,
+                    isPremium = true,
+                    isNieuw = true
+                ) { onNavigate("drtuinmaat") }
                 MenuKnop("Instellingen", Icons.Default.Settings) { onNavigate("instellingen") }
                 if (!state.isPremium) {
                     Spacer(modifier = Modifier.height(16.dp))

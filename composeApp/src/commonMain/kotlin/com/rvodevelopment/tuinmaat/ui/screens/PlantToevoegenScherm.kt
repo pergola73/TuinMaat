@@ -356,6 +356,17 @@ fun PlantToevoegenScherm(
 
                 InvoerVeldMetIcoon("Omschrijving", state.plant.omschrijving, { viewModel.updatePlant { p -> p.copy(omschrijving = it) } }, Icons.Default.Info, isMultiLine = true)
                 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InvoerVeldMetIcoon(
+                    label = "Persoonlijke Notitie",
+                    waarde = state.plant.persoonlijkeNotitie,
+                    onWaardeChange = { viewModel.updatePlant { p -> p.copy(persoonlijkeNotitie = it) } },
+                    icoon = Icons.Default.EditNote,
+                    isMultiLine = true,
+                    placeholder = "Voeg je eigen notities toe (wordt niet overschreven door AI)..."
+                )
+
                 // Snoeimaand Chips
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

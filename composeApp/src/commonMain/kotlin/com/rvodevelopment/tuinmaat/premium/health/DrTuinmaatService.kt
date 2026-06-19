@@ -1,5 +1,6 @@
 package com.rvodevelopment.tuinmaat.premium.health
 
+import com.rvodevelopment.tuinmaat.service.AiDiseaseResult
 import com.rvodevelopment.tuinmaat.service.AiService
 
 /**
@@ -8,5 +9,7 @@ import com.rvodevelopment.tuinmaat.service.AiService
 class DrTuinmaatService(
     private val aiService: AiService
 ) {
-    // TODO: Implementeer specifieke prompts voor ziekteherkenning
+    suspend fun diagnosePlant(imageBytes: ByteArray, currentPlantName: String? = null): Result<AiDiseaseResult> {
+        return aiService.identifyDisease(imageBytes, currentPlantName)
+    }
 }

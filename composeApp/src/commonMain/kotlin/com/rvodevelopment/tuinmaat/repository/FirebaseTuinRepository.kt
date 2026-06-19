@@ -1,6 +1,7 @@
 package com.rvodevelopment.tuinmaat.repository
 
 import com.rvodevelopment.tuinmaat.model.Plant
+import com.rvodevelopment.tuinmaat.model.Diagnosis
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
@@ -100,6 +101,33 @@ class FirebaseTuinRepository : TuinRepository {
             snapshot.get<String?>("naam") ?: "Mijn Tuin"
         }
         .catch { emit("Mijn Tuin") }
+    }
+
+    override suspend fun saveDiagnosis(gardenId: String, diagnosis: Diagnosis): Result<Unit> {
+        return try {
+            val collection = firestore.collection("tuinen").document(gardenId).collection("diagnoses")
+            if (diagnosis.id.isEmpty()) {
+                collection.add(diagnosis)
+            } else {
+                collection.document(diagnosis.id).set(diagnosis)
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override fun getDiagnoses(gardenId: String, plantId: String?): Flow<List<Diagnosis>> {
+        var query = firestore.collection("tuinen").document(gardenId).collection("diagnoses")
+            .orderBy("timestamp", dev.gitlive.firebase.firestore.Direction.DESCENDING)
+        
+        if (plantId != null) {
+            query = query.where { "plantId" equalTo plantId }
+        }
+
+        return query.snapshots().map { snapshot ->
+            snapshot.documents.map { it.data<Diagnosis>().copy(id = it.id) }
+        }.catch { emit(emptyList()) }
     }
 
     override fun getLocaties(gardenId: String): Flow<List<String>> {

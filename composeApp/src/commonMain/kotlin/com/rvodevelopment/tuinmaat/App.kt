@@ -12,6 +12,8 @@ import com.rvodevelopment.tuinmaat.ui.components.SecurityWrapper
 import com.rvodevelopment.tuinmaat.ui.screens.*
 import com.rvodevelopment.tuinmaat.ui.theme.TuinMaatTheme
 import com.rvodevelopment.tuinmaat.ui.viewmodel.*
+import com.rvodevelopment.tuinmaat.premium.health.DrTuinmaatScherm
+import com.rvodevelopment.tuinmaat.premium.health.DrTuinmaatViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
@@ -78,8 +80,26 @@ fun App() {
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
                             onNavigateToEdit = { id -> navController.navigate("toevoegen?plantId=$id") },
+                            onNavigateToDrTuinmaat = { id -> navController.navigate("drtuinmaat/$id") },
                             onNavigateToLocaties = { navController.navigate("locatiebeheer") },
                             onNavigateToSnoeiKalender = { navController.navigate("snoeikalender") }
+                        )
+                    }
+                    composable("drtuinmaat") {
+                        val viewModel: DrTuinmaatViewModel = koinInject()
+                        DrTuinmaatScherm(
+                            viewModel = viewModel,
+                            plantName = null,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("drtuinmaat/{plantName}") { backStackEntry ->
+                        val plantName = backStackEntry.arguments?.getString("plantName")
+                        val viewModel: DrTuinmaatViewModel = koinInject()
+                        DrTuinmaatScherm(
+                            viewModel = viewModel,
+                            plantName = plantName,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                     composable("toevoegen?plantId={plantId}") { backStackEntry ->

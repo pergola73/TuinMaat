@@ -9,10 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.LocalFlorist
-import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -34,9 +31,11 @@ import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.rvodevelopment.tuinmaat.getPlatform
 import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
+import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import org.jetbrains.compose.resources.painterResource
 import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
@@ -60,6 +59,7 @@ fun InvoerVeldMetIcoon(
     icoon: ImageVector,
     modifier: Modifier = Modifier,
     isMultiLine: Boolean = false,
+    placeholder: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -121,6 +121,7 @@ fun InvoerVeldMetIcoon(
                     } else Modifier
                 ),
             minLines = if (isMultiLine) 3 else 1,
+            placeholder = placeholder?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = DonkerGroen.copy(alpha = 0.4f)) } },
             shape = RoundedCornerShape(12.dp),
             visualTransformation = visualTransformation,
             trailingIcon = trailingIcon,
@@ -141,7 +142,13 @@ fun InvoerVeldMetIcoon(
 }
 
 @Composable
-fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
+fun MenuKnop(
+    tekst: String,
+    icoon: ImageVector,
+    isPremium: Boolean = false,
+    isNieuw: Boolean = false,
+    onClick: () -> Unit
+) {
     Surface(
         onClick = onClick,
         modifier = Modifier
@@ -166,12 +173,50 @@ fun MenuKnop(tekst: String, icoon: ImageVector, onClick: () -> Unit) {
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                tekst,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = DonkerGroen
-            )
+            Column {
+                Text(
+                    tekst,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DonkerGroen
+                )
+                if (isPremium || isNieuw) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isPremium) {
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFD4AF37),
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                "PREMIUM",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFFD4AF37),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 8.sp
+                            )
+                        }
+                        if (isPremium && isNieuw) {
+                            Text(
+                                " • ",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = GrasGroen.copy(alpha = 0.5f)
+                            )
+                        }
+                        if (isNieuw) {
+                            Text(
+                                "NIEUW",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = GrasGroen,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 8.sp
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.weight(1f))
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = DonkerGroen.copy(alpha = 0.3f))
         }

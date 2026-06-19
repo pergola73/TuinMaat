@@ -1,6 +1,7 @@
 package com.rvodevelopment.tuinmaat.repository
 
 import com.rvodevelopment.tuinmaat.model.Plant
+import com.rvodevelopment.tuinmaat.model.Diagnosis
 import kotlinx.coroutines.flow.Flow
 
 interface TuinRepository {
@@ -10,6 +11,10 @@ interface TuinRepository {
     suspend fun deletePlant(gardenId: String, plantId: String): Result<Unit>
     suspend fun savePlant(gardenId: String, plant: Plant): Result<Unit>
     suspend fun getTuinnaam(gardenId: String): Flow<String>
+
+    // Diagnose Historie
+    suspend fun saveDiagnosis(gardenId: String, diagnosis: Diagnosis): Result<Unit>
+    fun getDiagnoses(gardenId: String, plantId: String? = null): Flow<List<Diagnosis>>
     
     // Nieuwe methoden voor de locaties subcollectie
     fun getLocaties(gardenId: String): Flow<List<String>>
