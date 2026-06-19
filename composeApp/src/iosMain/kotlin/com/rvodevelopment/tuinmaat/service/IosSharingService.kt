@@ -19,4 +19,11 @@ class IosSharingService : SharingService {
             completion = null
         )
     }
+
+    override fun openUrl(url: String) {
+        val nsUrl = platform.Foundation.NSURL.URLWithString(url)
+        if (nsUrl != null) {
+            UIApplication.sharedApplication.openURL(nsUrl)
+        }
+    }
 }

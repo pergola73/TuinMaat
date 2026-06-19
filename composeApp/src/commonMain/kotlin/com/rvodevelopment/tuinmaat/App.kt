@@ -86,7 +86,7 @@ fun App() {
                             onNavigateToEdit = { id -> navController.navigate("toevoegen?plantId=$id") },
                             onNavigateToDrTuinmaat = { id -> navController.navigate("drtuinmaat/$id") },
                             onNavigateToLocaties = { navController.navigate("locatiebeheer") },
-                            onNavigateToSnoeiKalender = { navController.navigate("snoeikalender") }
+                            onNavigateToAgenda = { navController.navigate("actiecentrum") }
                         )
                     }
                     composable("drtuinmaat") {

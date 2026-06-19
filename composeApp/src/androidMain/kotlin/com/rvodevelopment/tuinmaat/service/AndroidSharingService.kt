@@ -15,4 +15,15 @@ class AndroidSharingService(private val context: Context) : SharingService {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         })
     }
+
+    override fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            println("Kon URL niet openen: ${e.message}")
+        }
+    }
 }

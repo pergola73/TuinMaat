@@ -21,6 +21,14 @@ class IosStorageService : StorageService {
         defaults.setBool(value, key)
     }
 
+    override fun getInt(key: String, defaultValue: Int): Int {
+        return if (defaults.objectForKey(key) == null) defaultValue else defaults.integerForKey(key).toInt()
+    }
+
+    override fun setInt(key: String, value: Int) {
+        defaults.setInteger(value.toLong(), key)
+    }
+
     override fun remove(key: String) {
         defaults.removeObjectForKey(key)
     }

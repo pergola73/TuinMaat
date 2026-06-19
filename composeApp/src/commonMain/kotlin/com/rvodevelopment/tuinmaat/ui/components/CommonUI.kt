@@ -224,6 +224,220 @@ fun MenuKnop(
 }
 
 @Composable
+fun FeatureCard(
+    tekst: String,
+    subtekst: String,
+    icoon: @Composable () -> Unit,
+    containerColor: Color,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+    isPremium: Boolean = false,
+    isNieuw: Boolean = false,
+    isAttentie: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .height(80.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        color = containerColor,
+        contentColor = contentColor
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = contentColor.copy(alpha = 0.1f),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        icoon()
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(tekst, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
+                    Text(subtekst, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.7f))
+                }
+            }
+            
+            // Badges rechtsboven
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isAttentie) {
+                    Surface(
+                        color = Color.Red,
+                        shape = CircleShape,
+                        modifier = Modifier.size(12.dp),
+                        border = BorderStroke(1.5.dp, Color.White)
+                    ) {}
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                if (isPremium) {
+                    Icon(
+                        Icons.Default.Star, 
+                        null, 
+                        tint = Color(0xFFD4AF37), 
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                if (isNieuw) {
+                    Surface(
+                        color = GrasGroen,
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        Text(
+                            "NIEUW",
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 7.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActionCardSmall(
+    tekst: String,
+    icoon: @Composable () -> Unit,
+    containerColor: Color,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+    isPremium: Boolean = false,
+    isNieuw: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .height(110.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(24.dp)),
+        shape = RoundedCornerShape(24.dp),
+        color = containerColor,
+        contentColor = contentColor
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.padding(12.dp).fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box {
+                    icoon()
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    tekst, 
+                    style = MaterialTheme.typography.titleMedium, 
+                    fontWeight = FontWeight.ExtraBold, 
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 18.sp
+                )
+            }
+
+            // Badges rechtsboven
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isPremium) {
+                    Icon(
+                        Icons.Default.Star, 
+                        null, 
+                        tint = Color(0xFFD4AF37), 
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                if (isNieuw) {
+                    Surface(
+                        color = GrasGroen,
+                        shape = CircleShape,
+                        modifier = Modifier.size(8.dp).padding(2.dp).align(Alignment.Top),
+                        border = BorderStroke(1.dp, Color.White)
+                    ) {}
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickActionKnop(
+    tekst: String,
+    icoon: ImageVector,
+    isPremium: Boolean = false,
+    isNieuw: Boolean = false,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .height(64.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFFF5F5F0)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box {
+                    Icon(icoon, null, tint = DonkerGroen, modifier = Modifier.size(24.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    tekst,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = DonkerGroen,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Badges rechtsboven
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isPremium) {
+                    Icon(
+                        Icons.Default.Star, 
+                        null, 
+                        tint = Color(0xFFD4AF37), 
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                if (isNieuw) {
+                    Surface(
+                        color = GrasGroen,
+                        shape = CircleShape,
+                        modifier = Modifier.size(6.dp),
+                        border = BorderStroke(1.dp, Color.White)
+                    ) {}
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun LocationChip(selected: Boolean, label: String, onClick: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(10.dp),
@@ -339,4 +553,3 @@ fun PremiumUpgradeDialog(
         }
     )
 }
-

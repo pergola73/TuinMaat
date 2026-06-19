@@ -16,7 +16,7 @@ class PremiumManager(
         return when (feature) {
             PremiumFeature.GARDEN_PLANNER -> {
                 // TODO: Later op true zetten voor productie
-                false 
+                true
             }
             else -> true
         }

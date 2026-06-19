@@ -22,6 +22,14 @@ class AndroidStorageService(context: Context) : StorageService {
         prefs.edit().putBoolean(key, value).apply()
     }
 
+    override fun getInt(key: String, defaultValue: Int): Int {
+        return prefs.getInt(key, defaultValue)
+    }
+
+    override fun setInt(key: String, value: Int) {
+        prefs.edit().putInt(key, value).apply()
+    }
+
     override fun remove(key: String) {
         prefs.edit().remove(key).apply()
     }

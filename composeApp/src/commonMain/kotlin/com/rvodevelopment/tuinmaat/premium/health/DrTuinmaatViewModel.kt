@@ -24,6 +24,7 @@ class DrTuinmaatViewModel(
     premiumManager: PremiumManager,
     private val drTuinmaatService: DrTuinmaatService,
     private val mediaService: MediaService,
+    private val selectionService: com.rvodevelopment.tuinmaat.service.SelectionService,
     private val tuinRepository: TuinRepository,
     private val userRepository: UserRepository,
     private val authService: AuthService
@@ -101,6 +102,7 @@ class DrTuinmaatViewModel(
     fun maakFoto(plantName: String? = null) {
         viewModelScope.launch {
             if (mediaService.requestCameraPermission()) {
+                selectionService.markeerSysteemActie()
                 mediaService.takePhoto()?.let { bytes ->
                     diagnose(bytes, plantName)
                 }
@@ -112,6 +114,7 @@ class DrTuinmaatViewModel(
 
     fun kiesFoto(plantName: String? = null) {
         viewModelScope.launch {
+            selectionService.markeerSysteemActie()
             mediaService.pickImage()?.let { bytes ->
                 diagnose(bytes, plantName)
             }

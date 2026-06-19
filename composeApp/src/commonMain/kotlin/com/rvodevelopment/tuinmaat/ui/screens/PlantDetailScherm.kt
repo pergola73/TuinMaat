@@ -33,7 +33,7 @@ fun PlantDetailScherm(
     onNavigateToEdit: (String) -> Unit,
     onNavigateToDrTuinmaat: (String) -> Unit,
     onNavigateToLocaties: () -> Unit = {},
-    onNavigateToSnoeiKalender: () -> Unit = {}
+    onNavigateToAgenda: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -285,14 +285,14 @@ fun PlantDetailScherm(
         if (state.toonSnoeiKalenderTip) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissSnoeiKalenderTip() },
-                title = { Text("Snoeikalender ✂️", color = DonkerGroen, fontWeight = FontWeight.Bold) },
-                text = { Text("Via de snoeikalender zie je snel en makkelijk welke planten in welke maand gesnoeid moeten worden. Zo vergeet je nooit meer een snoeibeurt!", color = Color.Black) },
+                title = { Text("Tuin-Agenda 📅", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                text = { Text("Wist je dat je in de Tuin-Agenda precies ziet wanneer je welke plant moet snoeien? Zo vergeet je nooit meer een snoeibeurt!", color = Color.Black) },
                 confirmButton = {
                     Button(onClick = { 
                         viewModel.dismissSnoeiKalenderTip()
-                        onNavigateToSnoeiKalender()
+                        onNavigateToAgenda()
                     }, colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)) {
-                        Text("Naar Snoeikalender")
+                        Text("Naar Agenda")
                     }
                 },
                 dismissButton = {

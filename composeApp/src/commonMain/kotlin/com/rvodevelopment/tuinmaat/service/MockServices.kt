@@ -20,6 +20,8 @@ class MockStorageService : StorageService, ImageStorageService {
     override fun setString(key: String, value: String) {}
     override fun getBoolean(key: String, defaultValue: Boolean) = false
     override fun setBoolean(key: String, value: Boolean) {}
+    override fun getInt(key: String, defaultValue: Int) = 0
+    override fun setInt(key: String, value: Int) {}
     override fun remove(key: String) {}
     override suspend fun uploadFile(path: String, bytes: ByteArray) = Result.success("https://dummy.url")
 }

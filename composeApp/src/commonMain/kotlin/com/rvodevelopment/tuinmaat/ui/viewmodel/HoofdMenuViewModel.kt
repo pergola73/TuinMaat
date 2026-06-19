@@ -27,7 +27,10 @@ data class HoofdMenuState(
     val isEmailVerified: Boolean = true,
     val isLoading: Boolean = false,
     val toonNieuwLabel: Boolean = true,
-    val toonTuintekenaar: Boolean = false
+    val toonTuintekenaar: Boolean = false,
+    val toonReviewVraag: Boolean = false,
+    val openReviewUrl: String? = null,
+    val heeftOngelezenBerichten: Boolean = false
 ) {
     val huidigeTip: String get() = if (tuintips.isNotEmpty()) tuintips[huidigeTipIndex] else ""
 }
@@ -40,6 +43,8 @@ class HoofdMenuViewModel(
     private val deepLinkHandler: DeepLinkHandler,
     private val premiumService: PremiumService,
     private val premiumManager: com.rvodevelopment.tuinmaat.premium.PremiumManager,
+    private val agendaService: com.rvodevelopment.tuinmaat.premium.notifications.TuinAgendaService,
+    private val storageService: StorageService,
     private val analyticsService: AnalyticsService
 ) : ViewModel() {
 
@@ -50,13 +55,62 @@ class HoofdMenuViewModel(
         observeUserData()
         fetchTuintip()
         observePremium()
+        observeNotifications()
         checkNewFeatureDuration()
         checkFeatureVisibility()
+        checkReviewRequest()
         analyticsService.logScreenView("HoofdMenu", "HoofdMenuViewModel")
         
         viewModelScope.launch {
             deepLinkHandler.checkPendingDeepLink()
         }
+    }
+
+    private fun observeNotifications() {
+        viewModelScope.launch {
+            agendaService.getNotifications().collect { notifications ->
+                val ongelezen = notifications.any { !it.isRead }
+                _state.update { it.copy(heeftOngelezenBerichten = ongelezen) }
+            }
+        }
+    }
+
+    private fun checkReviewRequest() {
+        val alGereviewed = storageService.getBoolean("app_reviewed", false)
+        if (!alGereviewed) {
+            val aantalOpens = storageService.getInt("app_open_count", 0) + 1
+            storageService.setInt("app_open_count", aantalOpens)
+            
+            // Toon review vraag bij de 5e keer openen
+            if (aantalOpens == 5) {
+                _state.update { it.copy(toonReviewVraag = true) }
+                analyticsService.logEvent("review_request_shown")
+            }
+        }
+    }
+
+    fun markReviewDone(positive: Boolean) {
+        storageService.setBoolean("app_reviewed", true)
+        _state.update { it.copy(toonReviewVraag = false) }
+        analyticsService.logEvent("review_response", mapOf("positive" to positive))
+        
+        if (positive) {
+            val appId = "com.rvodevelopment.tuinmaat"
+            val url = if (com.rvodevelopment.tuinmaat.getPlatform() == com.rvodevelopment.tuinmaat.PlatformType.IOS) {
+                "https://apps.apple.com/app/id6738981600?action=write-review"
+            } else {
+                "market://details?id=$appId"
+            }
+            _state.update { it.copy(openReviewUrl = url) }
+        }
+    }
+
+    fun reviewUrlGeopend() {
+        _state.update { it.copy(openReviewUrl = null) }
+    }
+
+    fun sluitReview() {
+        _state.update { it.copy(toonReviewVraag = false) }
     }
 
     private fun checkFeatureVisibility() {
