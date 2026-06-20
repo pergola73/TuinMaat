@@ -24,6 +24,7 @@ import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantDetailViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -217,6 +218,7 @@ fun PlantDetailScherm(
 
             // Vaste Navigatiepijlen halverwege het scherm
             if (state.planten.size > 1) {
+                val scope = rememberCoroutineScope()
                 // Linker pijl
                 if (pagerState.currentPage > 0) {
                     Box(
@@ -225,7 +227,12 @@ fun PlantDetailScherm(
                             .padding(start = 8.dp)
                             .offset(y = 120.dp) // Nog lager geplaatst om over tekst te voorkomen
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.5f), CircleShape),
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                            .clickable {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -245,7 +252,12 @@ fun PlantDetailScherm(
                             .padding(end = 8.dp)
                             .offset(y = 120.dp) // Nog lager geplaatst om over tekst te voorkomen
                             .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.5f), CircleShape),
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                            .clickable {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

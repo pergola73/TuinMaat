@@ -26,3 +26,11 @@ data class Plant(
     val bron: String = "",
     val persoonlijkeNotitie: String = ""
 )
+
+@Entity(tableName = "voltooide_taken")
+data class VoltooideTaak(
+    @PrimaryKey
+    val taakId: String, // Combinatie van type + datum + eventueel plantId
+    val voltooidOp: Long
+)
+

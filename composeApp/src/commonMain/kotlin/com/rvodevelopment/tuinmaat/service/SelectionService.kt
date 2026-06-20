@@ -8,8 +8,15 @@ class SelectionService(private val storageService: StorageService) {
     private val _geselecteerdeLocatie = MutableStateFlow("Alle")
     val geselecteerdeLocatie: StateFlow<String> = _geselecteerdeLocatie.asStateFlow()
 
+    private val _zoekTerm = MutableStateFlow("")
+    val zoekTerm: StateFlow<String> = _zoekTerm.asStateFlow()
+
     fun updateLocatie(locatie: String) {
         _geselecteerdeLocatie.value = locatie
+    }
+
+    fun updateZoekTerm(term: String) {
+        _zoekTerm.value = term
     }
 
     // Gebruik StorageService voor persistentie bij process death (bijv. tijdens camera gebruik)

@@ -45,7 +45,8 @@ class HoofdMenuViewModel(
     private val premiumManager: com.rvodevelopment.tuinmaat.premium.PremiumManager,
     private val agendaService: com.rvodevelopment.tuinmaat.premium.notifications.TuinAgendaService,
     private val storageService: StorageService,
-    private val analyticsService: AnalyticsService
+    private val analyticsService: AnalyticsService,
+    private val notificationService: NotificationService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HoofdMenuState())
@@ -60,6 +61,7 @@ class HoofdMenuViewModel(
         checkFeatureVisibility()
         checkReviewRequest()
         analyticsService.logScreenView("HoofdMenu", "HoofdMenuViewModel")
+        updateFcmToken()
         
         viewModelScope.launch {
             deepLinkHandler.checkPendingDeepLink()
@@ -275,6 +277,16 @@ class HoofdMenuViewModel(
                 it.copy(huidigeTipIndex = it.huidigeTipIndex - 1)
             } else {
                 it
+            }
+        }
+    }
+
+    private fun updateFcmToken() {
+        viewModelScope.launch {
+            authService.currentUser.first()?.let { user ->
+                notificationService.getFcmToken()?.let { token ->
+                    userRepository.updateFcmToken(user.uid, token)
+                }
             }
         }
     }

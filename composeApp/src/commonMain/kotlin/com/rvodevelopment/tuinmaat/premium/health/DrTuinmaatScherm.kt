@@ -1,5 +1,6 @@
 package com.rvodevelopment.tuinmaat.premium.health
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,10 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.rvodevelopment.tuinmaat.ui.components.PremiumUpgradeDialog
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
@@ -110,17 +114,22 @@ fun DrTuinmaatScherm(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-                    .background(DonkerGroen.copy(alpha = 0.05f), RoundedCornerShape(16.dp)),
+                    .height(250.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(DonkerGroen.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (state.geselecteerdeFoto != null) {
                     AsyncImage(
                         model = state.geselecteerdeFoto,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize().padding(8.dp),
-                        contentScale = ContentScale.Fit
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
+                    
+                    if (state.isScanning) {
+                        VisualScannerOverlay()
+                    }
                 } else {
                     Icon(
                         Icons.Default.AddAPhoto,
@@ -133,37 +142,55 @@ fun DrTuinmaatScherm(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Button(
-                    onClick = { viewModel.maakFoto(plantName) },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.PhotoCamera, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Camera")
+            if (state.isScanning) {
+                Text(
+                    "Bezig met visuele scan...",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = GrasGroen
+                )
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    color = GrasGroen,
+                    trackColor = GrasGroen.copy(alpha = 0.1f)
+                )
+            } else if (state.isLaden) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = DonkerGroen)
+                    Text(
+                        "AI analyseert gezondheidsprofiel...", 
+                        modifier = Modifier.padding(top = 8.dp), 
+                        color = DonkerGroen,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
-                
-                OutlinedButton(
-                    onClick = { viewModel.kiesFoto(plantName) },
-                    modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = DonkerGroen),
-                    shape = RoundedCornerShape(12.dp)
+            } else if (state.resultaat == null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(Icons.Default.PhotoLibrary, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Galerij")
+                    Button(
+                        onClick = { viewModel.maakFoto(plantName) },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Camera")
+                    }
+                    
+                    OutlinedButton(
+                        onClick = { viewModel.kiesFoto(plantName) },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = DonkerGroen),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Galerij")
+                    }
                 }
-            }
-
-            if (state.isLaden) {
-                Spacer(modifier = Modifier.height(32.dp))
-                CircularProgressIndicator(color = DonkerGroen)
-                Text("Analyseert ziektebeeld...", modifier = Modifier.padding(top = 8.dp), color = DonkerGroen)
             }
 
             state.error?.let {
@@ -176,131 +203,100 @@ fun DrTuinmaatScherm(
                 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(24.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.padding(24.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.BugReport, null, tint = DonkerGroen)
-                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.Default.HealthAndSafety, null, tint = GrasGroen, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.width(12.dp))
                             Text(
-                                text = "Diagnose: ${res.ziekteNaam}",
+                                text = "Gezondheidsrapport",
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.ExtraBold,
                                 color = DonkerGroen
                             )
                         }
 
-                        if (res.eppoCode.isNotEmpty()) {
-                            Text(
-                                text = "EPPO Code: ${res.eppoCode}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DonkerGroen.copy(alpha = 0.5f),
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(res.omschrijving, style = MaterialTheme.typography.bodyMedium)
+                        // Diagnose Sectie
+                        AnalysisSection(
+                            title = "Mogelijke Aandoening",
+                            content = res.ziekteNaam,
+                            description = res.omschrijving,
+                            icon = Icons.Default.BugReport,
+                            color = Color(0xFFE57373)
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+
+                        // Omgevingsfactoren
+                        Text(
+                            "Verzorgingsanalyse",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = DonkerGroen,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AnalysisChip(Icons.Default.WaterDrop, "Water", res.waterAnalyse, Color(0xFF4FC3F7), Modifier.weight(1f))
+                            AnalysisChip(Icons.Default.WbSunny, "Licht", res.lichtAnalyse, Color(0xFFFFD54F), Modifier.weight(1f))
+                            AnalysisChip(Icons.Default.Agriculture, "Voeding", res.voedingAnalyse, Color(0xFF81C784), Modifier.weight(1f))
+                        }
                         
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
                         
                         if (isPremium) {
-                            Text("Hersteladvies:", fontWeight = FontWeight.Bold, color = GrasGroen)
-                            Text(res.advies, style = MaterialTheme.typography.bodyMedium)
-
-                            res.referentieFoto?.let { foto ->
-                                Spacer(modifier = Modifier.height(20.dp))
-                                Text("Referentiebeeld:", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                AsyncImage(
-                                    model = foto,
-                                    contentDescription = "Referentie",
-                                    modifier = Modifier.fillMaxWidth().height(150.dp).padding(top = 4.dp),
-                                    contentScale = ContentScale.Fit
-                                )
-                            }
-                        } else {
-                            // Premium Paywall Card voor Hersteladvies
                             Surface(
-                                color = GrasGroen.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, GrasGroen.copy(alpha = 0.2f))
+                                color = DonkerGroen.copy(alpha = 0.05f),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        Icons.Default.Lock,
-                                        contentDescription = null,
-                                        tint = GrasGroen,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        "Hersteladvies Vergrendeld",
-                                        fontWeight = FontWeight.Bold,
-                                        color = DonkerGroen
-                                    )
-                                    Text(
-                                        "Upgrade naar Premium om het volledige stappenplan te zien en je plant te redden.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = DonkerGroen.copy(alpha = 0.7f),
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                        modifier = Modifier.padding(vertical = 8.dp)
-                                    )
-                                    Button(
-                                        onClick = { viewModel.toonPaywall() },
-                                        colors = ButtonDefaults.buttonColors(containerColor = GrasGroen),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text("Bekijk Hersteladvies")
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Lightbulb, null, tint = Color(0xFFFFD600), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Hersteladvies", fontWeight = FontWeight.ExtraBold, color = DonkerGroen)
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(res.advies, style = MaterialTheme.typography.bodyMedium, color = Color.Black.copy(alpha = 0.8f))
+
+                                    res.referentieFoto?.let { foto ->
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text("Referentiebeeld van gezonde bladeren:", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                        AsyncImage(
+                                            model = foto,
+                                            contentDescription = "Referentie",
+                                            modifier = Modifier.fillMaxWidth().height(150.dp).padding(top = 8.dp).clip(RoundedCornerShape(12.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
                                     }
                                 }
                             }
-                        }
-                    }
-                }
-
-                if (isPremium && state.historie.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Text(
-                        "Medisch Dossier (Historie)",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = DonkerGroen,
-                        modifier = Modifier.align(Alignment.Start)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    state.historie.forEach { diagnosis ->
-                        val date = Instant.fromEpochMilliseconds(diagnosis.timestamp)
-                            .toLocalDateTime(TimeZone.currentSystemDefault())
-                        val dateStr = "${date.dayOfMonth}-${date.monthNumber}-${date.year}"
-                        
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.5f))
-                        ) {
-                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.History, null, tint = DonkerGroen.copy(alpha = 0.5f))
-                                Spacer(Modifier.width(12.dp))
-                                Column {
-                                    Text(diagnosis.ziekteNaam, fontWeight = FontWeight.Bold)
-                                    Text(dateStr, style = MaterialTheme.typography.labelSmall)
-                                }
+                        } else {
+                            // Premium Paywall compact
+                            Button(
+                                onClick = { viewModel.toonPaywall() },
+                                colors = ButtonDefaults.buttonColors(containerColor = GrasGroen),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.Lock, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Bekijk volledig hersteladvies")
                             }
                         }
                     }
                 }
                 
                 Spacer(modifier = Modifier.height(32.dp))
-                Button(
+                TextButton(
                     onClick = { viewModel.reset() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Nieuwe check")
+                    Text("Andere plant analyseren", color = Color.Gray)
                 }
             }
         }
@@ -316,5 +312,90 @@ fun DrTuinmaatScherm(
                 onDismiss = { viewModel.sluitPaywall() }
             )
         }
+    }
+}
+
+@Composable
+fun AnalysisSection(
+    title: String,
+    content: String,
+    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color
+) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(title, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+        }
+        Text(content, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DonkerGroen, modifier = Modifier.padding(vertical = 4.dp))
+        Text(description, style = MaterialTheme.typography.bodySmall, color = Color.Black.copy(alpha = 0.7f))
+    }
+}
+
+@Composable
+fun AnalysisChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    status: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(status, style = MaterialTheme.typography.labelSmall, color = DonkerGroen, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+fun VisualScannerOverlay() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val yOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Scanning line
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.015f)
+                .align(Alignment.TopCenter)
+                .offset(y = 250.dp * yOffset)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, GrasGroen, Color.Transparent)
+                    )
+                )
+        )
+        
+        // Pulse effect
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(GrasGroen.copy(alpha = 0.1f), Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(x = 500f, y = 1000f * yOffset)
+                    )
+                )
+        )
     }
 }

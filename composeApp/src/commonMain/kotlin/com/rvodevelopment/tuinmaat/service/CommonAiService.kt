@@ -169,13 +169,19 @@ class CommonAiService(
         plantNaam: String
     ): AiDiseaseResult {
         val prompt = """
-            Ziekte: $ziekteNaam
+            Ziekte/Aandoening: $ziekteNaam
             Plant: $plantNaam
             
-            Geef gedetailleerde informatie in JSON:
+            Voer een totale analyse uit van deze plant op basis van het ziektebeeld.
+            Kijk niet alleen naar ziektes, maar ook naar omgevingsfactoren zoals water, licht en voeding.
+            
+            Geef de resultaten in JSON:
             {
-              "omschrijving": "Korte uitleg van de ziekte (max 40 woorden)",
-              "advies": "Stapsgewijs advies om de plant te redden of verdere verspreiding te voorkomen (max 60 woorden)"
+              "omschrijving": "Wat zie je aan de plant? (max 40 woorden)",
+              "advies": "Stapsgewijs herstelplan (max 60 woorden)",
+              "waterAnalyse": "Status van bewatering (bv: te nat, te droog of goed)",
+              "lichtAnalyse": "Status van lichtinval (bv: te veel direct zonlicht of te donker)",
+              "voedingAnalyse": "Status van voeding (bv: tekort aan stikstof of overbemest)"
             }
             Taal: Nederlands.
         """.trimIndent()
@@ -193,7 +199,7 @@ class CommonAiService(
                     }
                     putJsonObject("system_instruction") {
                         putJsonArray("parts") {
-                            addJsonObject { put("text", "Je bent een expert plantendokter. Antwoord uitsluitend in valide JSON.") }
+                            addJsonObject { put("text", "Je bent een expert plantendokter. Je analyseert zowel ziektes als verzorgingsfouten (water, licht, voeding). Antwoord uitsluitend in valide JSON.") }
                         }
                     }
                     putJsonObject("generationConfig") {
@@ -212,10 +218,13 @@ class CommonAiService(
 
             AiDiseaseResult(
                 ziekteNaam = ziekteNaam,
-                score = 0.0, // Wordt later gezet
+                score = 0.0,
                 eppoCode = "",
                 omschrijving = json["omschrijving"]?.jsonPrimitive?.content ?: "",
-                advies = json["advies"]?.jsonPrimitive?.content ?: ""
+                advies = json["advies"]?.jsonPrimitive?.content ?: "",
+                waterAnalyse = json["waterAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen",
+                lichtAnalyse = json["lichtAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen",
+                voedingAnalyse = json["voedingAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen"
             )
         } catch (e: Exception) {
             println("Gemini Disease Error: ${e.message}")

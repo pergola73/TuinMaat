@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 
 data class DrTuinmaatState(
     val isLaden: Boolean = false,
+    val isScanning: Boolean = false,
     val resultaat: AiDiseaseResult? = null,
     val error: String? = null,
     val geselecteerdeFoto: ByteArray? = null,
@@ -56,7 +57,13 @@ class DrTuinmaatViewModel(
 
     fun diagnose(imageBytes: ByteArray, plantName: String? = null, plantId: String? = null) {
         viewModelScope.launch {
-            _state.update { it.copy(isLaden = true, error = null, geselecteerdeFoto = imageBytes) }
+            _state.update { it.copy(geselecteerdeFoto = imageBytes, isScanning = true, error = null, resultaat = null) }
+            
+            // Toon de scanner animatie minimaal 2 seconden voor het "echte" laden begint
+            kotlinx.coroutines.delay(2000)
+            
+            _state.update { it.copy(isScanning = false, isLaden = true) }
+
             drTuinmaatService.diagnosePlant(imageBytes, plantName)
                 .onSuccess { res ->
                     _state.update { it.copy(isLaden = false, resultaat = res) }

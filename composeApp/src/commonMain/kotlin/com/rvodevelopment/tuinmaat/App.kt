@@ -123,7 +123,8 @@ fun App() {
                         val viewModel: TuinAgendaViewModel = koinInject()
                         TuinAgendaScherm(
                             viewModel = viewModel,
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToPlant = { plantId -> navController.navigate("detail/$plantId") }
                         )
                     }
                     composable("tuintekenaar") {

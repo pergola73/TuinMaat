@@ -23,6 +23,7 @@ class PlantDetailViewModel(
     private val userRepository: UserRepository,
     private val tuinRepository: TuinRepository,
     private val storageService: StorageService,
+    private val selectionService: SelectionService,
     private val analyticsService: AnalyticsService,
     private val initialPlantId: String?
 ) : ViewModel() {
@@ -62,36 +63,49 @@ class PlantDetailViewModel(
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun loadPlanten() {
         viewModelScope.launch {
-            authService.currentUser
+            val userFlow = authService.currentUser.filterNotNull()
+                .flatMapLatest { user -> userRepository.getUserData(user.uid) }
                 .filterNotNull()
-                .flatMapLatest { user ->
-                    userRepository.getUserData(user.uid)
-                }
-                .filterNotNull()
-                .flatMapLatest { userData ->
-                    val gardenId = userData.activeGardenId ?: userData.sharedGardenId ?: userData.id
-                    val isEigenTuin = gardenId == userData.id
 
-                    if (isEigenTuin) {
-                        tuinRepository.getPlanten(gardenId).map { it to null }
-                    } else {
-                        combine(
-                            tuinRepository.getPlanten(gardenId),
-                            userRepository.getUserData(gardenId)
-                        ) { planten, ownerData ->
-                            planten to ownerData?.voornaam
-                        }
+            combine(
+                userFlow,
+                selectionService.geselecteerdeLocatie,
+                selectionService.zoekTerm
+            ) { userData, locatie, zoekTerm ->
+                Triple(userData, locatie, zoekTerm)
+            }.flatMapLatest { (userData, locFilter, termFilter) ->
+                val gardenId = userData.activeGardenId ?: userData.sharedGardenId ?: userData.id
+                val isEigenTuin = gardenId == userData.id
+
+                val plantsFlow = if (isEigenTuin) {
+                    tuinRepository.getPlanten(gardenId).map { it to null }
+                } else {
+                    combine(
+                        tuinRepository.getPlanten(gardenId),
+                        userRepository.getUserData(gardenId)
+                    ) { planten, ownerData ->
+                        planten to ownerData?.voornaam
                     }
                 }
-                .collect { (planten, eigenaar) ->
-                    val index = planten.indexOfFirst { it.firestoreId == initialPlantId }.coerceAtLeast(0)
-                    _state.update { it.copy(
-                        planten = planten,
-                        isLoading = false,
-                        initialIndex = index,
-                        eigenaarNaam = eigenaar
-                    ) }
+
+                plantsFlow.map { (planten, eigenaar) ->
+                    val gefilterd = planten.filter { plant ->
+                        val matchesSearch = plant.naam.contains(termFilter, ignoreCase = true) ||
+                                plant.locatie.contains(termFilter, ignoreCase = true)
+                        val matchesLocation = (locFilter == "Alle") || (plant.locatie == locFilter)
+                        matchesSearch && matchesLocation
+                    }.sortedBy { it.naam }
+                    gefilterd to eigenaar
                 }
+            }.collect { (gefilterdePlanten, eigenaar) ->
+                val index = gefilterdePlanten.indexOfFirst { it.firestoreId == initialPlantId }.coerceAtLeast(0)
+                _state.update { it.copy(
+                    planten = gefilterdePlanten,
+                    isLoading = false,
+                    initialIndex = index,
+                    eigenaarNaam = eigenaar
+                ) }
+            }
         }
     }
 

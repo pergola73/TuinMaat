@@ -29,7 +29,10 @@ data class AiDiseaseResult(
     val eppoCode: String,
     val omschrijving: String = "",
     val advies: String = "",
-    val referentieFoto: String? = null
+    val referentieFoto: String? = null,
+    val waterAnalyse: String = "",
+    val lichtAnalyse: String = "",
+    val voedingAnalyse: String = ""
 )
 
 interface AiService {

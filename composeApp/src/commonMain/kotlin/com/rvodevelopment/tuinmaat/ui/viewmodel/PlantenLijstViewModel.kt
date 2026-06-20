@@ -42,9 +42,13 @@ class PlantenLijstViewModel(
 
     private fun observeSelection() {
         viewModelScope.launch {
-            selectionService.geselecteerdeLocatie.collect { locatie ->
-                analyticsService.logEvent("filter_locatie", mapOf("locatie" to locatie))
-                _state.update { it.copy(geselecteerdeLocatie = locatie) }
+            combine(
+                selectionService.geselecteerdeLocatie,
+                selectionService.zoekTerm
+            ) { locatie, term ->
+                locatie to term
+            }.collect { (locatie, term) ->
+                _state.update { it.copy(geselecteerdeLocatie = locatie, zoekTerm = term) }
                 updateFilteredList()
             }
         }
@@ -101,8 +105,7 @@ class PlantenLijstViewModel(
     }
 
     fun onZoekTermChange(term: String) {
-        _state.update { it.copy(zoekTerm = term) }
-        updateFilteredList()
+        selectionService.updateZoekTerm(term)
     }
 
     fun onLocatieSelectie(locatie: String) {

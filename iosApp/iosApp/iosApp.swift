@@ -1,16 +1,36 @@
 import SwiftUI
 import ComposeApp
 import FirebaseCore
+import FirebaseMessaging
 import GoogleMobileAds
+import UserNotifications
 
-@main
-struct TuinMaatApp: App {
-    init() {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
             FirebaseApp.configure()
         }
+        
+        // Push Notificaties Registratie
+        UNUserNotificationCenter.current().delegate = self
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { _, _ in }
+        application.registerForRemoteNotifications()
+        
+        // Messaging Delegate
+        Messaging.messaging().delegate = self
+        
         MobileAds.shared.start(completionHandler: nil)
-
+        
+        setupKoin()
+        setupAdMobRegistry()
+        
+        return true
+    }
+    
+    private func setupKoin() {
         let plantnetKey = Bundle.main.object(forInfoDictionaryKey: "PLANTNET_API_KEY") as? String ?? ""
         let geminiKey = Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String ?? ""
         let revenueCatKey = Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String ?? ""
@@ -21,7 +41,6 @@ struct TuinMaatApp: App {
             geminiApiKey: geminiKey,
             revenueCatApiKey: revenueCatKey
         )
-        setupAdMobRegistry()
     }
 
     private func setupAdMobRegistry() {
@@ -42,6 +61,24 @@ struct TuinMaatApp: App {
             return container
         }
     }
+    
+    // MessagingDelegate: Ontvang de FCM Token
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("Firebase registration token: \(String(describing: fcmToken))")
+        // De token wordt ook via de IosNotificationService opgehaald in de Kotlin code
+    }
+    
+    // UNUserNotificationCenterDelegate: Toon notificatie als app op voorgrond staat
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([[.banner, .list, .sound]])
+    }
+}
+
+@main
+struct TuinMaatApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     var body: some Scene {
         WindowGroup {

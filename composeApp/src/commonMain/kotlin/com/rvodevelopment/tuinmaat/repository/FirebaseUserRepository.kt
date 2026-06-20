@@ -32,7 +32,8 @@ class FirebaseUserRepository : UserRepository {
                             locaties = data["locaties"] as? List<String> ?: listOf("Tuin", "Balkon", "Kas"),
                             standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin",
                             sharedByUsers = (data["sharedByUsers"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-                            isHandmatigGeverifieerd = data["isHandmatigGeverifieerd"] as? Boolean ?: false
+                            isHandmatigGeverifieerd = data["isHandmatigGeverifieerd"] as? Boolean ?: false,
+                            fcmToken = data["fcmToken"] as? String
                         )
                     }
                 } else {
@@ -206,6 +207,15 @@ class FirebaseUserRepository : UserRepository {
             // We laten de app niet crashen als de mail-trigger faalt, maar loggen het wel
             println("Mail trigger error: ${e.message}")
             Result.success(Unit)
+        }
+    }
+
+    override suspend fun updateFcmToken(uid: String, token: String): Result<Unit> {
+        return try {
+            firestore.collection("users").document(uid).set(mapOf("fcmToken" to token), merge = true)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

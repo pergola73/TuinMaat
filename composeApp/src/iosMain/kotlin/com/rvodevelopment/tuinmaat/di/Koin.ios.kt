@@ -13,4 +13,5 @@ actual fun platformModule(): Module = module {
     single<BiometricService> { IosBiometricService() }
     single<MediaService> { IosMediaService() }
     single<StorageService> { IosStorageService() }
+    single<NotificationService> { IosNotificationService() }
 }
