@@ -21,7 +21,9 @@ data class UserData(
     val standaardLocatie: String = "Tuin",
     val sharedByUsers: List<String> = emptyList(), // UIDs van mensen die toegang hebben tot JOUW tuin
     val isHandmatigGeverifieerd: Boolean = false,
-    val fcmToken: String? = null
+    val fcmToken: String? = null,
+    val notificatieFrequentie: String = "DAILY", // NONE, DAILY, WEEKLY
+    val notificatieTijd: String = "09:00"
 )
 
 interface UserRepository {
@@ -36,4 +38,5 @@ interface UserRepository {
     suspend fun triggerDeletionEmail(email: String, voornaam: String, reden: String): Result<Unit>
     suspend fun removeViewerFromGarden(ownerUid: String, viewerUid: String): Result<Unit>
     suspend fun updateFcmToken(uid: String, token: String): Result<Unit>
+    suspend fun updateNotificationPreferences(uid: String, frequentie: String, tijd: String): Result<Unit>
 }

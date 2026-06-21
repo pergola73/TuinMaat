@@ -33,7 +33,9 @@ class FirebaseUserRepository : UserRepository {
                             standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin",
                             sharedByUsers = (data["sharedByUsers"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
                             isHandmatigGeverifieerd = data["isHandmatigGeverifieerd"] as? Boolean ?: false,
-                            fcmToken = data["fcmToken"] as? String
+                            fcmToken = data["fcmToken"] as? String,
+                            notificatieFrequentie = data["notificatieFrequentie"] as? String ?: "DAILY",
+                            notificatieTijd = data["notificatieTijd"] as? String ?: "09:00"
                         )
                     }
                 } else {
@@ -213,6 +215,18 @@ class FirebaseUserRepository : UserRepository {
     override suspend fun updateFcmToken(uid: String, token: String): Result<Unit> {
         return try {
             firestore.collection("users").document(uid).set(mapOf("fcmToken" to token), merge = true)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateNotificationPreferences(uid: String, frequentie: String, tijd: String): Result<Unit> {
+        return try {
+            firestore.collection("users").document(uid).set(mapOf(
+                "notificatieFrequentie" to frequentie,
+                "notificatieTijd" to tijd
+            ), merge = true)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

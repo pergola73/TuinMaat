@@ -174,18 +174,22 @@ class CommonAiService(
             Ziekte/Aandoening: $ziekteNaam
             Plant: $plantNaam
             
-            Voer een totale analyse uit van deze plant op basis van het ziektebeeld.
-            Kijk niet alleen naar ziektes, maar ook naar omgevingsfactoren zoals water, licht en voeding.
+            Voer een HOLISTISCHE analyse uit van deze plant. Gebruik de foto-informatie om een totaalbeeld te vormen.
+            Kijk naar:
+            1. ZIEKTES & PLAGEN: Identificeer specifieke infecties of insecten.
+            2. WATERHUISHOUDING: Zie je tekenen van wortelrot (te nat) of verwelking/bruine randen (te droog)?
+            3. LICHT & STANDPLAATS: Zie je verbranding (te veel zon) of spichtige groei/geel blad (te weinig licht)?
+            4. VOEDINGSSTOFFEN: Zie je verkleuringen die duiden op tekorten (bv. stikstof, magnesium).
             
             Geef de resultaten in JSON:
             {
-              "omschrijving": "Wat zie je aan de plant? (max 40 woorden)",
-              "advies": "Stapsgewijs herstelplan (max 60 woorden)",
-              "waterAnalyse": "Status van bewatering (bv: te nat, te droog of goed)",
-              "lichtAnalyse": "Status van lichtinval (bv: te veel direct zonlicht of te donker)",
-              "voedingAnalyse": "Status van voeding (bv: tekort aan stikstof of overbemest)"
+              "omschrijving": "Een samenvatting van de algehele conditie van de plant (max 40 woorden)",
+              "advies": "Een concreet actieplan om de plant weer gezond te krijgen (max 60 woorden)",
+              "waterAnalyse": "Status bewatering (bv: 'Te nat - kans op rot', 'Te droog' of 'Goed')",
+              "lichtAnalyse": "Status licht (bv: 'Te veel direct zonlicht', 'Te donker' of 'Ideaal')",
+              "voedingAnalyse": "Status voeding (bv: 'Stikstoftekort', 'Overbemest' of 'Voldoende')"
             }
-            Taal: Nederlands.
+            Antwoord uitsluitend in het Nederlands.
         """.trimIndent()
 
         return try {

@@ -4,6 +4,7 @@ import androidx.room.*
 import com.rvodevelopment.tuinmaat.model.Locatie
 import com.rvodevelopment.tuinmaat.model.Plant
 import com.rvodevelopment.tuinmaat.model.VoltooideTaak
+import com.rvodevelopment.tuinmaat.model.HandmatigeTaak
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -41,4 +42,16 @@ interface PlantDao {
 
     @Query("DELETE FROM voltooide_taken WHERE taakId = :id")
     suspend fun deactiveerTaak(id: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertHandmatigeTaak(taak: HandmatigeTaak)
+
+    @Query("SELECT * FROM handmatige_taken WHERE datum = :datum")
+    fun getHandmatigeTakenVoorDatum(datum: String): Flow<List<HandmatigeTaak>>
+
+    @Query("UPDATE handmatige_taken SET isVoltooid = :voltooid WHERE id = :id")
+    suspend fun updateHandmatigeTaakStatus(id: Int, voltooid: Boolean)
+
+    @Delete
+    suspend fun deleteHandmatigeTaak(taak: HandmatigeTaak)
 }
