@@ -23,7 +23,9 @@ actual fun AdBanner(modifier: Modifier) {
         val bannerId = com.rvodevelopment.tuinmaat.admobBannerId
         UIKitView(
             factory = { factory(bannerId) as UIView },
-            modifier = modifier.fillMaxWidth().height(50.dp)
+            modifier = modifier.fillMaxWidth().height(50.dp),
+            update = {},
+            interactive = true
         )
     } else {
         Box(modifier = modifier.fillMaxWidth().height(50.dp))

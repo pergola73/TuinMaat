@@ -18,6 +18,7 @@
 		3674F5982FD0526600BFA4C7 /* PurchasesHybridCommonUI in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */; };
 		3674F59B2FD0550A00BFA4C7 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */; };
 		3674F59F2FD0786300BFA4C7 /* TuinMaat.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 3674F59E2FD0786300BFA4C7 /* TuinMaat.storekit */; };
+		3681BDFB2FE6955E004DCA59 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 3681BDFA2FE6955E004DCA59 /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +67,7 @@
 				3674F5932FD0503800BFA4C7 /* PurchasesHybridCommonUI in Frameworks */,
 				3674F5982FD0526600BFA4C7 /* PurchasesHybridCommonUI in Frameworks */,
 				3623649D2FDC395D00FC6006 /* FirebaseAnalytics in Frameworks */,
+				3681BDFB2FE6955E004DCA59 /* FirebaseMessaging in Frameworks */,
 				3674F5852FD0256C00BFA4C7 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -130,6 +132,7 @@
 				3674F5972FD0526600BFA4C7 /* PurchasesHybridCommonUI */,
 				3674F59A2FD0550A00BFA4C7 /* GoogleMobileAds */,
 				3623649C2FDC395D00FC6006 /* FirebaseAnalytics */,
+				3681BDFA2FE6955E004DCA59 /* FirebaseMessaging */,
 			);
 			productName = iosApp;
 			productReference = A208DAE2D6A9C322B0B890D0 /* TuinMaat.app */;
@@ -510,6 +513,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3674F5992FD0550A00BFA4C7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
 			productName = GoogleMobileAds;
+		};
+		3681BDFA2FE6955E004DCA59 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2AAE93F22FACD05D007EE171 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

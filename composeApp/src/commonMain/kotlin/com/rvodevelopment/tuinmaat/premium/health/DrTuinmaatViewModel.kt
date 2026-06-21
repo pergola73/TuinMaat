@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 data class DrTuinmaatState(
     val isLaden: Boolean = false,
@@ -38,6 +39,7 @@ class DrTuinmaatViewModel(
         loadHistory()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadHistory() {
         viewModelScope.launch {
             authService.currentUser.flatMapLatest { user ->

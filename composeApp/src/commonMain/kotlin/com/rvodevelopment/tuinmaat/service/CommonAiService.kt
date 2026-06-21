@@ -22,6 +22,8 @@ class CommonAiService(
     private val mediaService: MediaService
 ) : AiService {
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     override suspend fun identifyPlant(imageBytes: ByteArray): Result<AiPlantResult> = withContext(Dispatchers.IO) {
         val start = Clock.System.now()
         try {
@@ -214,17 +216,17 @@ class CommonAiService(
                 ?.get("parts")?.jsonArray?.get(0)?.jsonObject
                 ?.get("text")?.jsonPrimitive?.content ?: "{}"
 
-            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(textResult).jsonObject
+            val parsedJson = json.parseToJsonElement(textResult).jsonObject
 
             AiDiseaseResult(
                 ziekteNaam = ziekteNaam,
                 score = 0.0,
                 eppoCode = "",
-                omschrijving = json["omschrijving"]?.jsonPrimitive?.content ?: "",
-                advies = json["advies"]?.jsonPrimitive?.content ?: "",
-                waterAnalyse = json["waterAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen",
-                lichtAnalyse = json["lichtAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen",
-                voedingAnalyse = json["voedingAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen"
+                omschrijving = parsedJson["omschrijving"]?.jsonPrimitive?.content ?: "",
+                advies = parsedJson["advies"]?.jsonPrimitive?.content ?: "",
+                waterAnalyse = parsedJson["waterAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen",
+                lichtAnalyse = parsedJson["lichtAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen",
+                voedingAnalyse = parsedJson["voedingAnalyse"]?.jsonPrimitive?.content ?: "Geen afwijkingen"
             )
         } catch (e: Exception) {
             println("Gemini Disease Error: ${e.message}")
@@ -328,19 +330,19 @@ class CommonAiService(
                 ?.get("parts")?.jsonArray?.get(0)?.jsonObject
                 ?.get("text")?.jsonPrimitive?.content ?: "{}"
 
-            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(textResult).jsonObject
+            val parsedJson = json.parseToJsonElement(textResult).jsonObject
 
             AiPlantResult(
                 naam = plantNaam,
-                wetenschappelijkeNaam = json["wetenschappelijkeNaam"]?.jsonPrimitive?.content ?: scientificName,
-                omschrijving = json["omschrijving"]?.jsonPrimitive?.content ?: "",
-                waterBehoefte = json["waterBehoefte"]?.jsonPrimitive?.content ?: "",
-                lichtBehoefte = json["lichtBehoefte"]?.jsonPrimitive?.content ?: "",
-                voedingAdvies = json["voedingAdvies"]?.jsonPrimitive?.content ?: "",
-                ehboSignaal = json["ehboSignaal"]?.jsonPrimitive?.content ?: "",
-                snoeiMaand = json["snoeiMaand"]?.jsonPrimitive?.content ?: "",
-                snoeiAdvies = json["snoeiAdvies"]?.jsonPrimitive?.content ?: "",
-                bemesting = json["bemesting"]?.jsonPrimitive?.content ?: ""
+                wetenschappelijkeNaam = parsedJson["wetenschappelijkeNaam"]?.jsonPrimitive?.content ?: scientificName,
+                omschrijving = parsedJson["omschrijving"]?.jsonPrimitive?.content ?: "",
+                waterBehoefte = parsedJson["waterBehoefte"]?.jsonPrimitive?.content ?: "",
+                lichtBehoefte = parsedJson["lichtBehoefte"]?.jsonPrimitive?.content ?: "",
+                voedingAdvies = parsedJson["voedingAdvies"]?.jsonPrimitive?.content ?: "",
+                ehboSignaal = parsedJson["ehboSignaal"]?.jsonPrimitive?.content ?: "",
+                snoeiMaand = parsedJson["snoeiMaand"]?.jsonPrimitive?.content ?: "",
+                snoeiAdvies = parsedJson["snoeiAdvies"]?.jsonPrimitive?.content ?: "",
+                bemesting = parsedJson["bemesting"]?.jsonPrimitive?.content ?: ""
             )
         } catch (e: Exception) {
             println("Gemini Error: ${e.message}")
@@ -431,8 +433,8 @@ class CommonAiService(
                 ?.get("parts")?.jsonArray?.get(0)?.jsonObject
                 ?.get("text")?.jsonPrimitive?.content ?: "{}"
 
-            val json = Json { ignoreUnknownKeys = true }.parseToJsonElement(textResult).jsonObject
-            val tip = json["tip"]?.jsonPrimitive?.content ?: "Geniet van je tuin vandaag!"
+            val parsedJson = json.parseToJsonElement(textResult).jsonObject
+            val tip = parsedJson["tip"]?.jsonPrimitive?.content ?: "Geniet van je tuin vandaag!"
 
             Result.success(AiGardenTip(temp, conditie, icoon, tip))
         } catch (e: Exception) {

@@ -31,7 +31,9 @@ actual fun NativeAd(adUnitId: String, modifier: Modifier, isMedium: Boolean) {
     if (factory != null && !isLocked) {
         UIKitView(
             factory = { factory(adUnitId, isMedium) as UIView },
-            modifier = modifier.fillMaxWidth().height(height)
+            modifier = modifier.fillMaxWidth().height(height),
+            update = {},
+            interactive = true
         )
     } else {
         Box(modifier = modifier.fillMaxWidth().height(height))

@@ -1,6 +1,7 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -111,7 +112,8 @@ fun TuinDelenScherm(
                     onClick = { showJoinDialog = true },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
                     shape = RoundedCornerShape(16.dp),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(DonkerGroen))
+                    border = BorderStroke(1.dp, DonkerGroen),
+                    enabled = true
                 ) {
                     Text("Ik heb een code ontvangen", color = DonkerGroen, fontWeight = FontWeight.Bold)
                 }

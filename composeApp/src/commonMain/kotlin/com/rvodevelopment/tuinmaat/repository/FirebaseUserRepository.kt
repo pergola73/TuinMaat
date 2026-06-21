@@ -31,7 +31,7 @@ class FirebaseUserRepository : UserRepository {
                             activeGardenId = data["activeGardenId"] as? String,
                             locaties = data["locaties"] as? List<String> ?: listOf("Tuin", "Balkon", "Kas"),
                             standaardLocatie = data["standaardLocatie"] as? String ?: "Tuin",
-                            sharedByUsers = (data["sharedByUsers"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                            sharedByUsers = (data["sharedByUsers"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
                             isHandmatigGeverifieerd = data["isHandmatigGeverifieerd"] as? Boolean ?: false,
                             fcmToken = data["fcmToken"] as? String
                         )

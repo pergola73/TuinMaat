@@ -4,6 +4,7 @@ package com.rvodevelopment.tuinmaat.data
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 
 import com.rvodevelopment.tuinmaat.util.ActivityProvider
 

@@ -2,6 +2,7 @@ package com.rvodevelopment.tuinmaat.data
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import platform.Foundation.NSHomeDirectory
 
 fun getDatabaseBuilder(): RoomDatabase.Builder<PlantDatabase> {
