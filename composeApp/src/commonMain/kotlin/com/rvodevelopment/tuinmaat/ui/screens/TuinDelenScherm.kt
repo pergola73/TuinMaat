@@ -1,6 +1,5 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,8 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
-import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 
 import androidx.compose.runtime.collectAsState
@@ -75,76 +71,80 @@ fun TuinDelenScherm(
         )
     }
 
-    TuinAchtergrond {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-                }
-                Text("Tuin Delen", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Tuin Delen", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = ZachtBeige)
+            )
+        },
+        containerColor = ZachtBeige
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp)) {
+            Text("Samen tuinieren", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
+            Text(
+                "Stuur een uitnodiging naar iemand anders om samen in jouw tuin te werken.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DonkerGroen.copy(alpha = 0.7f),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { viewModel.shareInvitation() },
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
+            ) {
+                Icon(Icons.Default.Share, null, tint = Color.White)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Deel mijn Tuin Code", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
 
-            Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
-                Text("Samen tuinieren", style = MaterialTheme.typography.titleLarge, color = DonkerGroen, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = { showJoinDialog = true },
+                modifier = Modifier.fillMaxWidth().height(64.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, DonkerGroen),
+                enabled = true
+            ) {
+                Text("Ik heb een code ontvangen", color = DonkerGroen, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+            HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (isGekoppeld) {
                 Text(
-                    "Stuur een uitnodiging naar iemand anders om samen in jouw tuin te werken.",
+                    "Je bent momenteel gekoppeld aan een gedeelde tuin. Je kunt het delen op elk moment stoppen.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = DonkerGroen.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    color = DonkerGroen.copy(alpha = 0.7f)
                 )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { viewModel.shareInvitation() },
-                    modifier = Modifier.fillMaxWidth().height(64.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DonkerGroen)
-                ) {
-                    Icon(Icons.Default.Share, null, tint = Color.White)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Deel mijn Tuin Code", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 OutlinedButton(
-                    onClick = { showJoinDialog = true },
-                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    onClick = { viewModel.unlinkGarden() },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, DonkerGroen),
-                    enabled = true
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                 ) {
-                    Text("Ik heb een code ontvangen", color = DonkerGroen, fontWeight = FontWeight.Bold)
+                    Text("Stop met delen", fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(modifier = Modifier.height(48.dp))
-                HorizontalDivider(color = DonkerGroen.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(32.dp))
-
-                if (isGekoppeld) {
-                    Text(
-                        "Je bent momenteel gekoppeld aan een gedeelde tuin. Je kunt het delen op elk moment stoppen.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DonkerGroen.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = { viewModel.unlinkGarden() },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
-                    ) {
-                        Text("Stop met delen", fontWeight = FontWeight.Bold)
-                    }
-                } else {
-                    Text(
-                        "Je beheert momenteel je eigen tuin. Zodra je een uitnodiging van iemand anders accepteert, kun je hier ook hun tuin zien.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DonkerGroen.copy(alpha = 0.6f),
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                    )
-                }
+            } else {
+                Text(
+                    "Je beheert momenteel je eigen tuin. Zodra je een uitnodiging van iemand anders accepteert, kun je hier ook hun tuin zien.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DonkerGroen.copy(alpha = 0.6f),
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                )
             }
         }
     }

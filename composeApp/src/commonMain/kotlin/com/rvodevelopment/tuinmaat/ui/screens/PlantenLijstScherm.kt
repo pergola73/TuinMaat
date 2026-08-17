@@ -29,7 +29,7 @@ import com.rvodevelopment.tuinmaat.ui.components.LocationChip
 import com.rvodevelopment.tuinmaat.ui.components.PlantKaart
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
-import com.rvodevelopment.tuinmaat.ui.theme.TuinAchtergrond
+import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import com.rvodevelopment.tuinmaat.ui.viewmodel.PlantenLijstViewModel
 
@@ -42,63 +42,67 @@ fun PlantenLijstScherm(
 ) {
     val state by viewModel.state.collectAsState()
 
-    TuinAchtergrond {
+    Scaffold(
+        topBar = {
+            Surface(color = ZachtBeige) {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                    ) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Mijn Planten",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = DonkerGroen,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                text = state.tuinnaam,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = DonkerGroen.copy(alpha = 0.6f)
+                            )
+                        }
+                        IconButton(onClick = { viewModel.toggleZoekveld() }) {
+                            Icon(
+                                if (state.isZoekenZichtbaar) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Zoeken",
+                                tint = DonkerGroen
+                            )
+                        }
+                    }
+
+                    // Locatie filters
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            LocationChip(
+                                selected = state.geselecteerdeLocatie == "Alle",
+                                label = "Alle"
+                            ) { viewModel.onLocatieSelectie("Alle") }
+                        }
+                        items(state.locaties) { loc ->
+                            LocationChip(
+                                selected = state.geselecteerdeLocatie == loc,
+                                label = loc
+                            ) { viewModel.onLocatieSelectie(loc) }
+                        }
+                    }
+                }
+            }
+        },
+        containerColor = ZachtBeige
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding(),
+                .padding(padding),
         ) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp),
-            ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Mijn Planten",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = DonkerGroen,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        text = state.tuinnaam,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = DonkerGroen.copy(alpha = 0.7f),
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                    )
-                }
-                IconButton(onClick = { viewModel.toggleZoekveld() }) {
-                    Icon(
-                        if (state.isZoekenZichtbaar) Icons.Default.Close else Icons.Default.Search,
-                        contentDescription = "Zoeken",
-                        tint = DonkerGroen
-                    )
-                }
-            }
-
-            // Locatie filters
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    LocationChip(
-                        selected = state.geselecteerdeLocatie == "Alle",
-                        label = "Alle"
-                    ) { viewModel.onLocatieSelectie("Alle") }
-                }
-                items(state.locaties) { loc ->
-                    LocationChip(
-                        selected = state.geselecteerdeLocatie == loc,
-                        label = loc
-                    ) { viewModel.onLocatieSelectie(loc) }
-                }
-            }
-
             // Neumorphic Zoekbalk
             AnimatedVisibility(
                 visible = state.isZoekenZichtbaar,

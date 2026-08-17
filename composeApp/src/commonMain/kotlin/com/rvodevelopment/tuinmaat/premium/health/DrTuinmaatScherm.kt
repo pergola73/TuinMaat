@@ -120,11 +120,21 @@ fun DrTuinmaatScherm(
                 contentAlignment = Alignment.Center
             ) {
                 if (state.geselecteerdeFoto != null) {
+                    val saturation by animateFloatAsState(
+                        targetValue = if (state.isScanning) 0.3f else 1f,
+                        animationSpec = tween(durationMillis = 2000)
+                    )
+                    
                     AsyncImage(
                         model = state.geselecteerdeFoto,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                            androidx.compose.ui.graphics.ColorMatrix().apply {
+                                setToSaturation(saturation)
+                            }
+                        )
                     )
                     
                     if (state.isScanning) {
@@ -199,8 +209,25 @@ fun DrTuinmaatScherm(
             }
 
             state.resultaat?.let { res ->
+                LaunchedEffect(Unit) {
+                    // Korte delay voor het hersteleffect
+                    kotlinx.coroutines.delay(500)
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
                 
+                Surface(
+                    color = GrasGroen.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AutoAwesome, null, tint = GrasGroen)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Analyse voltooid: Je plant wordt weer gezond! 🌱", color = DonkerGroen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     shape = RoundedCornerShape(24.dp),

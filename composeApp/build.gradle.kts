@@ -134,7 +134,7 @@ ksp {
 
 android {
     namespace = "com.rvodevelopment.tuinmaat.composeapp"
-    compileSdk = 35
+    compileSdk = 36
     buildFeatures {
         buildConfig = true
     }

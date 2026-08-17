@@ -32,6 +32,7 @@ import com.rvodevelopment.tuinmaat.ui.viewmodel.InstellingenViewModel
 import com.rvodevelopment.tuinmaat.appVersion
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InstellingenScherm(
     navController: NavController,
@@ -52,20 +53,21 @@ fun InstellingenScherm(
         "Andere reden",
     )
 
-    TuinAchtergrond {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-                }
-                Text(
-                    "Instellingen",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = DonkerGroen,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Instellingen", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = ZachtBeige)
+            )
+        },
+        containerColor = ZachtBeige
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (foutMelding != null) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -255,6 +257,7 @@ fun InstellingItem(text: String, icon: ImageVector, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoScherm(
     navController: NavController,
@@ -263,15 +266,21 @@ fun InfoScherm(
     val userData by viewModel.userData.collectAsState()
     var tapCount by remember { mutableStateOf(0) }
 
-    TuinAchtergrond {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-                IconButton(onClick = { navController.popBackStack() }) { 
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen) 
-                }
-                Text("Informatie", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-            }
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Informatie", color = DonkerGroen, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = ZachtBeige)
+            )
+        },
+        containerColor = ZachtBeige
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Card(
                 modifier = Modifier.padding(16.dp).fillMaxWidth().neumorphicShadow(shape = RoundedCornerShape(16.dp)),
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),

@@ -2,6 +2,8 @@ package com.rvodevelopment.tuinmaat.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rvodevelopment.tuinmaat.model.Plant
+import com.rvodevelopment.tuinmaat.premium.notifications.MaintenanceAction
 import com.rvodevelopment.tuinmaat.repository.TuinRepository
 import com.rvodevelopment.tuinmaat.repository.UserRepository
 import com.rvodevelopment.tuinmaat.service.*
@@ -23,6 +25,8 @@ data class HoofdMenuState(
     val actieveGid: String? = null,
     val huidigeMaand: Int = 1,
     val planten: List<String> = emptyList(),
+    val recentPlanten: List<Plant> = emptyList(),
+    val vandaagActies: List<MaintenanceAction> = emptyList(),
     val isPremium: Boolean = false,
     val isEmailVerified: Boolean = true,
     val isLoading: Boolean = false,
@@ -187,9 +191,19 @@ class HoofdMenuViewModel(
                             }
 
                             observeGardenData(activeGid)
+                            observeVandaagActies(activeGid)
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun observeVandaagActies(gardenId: String) {
+        viewModelScope.launch {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            agendaService.getUpcomingActions(gardenId, today, _state.value.isPremium).collect { actions ->
+                _state.update { it.copy(vandaagActies = actions.take(3)) }
             }
         }
     }
@@ -202,9 +216,12 @@ class HoofdMenuViewModel(
                 val namen = planten.map { it.naam }
                 val wasLeeg = _state.value.planten.isEmpty() && _state.value.tuintips.isEmpty()
                 
+                val recent = planten.sortedByDescending { it.id }.take(5)
+
                 _state.update { it.copy(
                     aantalPlanten = planten.size,
-                    planten = namen
+                    planten = namen,
+                    recentPlanten = recent
                 ) }
 
                 if (wasLeeg && namen.isNotEmpty()) {

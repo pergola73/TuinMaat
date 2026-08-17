@@ -11,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.rvodevelopment.tuinmaat"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.rvodevelopment.tuinmaat"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 30
         versionName = "2.3.0"
 

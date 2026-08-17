@@ -20,10 +20,12 @@ import io.ktor.client.request.get
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock as KtClock
+import com.rvodevelopment.tuinmaat.repository.UserData
 
 data class PlantToevoegenState(
     val plant: Plant = Plant(),
@@ -87,42 +89,49 @@ class PlantToevoegenViewModel(
             _state.update { it.copy(isLaden = true) }
             
             // Haal gebruikersgegevens op voor locaties en gardenId
-            val userData = userRepository.getUserData(profile.uid).first()
-            if (userData != null) {
-                val gardenId = userData.sharedGardenId ?: profile.uid
+            userRepository.getUserData(profile.uid).collectLatest { userData ->
+                if (userData != null) {
+                    val gardenId = userData.activeGardenId ?: userData.sharedGardenId ?: profile.uid
                 
-                // Controleer aantal planten voor de tip
-                val planten = tuinRepository.getPlanten(gardenId).first()
-                checkFirstTime(planten.size)
-
-                _state.update { 
-                    it.copy(
-                        beschikbareLocaties = userData.locaties,
-                        eigenaarNaam = if (gardenId != profile.uid) userData.voornaam else null,
-                        // Als het een nieuwe plant is, gebruik de standaardlocatie
-                        plant = if (plantId == null && it.plant.locatie.isBlank()) 
-                            it.plant.copy(locatie = userData.standaardLocatie) 
-                        else it.plant
-                    )
-                }
-
-                // Als we een plantId hebben, haal de plantgegevens op
-                if (plantId != null) {
-                    tuinRepository.getPlant(gardenId, plantId).collect { plant ->
-                        if (plant != null) {
-                            val maanden = plant.snoeiMaand.split(", ").filter { it.isNotBlank() }
-                            _state.update { it.copy(
-                                plant = plant,
-                                geselecteerdeMaanden = maanden,
-                                isLaden = false
-                            ) }
+                    // Controleer aantal planten voor de tip (eenmalig)
+                    if (plantId == null) {
+                        launch {
+                            val planten = tuinRepository.getPlanten(gardenId).first()
+                            checkFirstTime(planten.size)
                         }
+                    }
+
+                    _state.update { currentState ->
+                        currentState.copy(
+                            beschikbareLocaties = userData.locaties,
+                            eigenaarNaam = if (gardenId != profile.uid) userData.voornaam else null,
+                            // Als het een nieuwe plant is en er nog geen locatie is gekozen, gebruik de standaardlocatie
+                            plant = if (plantId == null && currentState.plant.locatie.isBlank()) 
+                                currentState.plant.copy(locatie = userData.standaardLocatie) 
+                            else currentState.plant
+                        )
+                    }
+
+                    // Als we een plantId hebben, haal de plantgegevens op (slechts eenmalig nodig)
+                    if (plantId != null && _state.value.plant.firestoreId.isEmpty()) {
+                        launch {
+                            tuinRepository.getPlant(gardenId, plantId).collect { plant ->
+                                if (plant != null) {
+                                    val maanden = plant.snoeiMaand.split(", ").filter { it.isNotBlank() }
+                                    _state.update { it.copy(
+                                        plant = plant,
+                                        geselecteerdeMaanden = maanden,
+                                        isLaden = false
+                                    ) }
+                                }
+                            }
+                        }
+                    } else {
+                        _state.update { it.copy(isLaden = false) }
                     }
                 } else {
                     _state.update { it.copy(isLaden = false) }
                 }
-            } else {
-                _state.update { it.copy(isLaden = false) }
             }
         }
     }

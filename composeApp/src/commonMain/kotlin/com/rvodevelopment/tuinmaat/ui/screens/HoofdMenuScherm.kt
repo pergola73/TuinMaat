@@ -47,12 +47,13 @@ fun HoofdMenuScherm(
         }
     }
 
-    TuinAchtergrond {
+    Scaffold(
+        containerColor = ZachtBeige
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
+                .padding(padding)
                 .verticalScroll(rememberScrollState()),
         ) {
             // Garden Switcher
@@ -152,40 +153,6 @@ fun HoofdMenuScherm(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        onClick = { onNavigate("lijst") },
-                        color = Color(0xFFF5F5F0),
-                        shape = RoundedCornerShape(50.dp),
-                        modifier = Modifier.height(36.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.Park,
-                                    contentDescription = null,
-                                    tint = GrasGroen,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Icon(
-                                    Icons.Default.FiberManualRecord,
-                                    contentDescription = null,
-                                    tint = Color(0xFFFFB6C1), // LightPink voor het roosje
-                                    modifier = Modifier.size(6.dp).offset(y = (-2).dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                state.aantalPlanten.toString(),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = DonkerGroen
-                            )
-                        }
-                    }
-
                     state.weerBericht?.let { weer ->
                         WeerCard(weer) {
                             selectionService.markeerSysteemActie()
@@ -238,7 +205,6 @@ fun HoofdMenuScherm(
                                     tint = DonkerGroen,
                                     modifier = Modifier.size(20.dp)
                                 )
-                                // Melding/attentie stipje voor nieuwe functies
                                 Surface(
                                     modifier = Modifier
                                         .size(8.dp)
@@ -266,9 +232,107 @@ fun HoofdMenuScherm(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // NIEUWE INDELING
+            // 1. Vandaag in de tuin (Kalender acties)
+            if (state.vandaagActies.isNotEmpty()) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Event, null, tint = DonkerGroen, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Vandaag in de tuin", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    state.vandaagActies.forEach { actie ->
+                        Surface(
+                            onClick = { onNavigate("actiecentrum") },
+                            color = Color.White.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).neumorphicShadow(shape = RoundedCornerShape(16.dp))
+                        ) {
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier.size(40.dp).background(OrganischGroen, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val icon = when (actie.type) {
+                                        com.rvodevelopment.tuinmaat.premium.notifications.ActionType.WATERING -> Icons.Default.WaterDrop
+                                        com.rvodevelopment.tuinmaat.premium.notifications.ActionType.PRUNING -> Icons.Default.ContentCut
+                                        else -> Icons.Default.Check
+                                    }
+                                    Icon(icon, null, tint = DonkerGroen, modifier = Modifier.size(20.dp))
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(actie.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = DonkerGroen)
+                                    Text(actie.description, style = MaterialTheme.typography.labelSmall, color = DonkerGroen.copy(alpha = 0.6f), maxLines = 1)
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // 2. Recent Toegevoegd / Foto Galerij
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                Text(
+                    if (state.recentPlanten.isNotEmpty()) "Nieuw in je tuin" else "Inspiratie voor jou",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = DonkerGroen
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    if (state.recentPlanten.isNotEmpty()) {
+                        items(state.recentPlanten.size) { index ->
+                            val plant = state.recentPlanten[index]
+                            PlantFotoCard(
+                                naam = plant.naam,
+                                fotoUrl = plant.fotoUri,
+                                onClick = { onNavigate("detail/${plant.firestoreId}") }
+                            )
+                        }
+                    } else {
+                        // Fallback met random planten (PlantNet inspiratie effect)
+                        val fallbackFotos = listOf(
+                            "https://images.unsplash.com/photo-1520412099561-64835287a95a?w=400",
+                            "https://images.unsplash.com/photo-1530633762170-171eeadbb83a?w=400",
+                            "https://images.unsplash.com/photo-1466781783364-391991bd0a61?w=400"
+                        )
+                        items(fallbackFotos.size) { index ->
+                            PlantFotoCard(
+                                naam = "Prachtige Tuin",
+                                fotoUrl = fallbackFotos[index],
+                                onClick = { onNavigate("toevoegen") }
+                            )
+                        }
+                    }
+                }
+
+                // 3. Tuinontwerp direct onder de foto's
+                if (state.toonTuintekenaar) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FeatureCard(
+                        tekst = "2D Tuinontwerp",
+                        subtekst = "Visualiseer je droomtuin",
+                        icoon = { Icon(Icons.Default.Architecture, null, modifier = Modifier.size(24.dp), tint = Color.White) },
+                        containerColor = DonkerGroen,
+                        contentColor = Color.White,
+                        isPremium = !state.isPremium,
+                        isNieuw = state.toonNieuwLabel,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { onNavigate("tuintekenaar") }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Advertentie blok onder de actie-knoppen
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                 if (!state.isPremium) {
                     NativeAd(
@@ -277,144 +341,9 @@ fun HoofdMenuScherm(
                         isMedium = true
                     )
                 }
-
-                // 1. Mijn Planten
-                FeatureCard(
-                    tekst = "Mijn Planten",
-                    subtekst = "Bekijk en verzorg je collectie",
-                    icoon = {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Park, 
-                                null, 
-                                modifier = Modifier.size(20.dp).offset(x = (-4).dp),
-                                tint = DonkerGroen
-                            )
-                            Icon(
-                                Icons.Default.Park, 
-                                null, 
-                                modifier = Modifier.size(24.dp).offset(x = 4.dp),
-                                tint = DonkerGroen
-                            )
-                            Icon(
-                                Icons.Default.FiberManualRecord,
-                                null,
-                                tint = Color(0xFFFFB6C1), // LightPink voor het roosje
-                                modifier = Modifier.size(6.dp).offset(y = (-2).dp)
-                            )
-                        }
-                    },
-                    containerColor = OrganischGroen,
-                    contentColor = DonkerGroen,
-                    modifier = Modifier.fillMaxWidth()
-                ) { onNavigate("lijst") }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 2. Tuin-Agenda met dynamisch icoon
-                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).dayOfMonth
-                FeatureCard(
-                    tekst = "Mijn Tuin-Agenda",
-                    subtekst = "Wat moet er vandaag gebeuren?",
-                    icoon = {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.CalendarToday, 
-                                null, 
-                                modifier = Modifier.size(28.dp),
-                                tint = DonkerGroen
-                            )
-                            Text(
-                                text = today.toString(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = DonkerGroen,
-                                fontSize = 10.sp,
-                                modifier = Modifier.offset(y = 2.dp)
-                            )
-                        }
-                    },
-                    containerColor = OrganischGroen,
-                    contentColor = DonkerGroen,
-                    isPremium = !state.isPremium,
-                    isNieuw = state.toonNieuwLabel,
-                    isAttentie = state.heeftOngelezenBerichten,
-                    modifier = Modifier.fillMaxWidth()
-                ) { onNavigate("actiecentrum") }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // 3. Plant Toevoegen & Dr Tuinmaat (Naast elkaar)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    ActionCardSmall(
-                        tekst = "Plant Toevoegen",
-                        icoon = {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.LocalFlorist, null, modifier = Modifier.size(32.dp))
-                                Icon(
-                                    Icons.Default.AutoAwesome, 
-                                    null, 
-                                    modifier = Modifier.size(16.dp).align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp),
-                                    tint = Color(0xFF8A2BE2) // Violet voor Gemini effect
-                                )
-                            }
-                        },
-                        containerColor = DonkerGroen,
-                        contentColor = Color.White,
-                        modifier = Modifier.weight(1f)
-                    ) { onNavigate("toevoegen") }
-
-                    ActionCardSmall(
-                        tekst = "Dr. Tuinmaat",
-                        icoon = {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.MedicalServices, null, modifier = Modifier.size(32.dp))
-                                Icon(
-                                    Icons.Default.Add, 
-                                    null, 
-                                    modifier = Modifier.size(12.dp).align(Alignment.Center),
-                                    tint = Color.Red
-                                )
-                            }
-                        },
-                        containerColor = DonkerGroen,
-                        contentColor = Color.White,
-                        isPremium = !state.isPremium,
-                        isNieuw = state.toonNieuwLabel,
-                        modifier = Modifier.weight(1f)
-                    ) { onNavigate("drtuinmaat") }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // 4. Tuinontwerp & Instellingen (Onderaan, compact)
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (state.toonTuintekenaar) {
-                        FeatureCard(
-                            tekst = "Tuinontwerp",
-                            subtekst = "Visualiseer je droomtuin",
-                            icoon = { Icon(Icons.Default.Architecture, null, modifier = Modifier.size(24.dp), tint = Color.White) },
-                            containerColor = DonkerGroen,
-                            contentColor = Color.White,
-                            isPremium = !state.isPremium,
-                            isNieuw = state.toonNieuwLabel,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { onNavigate("tuintekenaar") }
-                    }
-
-                    QuickActionKnop(
-                        tekst = "Instellingen",
-                        icoon = Icons.Default.Settings,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { onNavigate("instellingen") }
-                }
-                
             }
 
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
 
         // Review Vraag Dialog
@@ -450,6 +379,58 @@ fun HoofdMenuScherm(
                 onRestore = { instellingenViewModel.restorePurchases() }
             ) {
                 toonPremiumDialog = false
+            }
+        }
+    }
+}
+
+@Composable
+fun PlantFotoCard(
+    naam: String,
+    fotoUrl: String?,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .width(160.dp)
+            .height(200.dp)
+            .neumorphicShadow(shape = RoundedCornerShape(24.dp)),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White
+    ) {
+        Column {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                if (fotoUrl != null) {
+                    coil3.compose.AsyncImage(
+                        model = fotoUrl,
+                        contentDescription = naam,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(OrganischGroen),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.LocalFlorist, null, tint = DonkerGroen.copy(alpha = 0.3f), modifier = Modifier.size(48.dp))
+                    }
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = naam,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DonkerGroen,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
             }
         }
     }

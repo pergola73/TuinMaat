@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.rvodevelopment.tuinmaat.service.MessageService
 import com.rvodevelopment.tuinmaat.ui.components.SecurityWrapper
@@ -37,22 +38,43 @@ fun App() {
     }
 
     TuinMaatTheme {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            contentWindowInsets = WindowInsets(0, 0, 0, 0), // Laat NavHost zelf insets afhandelen
-        ) { _ ->
-            SecurityWrapper {
-                val navController = rememberNavController()
-                
-                // Bepaal de startbestemming op basis van inlogstatus
-                val startDestination = remember { 
-                    if (authService.isUserLoggedIn()) "hoofdmenu" else "login"
-                }
+        SecurityWrapper {
+            val navController = rememberNavController()
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
+            
+            // Bepaal de startbestemming op basis van inlogstatus
+            val startDestination = remember { 
+                if (authService.isUserLoggedIn()) "hoofdmenu" else "login"
+            }
 
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                bottomBar = {
+                    val toonBottomBar = currentRoute != "login" && authService.isUserLoggedIn()
+                    if (toonBottomBar) {
+                        com.rvodevelopment.tuinmaat.ui.components.TuinMaatBottomBar(
+                            currentRoute = currentRoute,
+                            onNavigate = { route ->
+                                // Navigatie logica voor bottom bar
+                                if (currentRoute != route) {
+                                    navController.navigate(route) {
+                                        // Vermijd opstapelen van bestemmingen
+                                        popUpTo("hoofdmenu") { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
                 NavHost(
                     navController = navController,
                     startDestination = startDestination,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
                 ) {
                     composable("login") {
                         val viewModel: LoginViewModel = koinViewModel()
