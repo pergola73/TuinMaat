@@ -19,8 +19,11 @@ import com.rvodevelopment.tuinmaat.premium.notifications.TuinAgendaViewModel
 import com.rvodevelopment.tuinmaat.premium.planner.GardenPlannerScherm
 import com.rvodevelopment.tuinmaat.premium.planner.GardenPlannerViewModel
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.parameter.parametersOf
 
+@OptIn(KoinExperimentalAPI::class)
 @Composable
 fun App() {
     val authService: com.rvodevelopment.tuinmaat.service.AuthService = koinInject()
@@ -52,7 +55,7 @@ fun App() {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     composable("login") {
-                        val viewModel: LoginViewModel = koinInject()
+                        val viewModel: LoginViewModel = koinViewModel()
                         LoginScherm(
                             viewModel = viewModel,
                         ) {
@@ -62,7 +65,7 @@ fun App() {
                         }
                     }
                     composable("hoofdmenu") {
-                        val viewModel: HoofdMenuViewModel = koinInject()
+                        val viewModel: HoofdMenuViewModel = koinViewModel()
                         HoofdMenuScherm(
                             viewModel = viewModel,
                         ) { route ->
@@ -70,7 +73,7 @@ fun App() {
                         }
                     }
                     composable("lijst") {
-                        val viewModel: PlantenLijstViewModel = koinInject()
+                        val viewModel: PlantenLijstViewModel = koinViewModel()
                         PlantenLijstScherm(
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
@@ -79,7 +82,7 @@ fun App() {
                     }
                     composable("detail/{plantId}") { backStackEntry ->
                         val plantId = backStackEntry.arguments?.getString("plantId")
-                        val viewModel: PlantDetailViewModel = koinInject { parametersOf(plantId) }
+                        val viewModel: PlantDetailViewModel = koinViewModel { parametersOf(plantId) }
                         PlantDetailScherm(
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
@@ -90,7 +93,7 @@ fun App() {
                         )
                     }
                     composable("drtuinmaat") {
-                        val viewModel: DrTuinmaatViewModel = koinInject()
+                        val viewModel: DrTuinmaatViewModel = koinViewModel()
                         DrTuinmaatScherm(
                             viewModel = viewModel,
                             plantName = null,
@@ -99,7 +102,7 @@ fun App() {
                     }
                     composable("drtuinmaat/{plantName}") { backStackEntry ->
                         val plantName = backStackEntry.arguments?.getString("plantName")
-                        val viewModel: DrTuinmaatViewModel = koinInject()
+                        val viewModel: DrTuinmaatViewModel = koinViewModel()
                         DrTuinmaatScherm(
                             viewModel = viewModel,
                             plantName = plantName,
@@ -108,7 +111,7 @@ fun App() {
                     }
                     composable("toevoegen?plantId={plantId}") { backStackEntry ->
                         val plantId = backStackEntry.arguments?.getString("plantId")
-                        val viewModel: PlantToevoegenViewModel = koinInject { parametersOf(plantId) }
+                        val viewModel: PlantToevoegenViewModel = koinViewModel { parametersOf(plantId) }
                         PlantToevoegenScherm(
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
@@ -120,7 +123,7 @@ fun App() {
                         )
                     }
                     composable("actiecentrum") {
-                        val viewModel: TuinAgendaViewModel = koinInject()
+                        val viewModel: TuinAgendaViewModel = koinViewModel()
                         TuinAgendaScherm(
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() },
@@ -128,7 +131,7 @@ fun App() {
                         )
                     }
                     composable("tuintekenaar") {
-                        val viewModel: GardenPlannerViewModel = koinInject()
+                        val viewModel: GardenPlannerViewModel = koinViewModel()
                         GardenPlannerScherm(
                             viewModel = viewModel,
                             onNavigateBack = { navController.popBackStack() }

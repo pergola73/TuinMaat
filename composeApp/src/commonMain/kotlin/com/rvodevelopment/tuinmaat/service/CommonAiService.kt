@@ -114,8 +114,8 @@ class CommonAiService(
                 }
             ).body()
 
-            val json = Json.parseToJsonElement(response).jsonObject
-            val results = json["results"]?.jsonArray
+            val parsedJson = json.parseToJsonElement(response).jsonObject
+            val results = parsedJson["results"]?.jsonArray
             if (results != null && results.isNotEmpty()) {
                 val bestMatch = results[0].jsonObject
                 val species = bestMatch["species"]?.jsonObject
@@ -148,8 +148,8 @@ class CommonAiService(
                 }
             ).body()
 
-            val json = Json.parseToJsonElement(response).jsonObject
-            val results = json["results"]?.jsonArray
+            val parsedJson = json.parseToJsonElement(response).jsonObject
+            val results = parsedJson["results"]?.jsonArray
             if (results != null && results.isNotEmpty()) {
                 val bestMatch = results[0].jsonObject
                 val eppoCode = bestMatch["name"]?.jsonPrimitive?.content ?: ""

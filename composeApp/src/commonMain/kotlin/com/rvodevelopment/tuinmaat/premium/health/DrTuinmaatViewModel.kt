@@ -22,6 +22,7 @@ data class DrTuinmaatState(
     val toonPremiumDialog: Boolean = false
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DrTuinmaatViewModel(
     premiumManager: PremiumManager,
     private val drTuinmaatService: DrTuinmaatService,
@@ -39,7 +40,6 @@ class DrTuinmaatViewModel(
         loadHistory()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadHistory() {
         viewModelScope.launch {
             authService.currentUser.flatMapLatest { user ->

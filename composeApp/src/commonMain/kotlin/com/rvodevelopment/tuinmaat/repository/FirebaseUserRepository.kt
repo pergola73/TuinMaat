@@ -5,6 +5,7 @@ import dev.gitlive.firebase.firestore.firestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import dev.gitlive.firebase.firestore.FieldValue
 
 class FirebaseUserRepository : UserRepository {
@@ -42,6 +43,7 @@ class FirebaseUserRepository : UserRepository {
                     null
                 }
             }
+            .onStart { emit(null) }
             .catch { 
                 println("FirebaseUserRepository: Error fetching snapshots: ${it.message}")
                 emit(null) 

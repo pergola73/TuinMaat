@@ -5,8 +5,8 @@ import platform.Foundation.NSBundle
 actual fun getPlatform(): PlatformType = PlatformType.IOS
 
 actual val appVersion: String = run {
-    val version = (NSBundle.mainBundle.infoDictionary?.get("CFBundleShortVersionString") as? String) ?: "2.2.2"
-    val build = (NSBundle.mainBundle.infoDictionary?.get("CFBundleVersion") as? String) ?: "28"
+    val version = (NSBundle.mainBundle.infoDictionary?.get("CFBundleShortVersionString") as? String) ?: "2.3.0"
+    val build = (NSBundle.mainBundle.infoDictionary?.get("CFBundleVersion") as? String) ?: "30"
     "$version ($build)"
 }
 

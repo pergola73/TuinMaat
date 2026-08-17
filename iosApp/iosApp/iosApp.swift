@@ -1,10 +1,13 @@
 import SwiftUI
 import ComposeApp
 import FirebaseCore
+#if canImport(FirebaseMessaging)
 import FirebaseMessaging
+#endif
 import GoogleMobileAds
 import UserNotifications
 
+#if canImport(FirebaseMessaging)
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
@@ -65,16 +68,64 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     // MessagingDelegate: Ontvang de FCM Token
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         print("Firebase registration token: \(String(describing: fcmToken))")
-        // De token wordt ook via de IosNotificationService opgehaald in de Kotlin code
     }
     
-    // UNUserNotificationCenterDelegate: Toon notificatie als app op voorgrond staat
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([[.banner, .list, .sound]])
     }
 }
+#else
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+            FirebaseApp.configure()
+        }
+        
+        MobileAds.shared.start(completionHandler: nil)
+        
+        setupKoin()
+        setupAdMobRegistry()
+        
+        return true
+    }
+    
+    private func setupKoin() {
+        let plantnetKey = Bundle.main.object(forInfoDictionaryKey: "PLANTNET_API_KEY") as? String ?? ""
+        let geminiKey = Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String ?? ""
+        let revenueCatKey = Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String ?? ""
+
+        KoinKt.doInitKoin(
+            useMock: false,
+            plantnetApiKey: plantnetKey,
+            geminiApiKey: geminiKey,
+            revenueCatApiKey: revenueCatKey
+        )
+    }
+
+    private func setupAdMobRegistry() {
+        PlatformViewRegistry.shared.bannerFactory = { adUnitId in
+            let bannerView = BannerView(adSize: AdSizeBanner)
+            bannerView.adUnitID = adUnitId
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootVC = windowScene.windows.first?.rootViewController {
+                bannerView.rootViewController = rootVC
+            }
+            bannerView.load(Request())
+            return bannerView
+        }
+        
+        PlatformViewRegistry.shared.nativeAdFactory = { adUnitId, isMedium in
+            let container = NativeAdViewContainer()
+            container.setup(adUnitId: adUnitId, isMedium: isMedium.boolValue)
+            return container
+        }
+    }
+}
+#endif
 
 @main
 struct TuinMaatApp: App {
@@ -139,7 +190,6 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
             adView.trailingAnchor.constraint(equalTo: self.trailingAnchor)
         ])
 
-        // 1. Mandatory Ad Attribution label
         let adBadge = UILabel()
         adBadge.text = " Ad "
         adBadge.font = .systemFont(ofSize: 10, weight: .bold)
@@ -151,14 +201,12 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         adView.addSubview(adBadge)
         adBadge.translatesAutoresizingMaskIntoConstraints = false
 
-        // 2. AdChoices View (Mandatory)
         let adChoicesView = AdChoicesView()
         adChoicesView.isUserInteractionEnabled = false
         adView.addSubview(adChoicesView)
         adChoicesView.translatesAutoresizingMaskIntoConstraints = false
         adView.adChoicesView = adChoicesView
 
-        // 3. Icon View
         let iconView = UIImageView()
         iconView.contentMode = .scaleAspectFill
         iconView.layer.cornerRadius = 6
@@ -168,7 +216,6 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         iconView.translatesAutoresizingMaskIntoConstraints = false
         adView.iconView = iconView
 
-        // 4. Headline (Mandatory)
         let headlineLabel = UILabel()
         headlineLabel.font = .boldSystemFont(ofSize: 15)
         headlineLabel.textColor = UIColor(red: 0.18, green: 0.49, blue: 0.20, alpha: 1.0)
@@ -177,7 +224,6 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         headlineLabel.translatesAutoresizingMaskIntoConstraints = false
         adView.headlineView = headlineLabel
 
-        // 5. Body View
         let bodyLabel = UILabel()
         bodyLabel.font = .systemFont(ofSize: 12)
         bodyLabel.textColor = .darkGray
@@ -187,68 +233,56 @@ class NativeAdViewContainer: UIView, NativeAdLoaderDelegate {
         bodyLabel.translatesAutoresizingMaskIntoConstraints = false
         adView.bodyView = bodyLabel
 
-        // 6. Media View (120pts height as requested)
         let mediaView = MediaView()
-        mediaView.isUserInteractionEnabled = true // Required for media interaction
+        mediaView.isUserInteractionEnabled = true 
         adView.addSubview(mediaView)
         mediaView.translatesAutoresizingMaskIntoConstraints = false
         adView.mediaView = mediaView
 
-        // 7. CTA Button (Mandatory)
         let ctaButton = UIButton()
         ctaButton.backgroundColor = UIColor(red: 0.48, green: 0.65, blue: 0.36, alpha: 1.0)
         ctaButton.setTitleColor(.white, for: .normal)
         ctaButton.titleLabel?.font = .boldSystemFont(ofSize: 14)
         ctaButton.layer.cornerRadius = 8
-        ctaButton.isUserInteractionEnabled = false // Terug naar false: laat de GADNativeAdView de click afhandelen
+        ctaButton.isUserInteractionEnabled = false 
         adView.addSubview(ctaButton)
         ctaButton.translatesAutoresizingMaskIntoConstraints = false
         adView.callToActionView = ctaButton
 
-        // Layout Constraints for Medium
         NSLayoutConstraint.activate([
             adBadge.topAnchor.constraint(equalTo: adView.topAnchor, constant: 8),
             adBadge.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 8),
-
             adChoicesView.topAnchor.constraint(equalTo: adView.topAnchor),
             adChoicesView.trailingAnchor.constraint(equalTo: adView.trailingAnchor),
-            adChoicesView.widthAnchor.constraint(equalToConstant: 24), // Iets groter voor betere zichtbaarheid
+            adChoicesView.widthAnchor.constraint(equalToConstant: 24),
             adChoicesView.heightAnchor.constraint(equalToConstant: 24),
-
             iconView.topAnchor.constraint(equalTo: adBadge.bottomAnchor, constant: 6),
             iconView.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 8),
-            iconView.widthAnchor.constraint(equalToConstant: 40), // Iets groter conform richtlijnen
+            iconView.widthAnchor.constraint(equalToConstant: 40),
             iconView.heightAnchor.constraint(equalToConstant: 40),
-
             headlineLabel.topAnchor.constraint(equalTo: adBadge.topAnchor),
             headlineLabel.leadingAnchor.constraint(equalTo: adBadge.trailingAnchor, constant: 8),
             headlineLabel.trailingAnchor.constraint(equalTo: adChoicesView.leadingAnchor, constant: -8),
-
             bodyLabel.topAnchor.constraint(equalTo: headlineLabel.bottomAnchor, constant: 2),
             bodyLabel.leadingAnchor.constraint(equalTo: headlineLabel.leadingAnchor),
             bodyLabel.trailingAnchor.constraint(equalTo: headlineLabel.trailingAnchor),
-
             mediaView.topAnchor.constraint(equalTo: iconView.bottomAnchor, constant: 8),
             mediaView.leadingAnchor.constraint(equalTo: adView.leadingAnchor),
             mediaView.trailingAnchor.constraint(equalTo: adView.trailingAnchor),
             mediaView.heightAnchor.constraint(equalToConstant: 120),
-
             ctaButton.topAnchor.constraint(equalTo: mediaView.bottomAnchor, constant: 10),
             ctaButton.leadingAnchor.constraint(equalTo: adView.leadingAnchor, constant: 12),
             ctaButton.trailingAnchor.constraint(equalTo: adView.trailingAnchor, constant: -12),
             ctaButton.bottomAnchor.constraint(equalTo: adView.bottomAnchor, constant: -10),
-            ctaButton.heightAnchor.constraint(equalToConstant: 44) // Standaard tap-hoogte
+            ctaButton.heightAnchor.constraint(equalToConstant: 44)
         ])
 
-        // Assign content BEFORE setting the nativeAd object
         (adView.headlineView as? UILabel)?.text = nativeAd.headline
         (adView.bodyView as? UILabel)?.text = nativeAd.body
         (adView.callToActionView as? UIButton)?.setTitle(nativeAd.callToAction, for: .normal)
         (adView.iconView as? UIImageView)?.image = nativeAd.icon?.image
         
-        // Verplicht voor de validator: koppel het object als LAATSTE stap
         adView.nativeAd = nativeAd
-
         adView.layoutIfNeeded()
         self.nativeAdView = adView
     }
