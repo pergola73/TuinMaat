@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -23,10 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.rvodevelopment.tuinmaat.ui.components.AdBanner
-import com.rvodevelopment.tuinmaat.ui.components.NativeAd
-import com.rvodevelopment.tuinmaat.ui.components.LocationChip
-import com.rvodevelopment.tuinmaat.ui.components.PlantKaart
+import com.rvodevelopment.tuinmaat.ui.components.*
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
@@ -44,40 +40,15 @@ fun PlantenLijstScherm(
 
     Scaffold(
         topBar = {
-            Surface(color = ZachtBeige) {
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                    ) {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Mijn Planten",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = DonkerGroen,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                            Text(
-                                text = state.tuinnaam,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DonkerGroen.copy(alpha = 0.6f)
-                            )
-                        }
-                        IconButton(onClick = { viewModel.toggleZoekveld() }) {
-                            Icon(
-                                if (state.isZoekenZichtbaar) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = "Zoeken",
-                                tint = DonkerGroen
-                            )
-                        }
-                    }
-
+            TuinMaatHeader(
+                titel = "Mijn Planten",
+                subtitel = state.tuinnaam,
+                onBackClick = onNavigateBack,
+                extraContent = {
+                    Spacer(modifier = Modifier.height(16.dp))
                     // Locatie filters
                     LazyRow(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item {
@@ -94,7 +65,7 @@ fun PlantenLijstScherm(
                         }
                     }
                 }
-            }
+            )
         },
         containerColor = ZachtBeige
     ) { padding ->
@@ -104,6 +75,19 @@ fun PlantenLijstScherm(
                 .padding(padding),
         ) {
             // Neumorphic Zoekbalk
+            Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).fillMaxWidth()) {
+                IconButton(
+                    onClick = { viewModel.toggleZoekveld() },
+                    modifier = Modifier.align(Alignment.CenterEnd).offset(y = (-40).dp)
+                ) {
+                    Icon(
+                        if (state.isZoekenZichtbaar) Icons.Default.Close else Icons.Default.Search,
+                        contentDescription = "Zoeken",
+                        tint = Color.White
+                    )
+                }
+            }
+            
             AnimatedVisibility(
                 visible = state.isZoekenZichtbaar,
                 enter = expandVertically(),
@@ -218,5 +202,3 @@ fun PlantenLijstScherm(
         }
     }
 }
-
-

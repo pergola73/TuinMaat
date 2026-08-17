@@ -25,10 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
-import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
-import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
-import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
+import com.rvodevelopment.tuinmaat.ui.components.*
+import com.rvodevelopment.tuinmaat.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,19 +38,17 @@ fun GardenPlannerScherm(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("2D Tuinontwerper 📐", color = DonkerGroen, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
+            TuinMaatHeader(
+                titel = "Tuinontwerper",
+                subtitel = "2D Plattegrond",
+                onBackClick = onNavigateBack,
+                extraContent = {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        IconButton(onClick = { viewModel.reset() }) {
+                            Icon(Icons.Default.DeleteSweep, "Reset", tint = Color.White)
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.reset() }) {
-                        Icon(Icons.Default.DeleteSweep, "Reset", tint = DonkerGroen)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ZachtBeige)
+                }
             )
         },
         containerColor = ZachtBeige
@@ -69,28 +65,24 @@ fun GardenPlannerScherm(
                     .background(Color.White)
                     .pointerInput(Unit) {
                         detectTapGestures { offset ->
-                            // Bereken de positie in meters op basis van de schaal
                             val xMeters = offset.x / state.scale
                             val yMeters = offset.y / state.scale
                             viewModel.placePlant(xMeters, yMeters)
                         }
                     }
             ) {
-                // Grid Background
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    // Vertical lines
                     for (i in 0..(size.width / state.scale).toInt()) {
                         drawLine(
-                            color = DonkerGroen.copy(alpha = 0.1f),
+                            color = Color(0xFF2D5A36).copy(alpha = 0.1f),
                             start = Offset(i * state.scale, 0f),
                             end = Offset(i * state.scale, size.height),
                             strokeWidth = 1f
                         )
                     }
-                    // Horizontal lines
                     for (i in 0..(size.height / state.scale).toInt()) {
                         drawLine(
-                            color = DonkerGroen.copy(alpha = 0.1f),
+                            color = Color(0xFF2D5A36).copy(alpha = 0.1f),
                             start = Offset(0f, i * state.scale),
                             end = Offset(size.width, i * state.scale),
                             strokeWidth = 1f
@@ -98,7 +90,6 @@ fun GardenPlannerScherm(
                     }
                 }
 
-                // Placed Plants
                 state.placedPlanten.forEach { placed ->
                     Box(
                         modifier = Modifier
@@ -120,17 +111,17 @@ fun GardenPlannerScherm(
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            Icon(Icons.Default.LocalFlorist, null, tint = GrasGroen, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.LocalFlorist, null, tint = Color(0xFF2D5A36), modifier = Modifier.size(24.dp))
                         }
                     }
                 }
                 
                 if (state.placedPlanten.isEmpty() && state.selectedPlant == null) {
                     Text(
-                        "Tik op de planten hieronder en daarna op de kaart om ze te plaatsen.",
+                        "Tik onderaan op een plant en daarna op de kaart om te plaatsen.",
                         modifier = Modifier.align(Alignment.Center).padding(32.dp),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = DonkerGroen.copy(alpha = 0.4f),
+                        color = Color.Gray,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
@@ -145,10 +136,10 @@ fun GardenPlannerScherm(
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text(
-                        text = if (state.selectedPlant != null) "Plaats nu: ${state.selectedPlant?.naam}" else "Jouw Plantenlijst",
+                        text = if (state.selectedPlant != null) "Plaats nu: ${state.selectedPlant?.naam}" else "Jouw Planten",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = DonkerGroen
+                        color = Color(0xFF2D5A36)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -169,12 +160,12 @@ fun GardenPlannerScherm(
                                     modifier = Modifier
                                         .size(64.dp)
                                         .background(
-                                            if (isSelected) GrasGroen.copy(alpha = 0.2f) else DonkerGroen.copy(alpha = 0.05f),
+                                            if (isSelected) Color(0xFFD8EED8) else Color(0xFFF7F9F6),
                                             CircleShape
                                         )
                                         .border(
                                             width = if (isSelected) 2.dp else 0.dp,
-                                            color = if (isSelected) GrasGroen else Color.Transparent,
+                                            color = Color(0xFF2D5A36),
                                             shape = CircleShape
                                         ),
                                     contentAlignment = Alignment.Center
@@ -187,7 +178,7 @@ fun GardenPlannerScherm(
                                             contentScale = ContentScale.Crop
                                         )
                                     } else {
-                                        Icon(Icons.Default.LocalFlorist, null, tint = DonkerGroen.copy(alpha = 0.3f))
+                                        Icon(Icons.Default.LocalFlorist, null, tint = Color(0xFF2D5A36).copy(alpha = 0.3f))
                                     }
                                 }
                                 Text(
@@ -195,7 +186,7 @@ fun GardenPlannerScherm(
                                     style = MaterialTheme.typography.labelSmall,
                                     maxLines = 1,
                                     modifier = Modifier.padding(top = 8.dp),
-                                    color = if (isSelected) GrasGroen else DonkerGroen
+                                    color = if (isSelected) Color(0xFF2D5A36) else Color.Gray
                                 )
                             }
                         }

@@ -1,9 +1,7 @@
 package com.rvodevelopment.tuinmaat.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +15,7 @@ import com.rvodevelopment.tuinmaat.PlatformType
 import com.rvodevelopment.tuinmaat.ui.theme.DonkerGroen
 import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.ZachtBeige
+import com.rvodevelopment.tuinmaat.ui.components.*
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,53 +33,58 @@ fun BeveiligingScherm(
     val isBiometrieBeschikbaar by viewModel.isBiometrieBeschikbaar.collectAsState()
     val isLaden by viewModel.isLaden.collectAsState()
     val platform = getPlatform()
-    val biometrieNaam = if (platform == PlatformType.IOS) "FaceID" else "Biometrische beveiliging"
+    val biometrieNaam = if (platform == PlatformType.IOS) "FaceID" else "Biometrie"
 
-    Column(modifier = Modifier.fillMaxSize().background(ZachtBeige).statusBarsPadding()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = DonkerGroen)
-            }
-            Text("Beveiliging", style = MaterialTheme.typography.headlineMedium, color = DonkerGroen, fontWeight = FontWeight.Bold)
-        }
-
-        if (isLaden) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DonkerGroen)
-            }
-        } else {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        biometrieNaam,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isBiometrieBeschikbaar) DonkerGroen else Color.Gray
-                    )
-                    Switch(
-                        checked = isBiometrieIngeschakeld,
-                        enabled = isBiometrieBeschikbaar,
-                        onCheckedChange = { ingeschakeld ->
-                            viewModel.updateBiometrie(ingeschakeld)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = GrasGroen,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.Gray.copy(alpha = 0.5f)
-                        )
-                    )
+    Scaffold(
+        topBar = {
+            TuinMaatHeader(
+                titel = "Beveiliging",
+                subtitel = "App vergrendeling",
+                onBackClick = { navController.popBackStack() }
+            )
+        },
+        containerColor = ZachtBeige
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
+            if (isLaden) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = DonkerGroen)
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    if (isBiometrieBeschikbaar) 
-                        "Gebruik vingerafdruk of gezichtsherkenning om de app te openen bij inactiviteit."
-                    else 
-                        "Biometrische beveiliging is niet beschikbaar op dit toestel.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isBiometrieBeschikbaar) DonkerGroen.copy(alpha = 0.6f) else Color.Red.copy(alpha = 0.6f)
-                )
+            } else {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                biometrieNaam,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isBiometrieBeschikbaar) DonkerGroen else Color.Gray
+                            )
+                            Switch(
+                                checked = isBiometrieIngeschakeld,
+                                enabled = isBiometrieBeschikbaar,
+                                onCheckedChange = { viewModel.updateBiometrie(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = GrasGroen
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (isBiometrieBeschikbaar) 
+                                "Gebruik vingerafdruk of gezichtsherkenning om de app te openen na inactiviteit."
+                            else 
+                                "Biometrische beveiliging is niet beschikbaar op dit toestel.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isBiometrieBeschikbaar) Color.Gray else Color.Red.copy(alpha = 0.6f)
+                        )
+                    }
+                }
             }
         }
     }

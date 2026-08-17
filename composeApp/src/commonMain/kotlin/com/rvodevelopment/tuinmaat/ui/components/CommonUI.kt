@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -39,6 +40,72 @@ import com.rvodevelopment.tuinmaat.ui.theme.GrasGroen
 import com.rvodevelopment.tuinmaat.ui.theme.neumorphicShadow
 import org.jetbrains.compose.resources.painterResource
 import com.rvodevelopment.tuinmaat.composeapp.generated.resources.*
+
+@Composable
+fun TuinMaatHeader(
+    titel: String,
+    subtitel: String? = null,
+    onBackClick: (() -> Unit)? = null,
+    extraContent: @Composable (ColumnScope.() -> Unit)? = null
+) {
+    Surface(
+        color = Color(0xFF2D5A36), // BotanischGroen
+        shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (onBackClick != null) {
+                        IconButton(
+                            onClick = onBackClick,
+                            modifier = Modifier.padding(end = 8.dp).offset(x = (-12).dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                        }
+                    }
+                    Column {
+                        if (subtitel != null) {
+                            Text(
+                                text = subtitel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                        Text(
+                            text = titel,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                // Groter Logo, onderaan uitgelijnd
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TuinMaatLogo(modifier = Modifier.size(44.dp))
+                }
+            }
+            extraContent?.invoke(this)
+        }
+    }
+}
 
 @Composable
 fun TuinMaatLogo(modifier: Modifier = Modifier) {
