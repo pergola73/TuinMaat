@@ -1,5 +1,6 @@
 package com.rvodevelopment.tuinmaat.service
 
+import com.rvodevelopment.tuinmaat.repository.ConfigRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -18,7 +19,7 @@ class CommonAiService(
     private val client: HttpClient,
     private val plantnetApiKey: String,
     private val geminiApiKey: String,
-    private val geminiModel: String,
+    private val configRepository: ConfigRepository,
     private val mediaService: MediaService
 ) : AiService {
 
@@ -192,8 +193,9 @@ class CommonAiService(
             Antwoord uitsluitend in het Nederlands.
         """.trimIndent()
 
+        val model = configRepository.getGeminiModel()
         return try {
-            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     putJsonArray("contents") {
@@ -305,8 +307,9 @@ class CommonAiService(
             Taal: Nederlands.
         """.trimIndent()
 
+        val model = configRepository.getGeminiModel()
         return try {
-            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     putJsonArray("contents") {
@@ -383,6 +386,7 @@ class CommonAiService(
             }
 
             // Stap 2: Genereer tip met Gemini
+            val model = configRepository.getGeminiModel()
             val nu = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             val maandNaam = when(nu.monthNumber) {
                 1 -> "Januari"
@@ -411,7 +415,7 @@ class CommonAiService(
                 Geef een korte tuintip (max 2 zinnen).
             """.trimIndent()
 
-            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$geminiModel:generateContent?key=$geminiApiKey") {
+            val response: JsonObject = client.post("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$geminiApiKey") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     putJsonArray("contents") {

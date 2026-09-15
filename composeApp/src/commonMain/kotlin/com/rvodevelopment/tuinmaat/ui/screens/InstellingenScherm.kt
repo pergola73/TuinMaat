@@ -234,6 +234,7 @@ fun InfoScherm(
                     InfoRow("Gebruiker", "${userData?.voornaam} ${userData?.achternaam}")
                     InfoRow("E-mail", userData?.email ?: "")
                     InfoRow("Tuin ID", userData?.sharedGardenId ?: userData?.id ?: "")
+                    InfoRow("App Versie", appVersion)
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     Text("Support: rvanoel@etik.com", style = MaterialTheme.typography.labelSmall, color = Color.Gray)

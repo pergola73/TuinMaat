@@ -91,6 +91,7 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     } else {
         single<UserRepository> { FirebaseUserRepository() }
         single<TuinRepository> { FirebaseTuinRepository() }
+        single<ConfigRepository> { FirebaseConfigRepository() }
         single<AuthService> { FirebaseAuthService(get()) }
         single<ImageStorageService> { FirebaseStorageService() }
     }
@@ -98,14 +99,11 @@ fun commonModule(useMock: Boolean, plantnetApiKey: String, geminiApiKey: String,
     single<MediaService> { get() }
     single { get<PlantDatabase>().plantDao() }
 
-    // Centrale plek voor het Gemini model
-    single(named("GEMINI_MODEL")) { "gemini-3.1-flash-lite" }
-
     single<AiService> { CommonAiService(
         client = get(),
         plantnetApiKey = get(named("PLANTNET_API_KEY")),
         geminiApiKey = get(named("GEMINI_API_KEY")),
-        geminiModel = get(named("GEMINI_MODEL")),
+        configRepository = get(),
         mediaService = get()
     ) }
 
